@@ -4,6 +4,8 @@
 > **Estado do projeto:** `DIAGNOSTICANDO`. A reunião de onboarding fecha o diagnóstico; sem ela não se copia template.
 > **Escopo contratado:** somente o Agente de IA (sem reestruturação do CRM).
 > IDs técnicos abaixo são referência desta data. Na construção eles são relidos ao vivo, porque a conta muda.
+>
+> **Atualização:** o escopo foi definido em 8 itens (agenda no Google com um horário por vez, arquivos, dois follow-ups, passagem para humano, painel com relatório semanal, limites). As perguntas simples da reunião estão em `perguntas-reuniao.md`. As seções 3 e 4 abaixo ficam como referência.
 
 ---
 
