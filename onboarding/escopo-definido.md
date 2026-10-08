@@ -22,7 +22,7 @@
 
 | Renda bruta | O que a Anna faz |
 |---|---|
-| Abaixo de R$ 10 mil | Move para a coluna da renda e **não agenda** |
+| Abaixo de R$ 10 mil | Move para a coluna da renda e **não oferece reunião**. A conversa **não é encerrada**: a Anna continua respondendo (decidido em 08/10) |
 | De R$ 10 mil a R$ 15 mil | Agenda para preencher a agenda, com preferência para quem ganha acima de R$ 13,5 mil |
 | Acima de R$ 15 mil | **Prioridade** |
 
@@ -81,18 +81,34 @@ A maioria dos vencimentos é no dia 07. Para quem vence em outro dia, sai um lem
 - Follow-up durante a qualificação: quantas tentativas, intervalo e quando desistir.
 - Follow-up após a proposta: etapa que dispara, onde a equipe escreve o resumo e a cadência.
 - Passagem para humano: quem recebe, como fica sabendo e por quanto tempo a Anna fica em silêncio.
-- Mensagem de encerramento para quem ganha abaixo de R$ 10 mil.
 - Textos que faltam na cobrança: 4º dia útil, lembrete de 4 dias antes (vencimentos fora do dia 07) e confirmação de pagamento. A Dra. vai mandar as mensagens finais num arquivo só.
 
 ## 5 · Pontos de atenção (precisam de decisão antes de construir)
 
-### 5.1 "Nunca dizer que é IA"
+### 5.1 "Nunca dizer que é IA" · **decidido**
+
+**Decisão de 08/10:** a Anna nunca toca no assunto. Se o lead perguntar se é robô, ela passa a conversa para a equipe.
+
 
 A Anna pode atender sem se apresentar como IA ou assistente virtual. O que não dá para implementar é **negar** quando o lead pergunta diretamente. Para um escritório de advocacia, a mentira descoberta vira problema de ética profissional e de reputação, e o lead costuma perguntar justamente quando já desconfia.
 
 **Proposta:** a Anna nunca toca no assunto. Se o lead perguntar "é robô?", ela não confirma nem nega: diz que vai chamar alguém da equipe e passa a conversa para um humano.
 
-### 5.2 Mensagens 4 e 5: "a Dra. analisou seu caso"
+### 5.2 Mensagens 4 e 5: "a Dra. analisou seu caso" · **a confirmar com a proposta abaixo**
+
+**Resposta de 08/10:** a pausa existe só para parecer que alguém analisou.
+
+**Como vai ser implementado:** a pausa de 30 minutos e o "vou encaminhar para a Dra. Carolina" continuam. O encaminhamento passa a ser real: a Anna grava uma nota no card com o resumo do caso, sem exigir nenhuma ação da Dra. O que não entra é a frase falsa "a Dra. analisou seu caso" nem "o seu caso é urgente" dito para todo lead.
+
+Mensagem 5 proposta, com o mesmo efeito:
+
+> Já passei o seu caso para a Dra. Carolina Calvo.
+>
+> Pelo que você me contou, a sua situação é delicada. Por isso, o primeiro atendimento é ON LINE: nessa reunião ela vai explicar a possibilidade de obter judicialmente a SUSPENSÃO dos descontos bancários por até 6 MESES, além da *REVISÃO DE JUROS e reestruturação das suas dívidas*.
+>
+> Ela pode atender você HOJE às 17:00, ON LINE. Posso agendar?
+
+**Contexto do diagnóstico:**
 
 Hoje a pausa de 30 minutos **simula** a análise. Ninguém olha o caso, mas a mensagem 5 afirma que a Dra. analisou e que o caso é urgente. Isso vale para todo lead, inclusive os que não são urgentes. A doutrina da casa trata isso como promessa que mente: o texto descreve um processo que não existe.
 
@@ -102,13 +118,19 @@ Opções:
 
 Recomendação: (a), se a Dra. topar dar um OK rápido. Caso contrário, (b).
 
-### 5.3 Janela de 24 horas do WhatsApp oficial
+### 5.3 Janela de 24 horas do WhatsApp oficial · **modelos criados**
+
+**08/10:** os 12 modelos e 7 campos foram criados no Kommo como rascunho (lista em `modelos-whatsapp.md`). Falta enviar para a aprovação da Meta.
+
 
 Lembretes de reunião e toda a régua de cobrança saem para quem não falou nas últimas 24 horas. No número oficial isso só funciona com **modelos aprovados pela Meta** (categoria utilidade), com custo por envio. Serão uns 12 modelos: 3 lembretes de reunião e cerca de 9 de cobrança.
 
 Também é preciso decidir **por qual número a cobrança sai**. Os clientes conversam pelo WhatsApp Lite, que não tem janela, mas o envio automático por ele precisa ser testado e tem risco de bloqueio se o volume for alto.
 
-### 5.4 Limite da OpenAI
+### 5.4 Limite da OpenAI · **decidido: fica em US$ 20**
+
+**Decisão de 08/10:** o limite continua em US$ 20/mês. Com isso, o alerta de saldo esgotado na OpenAI passa a ser obrigatório no grupo de alertas.
+
 
 São cerca de 25 leads por dia, mais áudios e imagens. US$ 20 por mês pode ficar no limite. Quando o limite estoura, a Anna fica muda sem avisar ninguém. Por isso:
 - o alerta de erro precisa avisar quando a OpenAI recusar por saldo;
