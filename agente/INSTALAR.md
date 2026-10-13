@@ -38,7 +38,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 | 3 | Credenciais do Google | Dra. ou Guilherme com a conta dela | `tutoriais/01-google-agenda.mp4` ou Parte 3 do prompt 2 → `GOOGLE_*` |
 | 4 | Redis e relógio | **feito em 13/10** | Redis compartilhado com prefixo `anna-cc:`. QStash `anna-carolina-calvo-tick` (`*/5 * * * *` → `/api/tick`, Bearer `CRON_SECRET`), criado com `scripts/criar-relogio.ts --criar` |
 | 5 | Deploy | **feito em 13/10** | https://anna-carolina-calvo.vercel.app (time Control Gestão, ligado ao GitHub: cada push no branch republica). Criado com `scripts/vercel.ts --publicar`. `/api/validate` em produção: `ok: true`, sem problemas |
-| 6 | Webhooks | **feito em 13/10** | 47513131 `add_message` → `/api/inbound` e 47513135 `add_lead`, `update_lead`, `status_lead` → `/api/lead`, criados com `scripts/create-webhook.ts --criar`. A conta não tinha nenhum webhook antes |
+| 6 | Webhooks | **feito em 13/10, entregando** | 47513131 `add_message` + `add_outgoing_message` → `/api/inbound` e 47513135 `add_lead`, `update_lead`, `status_lead` → `/api/lead`, criados com `scripts/create-webhook.ts --criar`. A conta não tinha nenhum webhook antes. O `/api/validate` mostra o último aviso de cada um e quantos chegaram em 7 dias |
 | 7 | Automações antigas | lidas em 13/10 | `onboarding/automacoes-existentes.md`: o código já evita duplicar lembretes e preenche o campo Agendamento. Falta o OK do escritório para a exceção da tag `ia` nos robôs de "retorno imediato" |
 
 ## Ordem para ligar
