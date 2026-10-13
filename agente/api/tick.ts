@@ -74,8 +74,18 @@ async function executar(job: Job): Promise<string> {
     const state = await getState(leadId)
     if (state.reuniao?.eventId !== job.token || state.etapa !== 'agendado') return 'lembrete cancelado (reunião mudou)'
     const lead = await getLead(leadId)
-    const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
     const modelo = String(job.dados?.modelo) as ChaveModelo
+    // 1h e 15 min: com o card em Closer › Reunião agendada, a automação do escritório já manda (2h, 1h e
+    // 15 min antes do campo "Reunião"). A Anna só cobre quando o card saiu de lá (ex.: o robô
+    // "SDR RETORNO IMEDIATO" devolveu para o SDR porque o lead respondeu).
+    const pulo = modelo !== 'lembrete24h' && lead.pipeline_id === PIPELINES.closer && lead.status_id === STATUS.reuniaoAgendada
+      ? 'automação do escritório cobre (Reunião agendada)'
+      : !CRM_MAP.modelos[modelo].botId ? `bot do modelo "${CRM_MAP.modelos[modelo].nome}" ainda sem modelo` : ''
+    if (pulo) {
+      await logExec({ tipo: 'pulou', leadId, nome: lead.name, tools: [`lembrete ${modelo}`], detalhe: pulo })
+      return `lembrete pulado: ${pulo}`
+    }
+    const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
     const detalhe = await enviarModelo(leadId, modelo, { primeiroNome: nome || 'tudo bem', linkMeet: state.reuniao.link })
     await logExec({ tipo: 'followup', leadId, nome: lead.name, tools: [`lembrete ${modelo}`], detalhe })
     return detalhe

@@ -243,6 +243,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         await deps.cancelarRegua()
         await deps.salvarCampos({
           [CRM_MAP.campos.reuniao]: Math.floor(slot.inicio.getTime() / 1000),
+          [CRM_MAP.campos.agendamento]: Math.floor(slot.inicio.getTime() / 1000),
           [CRM_MAP.campos.horarioReuniao]: quandoExtenso(slot.inicio),
           [CRM_MAP.campos.linkMeet]: ev.link,
         })

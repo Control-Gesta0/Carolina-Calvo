@@ -78,6 +78,11 @@ async function tratar(ev: Evento): Promise<void> {
     }
     if (bloqueio(lead) || lead.pipeline_id !== PIPELINES.sdr) return
     if ((await getState(ev.id)).etapa) return
+    if (!CRM_MAP.modelos.primeiroContato.botId) {
+      // modelo ainda não aprovado: a Anna começa quando o lead escrever (janela de 24h aberta)
+      await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, detalhe: 'primeiro contato aguardando o modelo aprovado; a Anna responde quando o lead escrever' })
+      return
+    }
     // um primeiro contato por lead, mesmo com webhooks repetidos
     if ((await redis.set(k('iniciado', ev.id), '1', { nx: true, ex: 30 * 86400 })) !== 'OK') return
 

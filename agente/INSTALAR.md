@@ -1,7 +1,7 @@
 # Anna · SDR de IA da Carolina Calvo Advogados
 
-> **Estado (13/10/2026): construída, aguardando prova.** Typecheck limpo, `npm test` 82/82,
-> exame do intérprete 63/63 (21 cenários × 3, GPT-5.4 Mini real), `scripts/validate.ts`
+> **Estado (13/10/2026): construída, aguardando prova.** Typecheck limpo,
+> `npm test` 83/83 após os ajustes de 13/10 (bots e automações antigas), exame do intérprete 63/63 (21 cenários × 3, GPT-5.4 Mini real), `scripts/validate.ts`
 > sem problemas contra o Kommo vivo. **Ainda não rodou com lead real**: faltam as peças
 > externas da lista abaixo e o teste ponta a ponta no WhatsApp.
 
@@ -29,17 +29,17 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 
 ## Peças que faltam (o validate lista ao vivo)
 
-> Atalho: as peças 1, 2, 3, 5 e a leitura da 7 estão num prompt único para o Cowork no Chrome, `onboarding/prompt-cowork-go-live.md`. Os segredos não vão no prompt: o Guilherme cola na Vercel.
+> Atalho: as peças 1, 2, 3, 5 e a leitura da 7 estão nos prompts do Cowork no Chrome: `onboarding/prompt-cowork-go-live.md` (1ª rodada, feita em 13/10) e `onboarding/prompt-cowork-go-live-2.md` (o que falta). Os segredos não vão no prompt: o Guilherme cola na Vercel.
 
 | # | Peça | Quem | Como |
 |---|---|---|---|
-| 1 | Aprovar os 4 modelos novos na Meta | Cowork | `onboarding/prompt-cowork-envio-modelos.md` |
-| 2 | 13 Salesbots (1 texto livre + 12 modelos) e os IDs | Cowork | `onboarding/prompt-cowork-salesbots.md` → preencher `lib/crm-map.ts` (`botId`) e `KOMMO_BOT_ID` |
-| 3 | Credenciais do Google | Dra. | `tutoriais/01-google-agenda.mp4` → `GOOGLE_*` |
+| 1 | Aprovar os 4 modelos novos na Meta | Cowork | Os rascunhos da API (51584–51590) não têm número WABA e a tela não deixa ligar. Criar de novo pela tela: `onboarding/prompt-cowork-go-live-2.md` (Parte 2) → trocar os `templateId` em `lib/crm-map.ts` |
+| 2 | 13 Salesbots | **feito em 13/10** | Texto livre = **54152** (`KOMMO_BOT_ID`). Modelos 54162–54176 já no `crm-map.ts`. Os bots 54154–54160 esperam a aprovação dos 4 modelos para escolher o modelo; até lá o `botId` deles fica 0 e a Anna só começa quando o lead escreve |
+| 3 | Credenciais do Google | Dra. ou Guilherme com a conta dela | `tutoriais/01-google-agenda.mp4` ou Parte 4 do prompt 2 → `GOOGLE_*` |
 | 4 | Redis e relógio | Control Gestão | **Redis: pronto** (database compartilhada, prefixo `anna-cc:` livre). **QStash: credencial ok**; o schedule nasce depois do deploy com `npx tsx scripts/criar-relogio.ts --criar` (`*/5 * * * *` → `DEPLOY_URL/api/tick`, Bearer `CRON_SECRET`) |
-| 5 | Deploy | Control Gestão | Vercel (plano Pro: uso comercial) com as envs de `.env.local.example` |
+| 5 | Deploy | Control Gestão | Projeto `anna-carolina-calvo` configurado na Vercel (time Control Gestão, Pro). Falta colar as 6 variáveis secretas e clicar em Deploy (Parte 1 do prompt 2) |
 | 6 | Webhooks | Control Gestão, com OK do escritório | `npx tsx scripts/create-webhook.ts` (lista) → `--criar` |
-| 7 | Desligar automações antigas nos leads da Anna | Cowork, com OK | Salesbot das tags FOLLOW 1–4; regra que devolve o lead para "5 A 10 MIL"; automação de 24h em Cliente decisão (antes de `POS_PROPOSTA_ATIVO=true`). Ler antes com `onboarding/prompt-cowork-ler-salesbots.md` |
+| 7 | Automações antigas | lidas em 13/10 | `onboarding/automacoes-existentes.md`: o código já evita duplicar lembretes e preenche o campo Agendamento. Falta o OK do escritório para a exceção da tag `anna` nos robôs de "retorno imediato" |
 
 ## Ordem para ligar
 

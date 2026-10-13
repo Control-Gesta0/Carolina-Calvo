@@ -38,8 +38,11 @@ export const CRM_MAP = {
     primeiroNome: 805158,
     horarioReuniao: 805160,
     linkMeet: 805162,
-    /** data/hora da reunião (date_time, epoch em SEGUNDOS) — o mesmo do modelo "Lembrete Reunião" */
+    /** data/hora da reunião (date_time, epoch em SEGUNDOS). As automações do escritório leem os dois:
+     *  "Reunião" → lembretes 2h/1h/15min em Closer › Reunião agendada (modelo "Lembrete Reunião");
+     *  "Agendamento" → 24h depois, o card vai para Cliente decisão. 171 de 192 leads têm os dois iguais. */
     reuniao: 803540,
+    agendamento: 773220,
     objetivo: 805204,
     rendaBruta: 805206,
     rendaLiquida: 805208,
@@ -66,18 +69,20 @@ export const CRM_MAP = {
   etapasProtegidas: [STATUS.ganho, STATUS.perdido, STATUS.clienteDecisao] as number[],
 
   modelos: {
-    primeiroContato: modelo(51584, 'Anna - Primeiro contato'),
-    lembrete24h: modelo(51586, 'Anna - Lembrete reunião 24h'),
-    lembrete1h: modelo(51588, 'Anna - Lembrete reunião 1h'),
-    lembrete15m: modelo(51590, 'Anna - Lembrete reunião 15min'),
-    follow1: modelo(49790, 'Follow 1'),
-    follow2: modelo(49666, 'Follow 2'),
-    follow3: modelo(49452, 'Follow up 3'),
-    follow4: modelo(49454, 'Follow up 4'),
-    fupHorario: modelo(46734, 'FUP horário reunião'),
-    se524h: modelo(47012, 'SE 5 24h'),
-    fupEncerramento: modelo(46746, 'FUP encerramento 48h'),
-    perguntaReuniao: modelo(48922, 'Pergunta reunião'),
+    // botId 0 = o bot existe mas ainda está sem o modelo (só dá para escolher depois da aprovação da Meta).
+    // Depois de aprovado: abrir o bot indicado, escolher o modelo no bloco e trocar o 0 pelo ID.
+    primeiroContato: modelo(51584, 'Anna - Primeiro contato', 0), // bot 54154
+    lembrete24h: modelo(51586, 'Anna - Lembrete reunião 24h', 0), // bot 54156
+    lembrete1h: modelo(51588, 'Anna - Lembrete reunião 1h', 0), // bot 54158
+    lembrete15m: modelo(51590, 'Anna - Lembrete reunião 15min', 0), // bot 54160
+    follow1: modelo(49790, 'Follow 1', 54162),
+    follow2: modelo(49666, 'Follow 2', 54164),
+    follow3: modelo(49452, 'Follow up 3', 54166),
+    follow4: modelo(49454, 'Follow up 4', 54168),
+    fupHorario: modelo(46734, 'FUP horário reunião', 54170),
+    se524h: modelo(47012, 'SE 5 24h', 54172),
+    fupEncerramento: modelo(46746, 'FUP encerramento 48h', 54174),
+    perguntaReuniao: modelo(48922, 'Pergunta reunião', 54176),
   } satisfies Record<string, Modelo>,
 
   midia: {

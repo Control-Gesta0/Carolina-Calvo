@@ -181,6 +181,7 @@ async function main() {
     await fluxo.turno(ctx(w, new Date(agora.getTime() + 40 * 60_000), 'pode sim'), deps)
     eq('evento criado no horário oferecido', w.eventos, ['2026-10-12T15:00'])
     eq('lead vai para Closer › Reunião agendada', w.movido[w.movido.length - 1], STATUS.reuniaoAgendada)
+    eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 12, 18) / 1000, Date.UTC(2026, 9, 12, 18) / 1000])
     eq('confirmação com link do Meet', w.enviados[6].includes('https://meet.google.com/abc') && w.enviados[6].startsWith('*Agendado!* Segunda-feira, 12/10, às 15:00'), true)
     eq('lembretes agendados', w.lembretes, 1)
     eq('etapa agendado', w.state.etapa, 'agendado')
