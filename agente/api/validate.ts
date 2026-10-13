@@ -3,6 +3,7 @@ import { CONFIG, googleConfigurado } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
 import { CONFIG_REGUAS, modeloDaEtapa, type Regua } from '../lib/followup'
 import { prompt } from '../lib/anna/interprete'
+import { lerWebhooks } from '../lib/execlog'
 import { kommoGet } from '../lib/kommo'
 
 /**
@@ -58,5 +59,5 @@ export async function validar() {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (String(req.query.secret || '') !== CONFIG.webhookSecret) return res.status(401).json({ error: 'unauthorized' })
   const r = await validar()
-  return res.status(r.ok ? 200 : 500).json(r)
+  return res.status(r.ok ? 200 : 500).json({ ...r, webhooks: await lerWebhooks().catch(() => null) })
 }

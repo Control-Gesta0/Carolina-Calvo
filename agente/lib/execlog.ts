@@ -61,3 +61,20 @@ export async function logExec(e: Omit<ExecEntry, 'at'>): Promise<void> {
 export async function readExecs(limit = 100): Promise<ExecEntry[]> {
   return (await redis.lrange<ExecEntry>(k('execlog'), 0, limit - 1)) || []
 }
+
+/** Último aviso recebido em cada webhook (e quantos em 7 dias): diz se o Kommo está entregando e por que recusamos. */
+export async function marcarWebhook(rota: 'inbound' | 'lead', resultado: string): Promise<void> {
+  try {
+    await redis.set(k('webhook', rota), JSON.stringify({ em: new Date().toISOString(), resultado: resultado.slice(0, 200) }), { ex: 7 * 86400 })
+    const n = k('webhook-n', rota)
+    if ((await redis.incr(n)) === 1) await redis.expire(n, 7 * 86400)
+  } catch { /* diagnóstico nunca derruba o webhook */ }
+}
+
+export async function lerWebhooks(): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {}
+  for (const rota of ['inbound', 'lead']) {
+    out[rota] = { ultimo: (await redis.get(k('webhook', rota))) || null, recebidos7d: Number((await redis.get(k('webhook-n', rota))) || 0) }
+  }
+  return out
+}

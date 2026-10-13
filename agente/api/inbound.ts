@@ -3,7 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import crypto from 'crypto'
 import { bloqueio, processLead } from '../lib/agent'
 import { CONFIG } from '../lib/config'
-import { logExec } from '../lib/execlog'
+import { logExec, marcarWebhook } from '../lib/execlog'
 import { cancelarRegua } from '../lib/followup'
 import { botRodandoRecente } from '../lib/modelos'
 import { appendMessage, isEchoOfSent, markHumanSpoke, seenMessage } from '../lib/history'
@@ -23,11 +23,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') return res.status(200).json({ ok: true, service: 'anna', cliente: CONFIG.clientName, model: CONFIG.llmModel, gate: CONFIG.gateTag || '(todos)' })
   if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' })
   const provided = String(req.headers['x-webhook-secret'] || req.query.secret || '')
-  if (!safeEq(provided, CONFIG.webhookSecret)) return res.status(401).json({ error: 'unauthorized' })
+  if (!safeEq(provided, CONFIG.webhookSecret)) {
+    await marcarWebhook('inbound', '401 secret errado')
+    return res.status(401).json({ error: 'unauthorized' })
+  }
 
   const parsed = parseKommoWebhook(req.body)
-  if (!parsed) return res.status(200).json({ ok: false, reason: 'sem message[add]' })
-  if (parsed.accountId && parsed.accountId !== CONFIG.kommoAccountId) return res.status(200).json({ ok: false, reason: 'outra conta' })
+  if (!parsed) {
+    await marcarWebhook('inbound', `sem message[add] · ${typeof req.body} · chaves: ${Object.keys((req.body || {}) as object).slice(0, 6).join(', ')}`)
+    return res.status(200).json({ ok: false, reason: 'sem message[add]' })
+  }
+  if (parsed.accountId && parsed.accountId !== CONFIG.kommoAccountId) {
+    await marcarWebhook('inbound', `outra conta ${parsed.accountId}`)
+    return res.status(200).json({ ok: false, reason: 'outra conta' })
+  }
+  await marcarWebhook('inbound', `ok · ${parsed.msgs.length} msg · lead ${parsed.msgs[0].leadId} · ${parsed.msgs[0].direction}`)
 
   waitUntil(ingest(parsed.msgs, crypto.randomUUID()))
   return res.status(200).json({ ok: true })

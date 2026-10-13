@@ -5,7 +5,7 @@ import { bloqueio } from '../lib/agent'
 import { primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
-import { logExec } from '../lib/execlog'
+import { logExec, marcarWebhook } from '../lib/execlog'
 import { getFu, iniciarRegua } from '../lib/followup'
 import { addLeadTags, getLead, getMainContactName } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
@@ -44,8 +44,12 @@ export function parseLeadWebhook(body: Record<string, unknown>): Evento[] {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(200).json({ ok: true, service: 'anna-leads' })
   const provided = String(req.headers['x-webhook-secret'] || req.query.secret || '')
-  if (!safeEq(provided, CONFIG.webhookSecret)) return res.status(401).json({ error: 'unauthorized' })
+  if (!safeEq(provided, CONFIG.webhookSecret)) {
+    await marcarWebhook('lead', '401 secret errado')
+    return res.status(401).json({ error: 'unauthorized' })
+  }
   const eventos = parseLeadWebhook((req.body || {}) as Record<string, unknown>)
+  await marcarWebhook('lead', eventos.length ? `ok · ${eventos.length} evento(s) · ${eventos[0].tipo} ${eventos[0].id}` : `0 eventos · chaves: ${Object.keys((req.body || {}) as object).slice(0, 6).join(', ')}`)
   waitUntil(Promise.all(eventos.map(tratar)))
   return res.status(200).json({ ok: true, eventos: eventos.length })
 }
