@@ -165,14 +165,12 @@ Os demais modelos de pós-reunião não aparecem em nenhuma automação, ou seja
   - desligar a automação de 24h em Cliente decisão, para ela não mandar a mesma mensagem duas vezes.
   - Isso é conferido na tela pelo Cowork antes da virada.
 
-## 5 · Perguntas para fechar
+## 5 · Decisões de 13/10/2026
 
-1. **Agendamento:**
-   - o FOLLOW 1 depois de 2h sem confirmação é o modelo **FUP horário reunião**?
-   - se o lead continuar sem responder, a Anna segue com **SE 5 24h** e **FUP encerramento 48h**, ou passa para o FOLLOW 2 da régua de qualificação?
-2. **Pós-proposta:**
-   - a primeira mensagem (24h depois de Cliente decisão) é o **Pergunta reunião**?
-   - quais modelos vêm depois, em que ordem e com quantas horas de intervalo?
-3. **Horário:** pode haver uma janela de envio das 7h às 20h? Nenhum envio atual cai fora dela. A janela só evita que um lead que falou com a Anna às 23h receba o FOLLOW 1 à 1h da manhã. Fins de semana continuam como hoje.
-4. **Encerramento:** 24h depois do FOLLOW FINAL, o lead continua indo para **Gestão operacional › Venda perdida**, como hoje?
-5. **Renda abaixo de R$ 10 mil:** esses leads recebem a régua de qualificação? Se a Anna já tem as 3 informações, os textos do FOLLOW 1 e 2 ("contracheque ou conta corrente?") repetem uma pergunta já respondida.
+1. **Agendamento:** a régua é **FUP horário reunião** 2h depois da oferta de horário, **SE 5 24h** 24h depois da oferta e **FUP encerramento 48h** 48h depois da oferta. Depois disso, o lead segue o mesmo encerramento da qualificação: vai para Venda perdida 24h depois (a confirmar).
+2. **Pós-proposta:** a primeira mensagem é **Pergunta reunião**, 24h depois da entrada em Cliente decisão. As etapas seguintes ainda não foram definidas e continuam manuais.
+3. **Horário:** os envios saem das 7h às 20h, todos os dias. O que cair fora desse horário sai às 7h do dia seguinte, e as etapas seguintes contam a partir do envio real.
+4. **Encerramento:** continua indo para **Gestão operacional › Venda perdida**.
+5. **Renda abaixo de R$ 10 mil:** recebe a régua de qualificação normalmente. A única diferença é que a Anna não marca reunião.
+
+A configuração para a construção está em `config/follow-ups.json`.
