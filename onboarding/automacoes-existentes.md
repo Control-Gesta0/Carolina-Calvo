@@ -9,7 +9,7 @@ Leitura feita pelo Cowork em 13/10/2026, só leitura, nada foi alterado. Este ar
 | Closer › Reunião agendada: bots "Reunião agendada - 2h / 1h / 15 minutos" | Lembretes antes do campo **Reunião** (803540) | A Anna preenche **Reunião** e **Agendamento** com o horário marcado, e esses lembretes saem como hoje. Os lembretes de 1h e 15 min da Anna **só saem se o card não estiver mais em Reunião agendada**. O de 24h é da Anna, porque o escritório não tem esse. |
 | Closer › Reunião agendada: "24 horas depois de Lead: Agendamento" | Move o card para Cliente decisão | A Anna passou a preencher **Agendamento** (773220) junto com Reunião. Antes só preenchia Reunião. Nos leads antigos, 171 de 192 têm os dois iguais. |
 | Closer › Cliente decisão: robô "Follow Cliente decisão" (52156) | 24h depois envia "Pergunta reunião" e coloca a tag "Follow-up Cliente Decisão Enviado" | A régua pós-proposta da Anna fica **desligada** (`POS_PROPOSTA_ATIVO=false`). A automação do escritório já faz isso. |
-| Salesbot "Follow up" (52612), comando "/follow up" | FOLLOW 1 a 4 e Venda perdida | É manual. A Anna roda a mesma régua sozinha nos leads dela. **A equipe não deve disparar "/follow up" num lead com a tag `anna`.** |
+| Salesbot "Follow up" (52612), comando "/follow up" | FOLLOW 1 a 4 e Venda perdida | É manual. A Anna roda a mesma régua sozinha nos leads dela. **A equipe não deve disparar "/follow up" num lead com a tag `ia`.** |
 | "FOLLOW AGENDAR REUNIÃO" (53764) e "Ativar follow 1 a 4" | Follow-ups manuais | Mesma regra: não usar nos leads da Anna. |
 
 ## O que precisa de decisão do escritório
@@ -24,7 +24,7 @@ Leitura feita pelo Cowork em 13/10/2026, só leitura, nada foi alterado. Este ar
   - A Anna cobre os lembretes de 1h e 15 min nesse caso, quando os bots dela tiverem modelo.
 - **"Acompanha resposta e move para RI" (48895):** faz a mesma coisa.
 
-**Proposta:** pôr um primeiro bloco nesses 3 robôs: "se o lead tem a tag `anna`, parar". Só muda o comportamento nos leads da Anna, e nenhuma mensagem é alterada. Isso precisa do OK do escritório antes de mexer.
+**Proposta:** pôr um primeiro bloco nesses 3 robôs: "se o lead tem a tag `ia`, parar". Só muda o comportamento nos leads da Anna, e nenhuma mensagem é alterada. Isso precisa do OK do escritório antes de mexer.
 
 ### 2. Robô "Campanha" ao entrar em SDR › Contato inicial
 
@@ -32,7 +32,7 @@ Ainda não foi lido. Se ele manda mensagem ao lead novo, duplica com o "Primeiro
 
 ### 3. CLOSED (SDR, Closer e Gestão operacional) e "Fluxo Superendividamento - Vídeo"
 
-Quando um lead fechado volta a escrever, essas automações movem o card para o SDR e podem mandar o vídeo. A Anna não fala com leads de Gestão operacional nem de Financeiro, nem nas etapas protegidas. Um lead perdido que volta para o SDR com a tag `anna` e sem etapa da Anna recebe o primeiro contato.
+Quando um lead fechado volta a escrever, essas automações movem o card para o SDR e podem mandar o vídeo. A Anna não fala com leads de Gestão operacional nem de Financeiro, nem nas etapas protegidas. Um lead perdido que volta para o SDR com a tag `ia` e sem etapa da Anna recebe o primeiro contato.
 
 ## IDs úteis
 

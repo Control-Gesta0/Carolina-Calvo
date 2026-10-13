@@ -105,7 +105,7 @@ Abra cada item, anote e feche sem salvar. Use o "</>" para ver o JSON, se ajudar
 3. O robô "Fluxo Superendividamento - Vídeo": o que envia.
 4. "Ativar follow 2", "Ativar follow 3" e "Ativar follow 4" (52910, 52908 e 52906): fluxo bloco a bloco.
 5. No gatilho do Digital Pipeline que liga o "SDR RETORNO IMEDIATO" ao Closer, abra o modal e veja, sem salvar:
-   - se dá para pôr condição por tag, como "só para leads sem a tag anna";
+   - se dá para pôr condição por tag, como "só para leads sem a tag ia";
    - quais condições a tela oferece.
 
 ==================================================

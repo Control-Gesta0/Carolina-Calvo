@@ -38,7 +38,7 @@ export const CONFIG = {
   debounceSeconds: Number(process.env.DEBOUNCE_SECONDS || 10),
 
   // Gate: só atende quem tem a tag. Vazio = atende todos (só no fim da rampagem).
-  gateTag: (process.env.GATE_TAG || 'anna').toLowerCase(),
+  gateTag: (process.env.GATE_TAG || 'ia').toLowerCase(),
   humanTag: (process.env.HUMAN_TAG || 'atendimento-humano').toLowerCase(),
   testLeadIds: list(process.env.TEST_LEAD_IDS).map(Number).filter(Boolean),
   /** true = lead novo de formulário de superendividamento já entra com a tag e recebe o primeiro contato */

@@ -8,7 +8,7 @@
 ## O que ela faz
 
 ```
-Lead de formulário ganha a tag "anna" ─→ /api/lead ─→ modelo "Anna - Primeiro contato" (pergunta 1)
+Lead de formulário ganha a tag "ia" ─→ /api/lead ─→ modelo "Anna - Primeiro contato" (pergunta 1)
 Lead responde (add_message) ─→ /api/inbound ─→ cancela a régua ─→ buffer 10s
   ─→ roteiro da Dra. em CÓDIGO (lib/anna/fluxo.ts) + GPT só para ler o turno (lib/anna/interprete.ts)
      q1 opção → q2 renda bruta/líquido/desconto (move o card para a coluna da renda)
@@ -39,7 +39,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 | 4 | Redis e relógio | Control Gestão | **Redis: pronto** (database compartilhada, prefixo `anna-cc:` livre). **QStash: credencial ok**; o schedule nasce depois do deploy com `npx tsx scripts/criar-relogio.ts --criar` (`*/5 * * * *` → `DEPLOY_URL/api/tick`, Bearer `CRON_SECRET`) |
 | 5 | Deploy | Claude Code, com um `VERCEL_TOKEN` do Guilherme | `npx tsx scripts/vercel.ts --publicar`: cria o projeto `anna-carolina-calvo` (time Control Gestão, Pro) ligado ao GitHub, grava as variáveis e publica a produção |
 | 6 | Webhooks | Control Gestão, com OK do escritório | `npx tsx scripts/create-webhook.ts` (lista) → `--criar` |
-| 7 | Automações antigas | lidas em 13/10 | `onboarding/automacoes-existentes.md`: o código já evita duplicar lembretes e preenche o campo Agendamento. Falta o OK do escritório para a exceção da tag `anna` nos robôs de "retorno imediato" |
+| 7 | Automações antigas | lidas em 13/10 | `onboarding/automacoes-existentes.md`: o código já evita duplicar lembretes e preenche o campo Agendamento. Falta o OK do escritório para a exceção da tag `ia` nos robôs de "retorno imediato" |
 
 ## Ordem para ligar
 
@@ -48,7 +48,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 3. Peças 1 a 5. `npx tsx scripts/validate.ts` → `prontoParaLeadReal: true`.
 4. Relógio: `npx tsx scripts/criar-relogio.ts --criar` e conferir no log do QStash o primeiro tique com 200.
 5. Webhooks (peça 6).
-6. **E2E com lead de teste** (número da equipe, em `TEST_LEAD_IDS`, com a tag `anna`):
+6. **E2E com lead de teste** (número da equipe, em `TEST_LEAD_IDS`, com a tag `ia`):
    - ☐ primeiro contato chega no celular pelo modelo;
    - ☐ "3" → pergunta 2;
    - ☐ valores em partes → pede só o que falta;
