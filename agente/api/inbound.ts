@@ -1,12 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { waitUntil } from '@vercel/functions'
 import crypto from 'crypto'
-import { processLead } from '../lib/agent'
+import { bloqueio, processLead } from '../lib/agent'
 import { CONFIG } from '../lib/config'
 import { logExec } from '../lib/execlog'
 import { cancelarRegua } from '../lib/followup'
 import { botRodandoRecente } from '../lib/modelos'
 import { appendMessage, isEchoOfSent, markHumanSpoke, seenMessage } from '../lib/history'
+import { getLead } from '../lib/kommo'
 import { mediaKind, mediaToText } from '../lib/media'
 import { isResetCommand, resetLead } from '../lib/reset'
 import { sendReply } from '../lib/transport'
@@ -74,12 +75,27 @@ export function parseKommoWebhook(raw: unknown): { accountId: string; msgs: Inbo
 
 async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
   const leads = new Set<number>()
+  // O webhook traz as mensagens de TODOS os leads da conta. Quem a Anna não atende (sem a tag de
+  // liberação, com a equipe, cliente, financeiro) sai aqui, antes de gastar OpenAI com áudio/imagem.
+  const liberado = new Map<number, boolean>()
+  const podeAtender = async (leadId: number) => {
+    if (!liberado.has(leadId)) liberado.set(leadId, await getLead(leadId).then(l => !bloqueio(l)).catch(() => true))
+    return liberado.get(leadId)!
+  }
   for (const m of msgs) {
     try {
       if (await seenMessage(`kommo:${m.id}`)) continue
       let text = (m.text || '').trim()
-      const kind = mediaKind(m.attachType)
       const outgoing = m.direction === 'outgoing'
+      // reset de teste vem antes do filtro: o lead de teste pode ter saído da Anna (passou para a equipe)
+      if (!outgoing && text && isResetCommand(m.leadId, text)) {
+        await resetLead(m.leadId)
+        await sendReply(m.leadId, '🔄 Teste reiniciado. Mande a primeira mensagem como se fosse um lead novo.')
+        await logExec({ tipo: 'reset', leadId: m.leadId, detalhe: 'reset de teste' })
+        continue
+      }
+      if (!(await podeAtender(m.leadId))) continue
+      const kind = mediaKind(m.attachType)
       if (kind && !outgoing) text = await mediaToText(kind, m.attachLink, text)
       if (!text) continue
 
@@ -95,13 +111,6 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
       }
       // O lead respondeu: qualquer régua de follow-up dele para na hora
       await cancelarRegua(m.leadId)
-
-      if (isResetCommand(m.leadId, text)) {
-        await resetLead(m.leadId)
-        await sendReply(m.leadId, '🔄 Teste reiniciado. Mande a primeira mensagem como se fosse um lead novo.')
-        await logExec({ tipo: 'reset', leadId: m.leadId, detalhe: 'reset de teste' })
-        continue
-      }
 
       await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'in', text, ts: Date.now() })
       leads.add(m.leadId)
