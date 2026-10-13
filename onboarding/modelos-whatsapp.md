@@ -1,6 +1,6 @@
 # Modelos de WhatsApp (Meta) da Anna e da cobrança
 
-> Criados no Kommo em 08/10/2026 como **rascunho**. Falta enviar para aprovação da Meta (Kommo › Configurações › Modelos › abrir o modelo › enviar para revisão). A Meta leva de 1 minuto a 48 horas.
+> Criados no Kommo em 08/10/2026 como **rascunho**. **Em 13/10 a API do Kommo aceitou o pedido de revisão mas não enviou nada à Meta:** os modelos não estão vinculados a nenhum número de WhatsApp, e esse vínculo (`waba_selected_waba_ids`) a API ignora tanto na criação quanto na edição. O envio precisa ser feito pela tela do Kommo: abrir cada modelo, selecionar o número oficial do escritório (o mesmo dos 34 modelos já aprovados, conta WABA `2343930862777873`) e enviar para revisão. A Meta leva de 1 minuto a 48 horas.
 > Cada variável é um campo do card que o sistema preenche antes do envio. O envio sai pelo Salesbot, usando o modelo aprovado.
 
 ## Campos criados no lead
