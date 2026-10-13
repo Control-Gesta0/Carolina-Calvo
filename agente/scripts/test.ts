@@ -106,6 +106,7 @@ async function main() {
 
   console.log('\n— Parsers e utilitários')
   eq('add_message plano', parseKommoWebhook({ 'account[id]': '33595135', 'message[add][0][id]': 'm1', 'message[add][0][entity_id]': '77', 'message[add][0][text]': 'oi', 'message[add][0][type]': 'incoming' })?.msgs.map(m => [m.leadId, m.text, m.direction]), [[77, 'oi', 'incoming']])
+  eq('add_outgoing_message (equipe falando)', parseKommoWebhook({ 'account[id]': '33595135', 'outgoing_message[add][0][id]': 'o1', 'outgoing_message[add][0][entity_id]': '77', 'outgoing_message[add][0][text]': 'Oi, aqui é a Dra.', 'outgoing_message[add][0][type]': 'outgoing' })?.msgs.map(m => [m.leadId, m.direction]), [[77, 'outgoing']])
   eq('webhook de lead', parseLeadWebhook({ 'leads[status][0][id]': '9', 'leads[status][0][status_id]': '75538167', 'leads[status][0][pipeline_id]': '9809931', 'leads[add][0][id]': '8' }).map(e => [e.tipo, e.id, e.statusId]), [['add', 8, 0], ['status', 9, 75538167]])
   eq('renderiza variável do card', renderizar('Olá, {{lead.cf.805158}}. Link: {{lead.cf.805162}}', { 805158: 'Maria', 805162: 'https://meet.google.com/x' }), 'Olá, Maria. Link: https://meet.google.com/x')
   eq('primeiro nome', primeiroNome('MARIA DOLORES DA SILVA'), 'Maria')

@@ -49,8 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'unauthorized' })
   }
   const eventos = parseLeadWebhook((req.body || {}) as Record<string, unknown>)
-  await marcarWebhook('lead', eventos.length ? `ok · ${eventos.length} evento(s) · ${eventos[0].tipo} ${eventos[0].id}` : `0 eventos · chaves: ${Object.keys((req.body || {}) as object).slice(0, 6).join(', ')}`)
-  waitUntil(Promise.all(eventos.map(tratar)))
+  const diag = eventos.length ? `ok · ${eventos.length} evento(s) · ${eventos[0].tipo} ${eventos[0].id}` : `0 eventos · chaves: ${Object.keys((req.body || {}) as object).slice(0, 6).join(', ')}`
+  waitUntil(Promise.all([marcarWebhook('lead', diag), ...eventos.map(tratar)]))
   return res.status(200).json({ ok: true, eventos: eventos.length })
 }
 

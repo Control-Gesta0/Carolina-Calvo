@@ -30,16 +30,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const parsed = parseKommoWebhook(req.body)
   if (!parsed) {
-    await marcarWebhook('inbound', `sem message[add] · ${typeof req.body} · chaves: ${Object.keys((req.body || {}) as object).slice(0, 6).join(', ')}`)
+    await marcarWebhook('inbound', `sem message[add] nem outgoing_message[add] · ${typeof req.body} · chaves: ${Object.keys((req.body || {}) as object).slice(0, 6).join(', ')}`)
     return res.status(200).json({ ok: false, reason: 'sem message[add]' })
   }
   if (parsed.accountId && parsed.accountId !== CONFIG.kommoAccountId) {
     await marcarWebhook('inbound', `outra conta ${parsed.accountId}`)
     return res.status(200).json({ ok: false, reason: 'outra conta' })
   }
-  await marcarWebhook('inbound', `ok · ${parsed.msgs.length} msg · lead ${parsed.msgs[0].leadId} · ${parsed.msgs[0].direction}`)
-
-  waitUntil(ingest(parsed.msgs, crypto.randomUUID()))
+  // o Kommo espera resposta em até 2 s: o resto roda depois do 200
+  waitUntil(Promise.all([
+    marcarWebhook('inbound', `ok · ${parsed.msgs.length} msg · lead ${parsed.msgs[0].leadId} · ${parsed.msgs[0].direction}`),
+    ingest(parsed.msgs, crypto.randomUUID()),
+  ]))
   return res.status(200).json({ ok: true })
 }
 
@@ -64,21 +66,24 @@ export function parseKommoWebhook(raw: unknown): { accountId: string; msgs: Inbo
   if (!raw || typeof raw !== 'object') return null
   const body = raw as Record<string, unknown>
   const msgs: InboundMsg[] = []
-  for (let i = 0; i < 20; i++) {
-    const p = (f: string, n: Array<string | number>) => pick(body, `message[add][${i}]${f}`, ['message', 'add', i, ...n])
-    const id = p('[id]', ['id'])
-    const entityId = p('[entity_id]', ['entity_id'])
-    const text = p('[text]', ['text'])
-    if (!id && !entityId && !text) break
-    const leadId = Number(entityId)
-    if (!leadId) continue
-    msgs.push({
-      id: id || `${leadId}:${p('[created_at]', ['created_at'])}:${i}`,
-      leadId, text,
-      attachType: p('[attachment][type]', ['attachment', 'type']),
-      attachLink: p('[attachment][link]', ['attachment', 'link']),
-      direction: p('[type]', ['type']).toLowerCase(),
-    })
+  // add_message chega em message[add]; add_outgoing_message (equipe ou Salesbot) em outgoing_message[add]
+  for (const raiz of ['message', 'outgoing_message'] as const) {
+    for (let i = 0; i < 20; i++) {
+      const p = (f: string, n: Array<string | number>) => pick(body, `${raiz}[add][${i}]${f}`, [raiz, 'add', i, ...n])
+      const id = p('[id]', ['id'])
+      const entityId = p('[entity_id]', ['entity_id'])
+      const text = p('[text]', ['text'])
+      if (!id && !entityId && !text) break
+      const leadId = Number(entityId)
+      if (!leadId) continue
+      msgs.push({
+        id: id || `${leadId}:${p('[created_at]', ['created_at'])}:${i}`,
+        leadId, text,
+        attachType: p('[attachment][type]', ['attachment', 'type']),
+        attachLink: p('[attachment][link]', ['attachment', 'link']),
+        direction: (p('[type]', ['type']) || (raiz === 'outgoing_message' ? 'outgoing' : 'incoming')).toLowerCase(),
+      })
+    }
   }
   return msgs.length ? { accountId: pick(body, 'account[id]', ['account', 'id']), msgs } : null
 }
