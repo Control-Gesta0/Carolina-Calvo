@@ -29,6 +29,8 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 
 ## Peças que faltam (o validate lista ao vivo)
 
+> Atalho: as peças 1, 2, 3, 5 e a leitura da 7 estão num prompt único para o Cowork no Chrome, `onboarding/prompt-cowork-go-live.md`. Os segredos não vão no prompt: o Guilherme cola na Vercel.
+
 | # | Peça | Quem | Como |
 |---|---|---|---|
 | 1 | Aprovar os 4 modelos novos na Meta | Cowork | `onboarding/prompt-cowork-envio-modelos.md` |
