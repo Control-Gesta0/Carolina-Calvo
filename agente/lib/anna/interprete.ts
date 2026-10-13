@@ -82,7 +82,8 @@ const SCHEMA = {
 } as const
 
 let promptCache: string | null = null
-function prompt(): string {
+/** O prompt da Anna, do jeito que o bundle da Vercel o entrega (o validate usa o mesmo caminho). */
+export function prompt(): string {
   if (promptCache) return promptCache
   for (const base of [process.cwd(), path.join(__dirname, '..', '..'), path.join(__dirname, '..', '..', '..')]) {
     try { promptCache = fs.readFileSync(path.join(base, 'prompts', 'anna.md'), 'utf-8'); return promptCache } catch { /* próximo */ }

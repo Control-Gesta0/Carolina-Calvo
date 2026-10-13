@@ -1,9 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import fs from 'fs'
-import path from 'path'
 import { CONFIG, googleConfigurado } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
 import { CONFIG_REGUAS, modeloDaEtapa, type Regua } from '../lib/followup'
+import { prompt } from '../lib/anna/interprete'
 import { kommoGet } from '../lib/kommo'
 
 /**
@@ -20,7 +19,7 @@ export async function validar() {
   const problemas: string[] = []
   const pendencias: string[] = []
 
-  if (!fs.existsSync(path.join(process.cwd(), 'prompts', 'anna.md'))) problemas.push('prompts/anna.md não está no bundle (includeFiles)')
+  try { prompt() } catch { problemas.push('prompts/anna.md não está no bundle (includeFiles)') }
   if (!CONFIG.kommoBotId) pendencias.push('KOMMO_BOT_ID: Salesbot de texto livre ainda não criado')
   if (!googleConfigurado()) pendencias.push('Google Agenda: faltam GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN (sem isso a Anna não agenda, passa para a equipe)')
   if (!CONFIG.cronSecret) pendencias.push('CRON_SECRET ausente: o relógio (/api/tick) não roda, sem pausa de 30 min, follow-up e lembretes')
