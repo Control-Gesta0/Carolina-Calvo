@@ -34,7 +34,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 | 1 | Aprovar os 4 modelos novos na Meta | Cowork | `onboarding/prompt-cowork-envio-modelos.md` |
 | 2 | 13 Salesbots (1 texto livre + 12 modelos) e os IDs | Cowork | `onboarding/prompt-cowork-salesbots.md` → preencher `lib/crm-map.ts` (`botId`) e `KOMMO_BOT_ID` |
 | 3 | Credenciais do Google | Dra. | `tutoriais/01-google-agenda.mp4` → `GOOGLE_*` |
-| 4 | Redis e relógio | Control Gestão | Upstash: database Redis + QStash Schedule `*/5 * * * *` para `DEPLOY_URL/api/tick` com `Authorization: Bearer <CRON_SECRET>` |
+| 4 | Redis e relógio | Control Gestão | **Redis: pronto** (database compartilhada, prefixo `anna-cc:` livre). **QStash: credencial ok**; o schedule nasce depois do deploy com `npx tsx scripts/criar-relogio.ts --criar` (`*/5 * * * *` → `DEPLOY_URL/api/tick`, Bearer `CRON_SECRET`) |
 | 5 | Deploy | Control Gestão | Vercel (plano Pro: uso comercial) com as envs de `.env.local.example` |
 | 6 | Webhooks | Control Gestão, com OK do escritório | `npx tsx scripts/create-webhook.ts` (lista) → `--criar` |
 | 7 | Desligar automações antigas nos leads da Anna | Cowork, com OK | Salesbot das tags FOLLOW 1–4; regra que devolve o lead para "5 A 10 MIL"; automação de 24h em Cliente decisão (antes de `POS_PROPOSTA_ATIVO=true`). Ler antes com `onboarding/prompt-cowork-ler-salesbots.md` |
@@ -44,8 +44,9 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 1. `npm ci && npm run typecheck && npm test` → verde.
 2. `EVAL_REPS=3 npm run evals` → todos aprovados (custa centavos na chave do escritório).
 3. Peças 1 a 5. `npx tsx scripts/validate.ts` → `prontoParaLeadReal: true`.
-4. Webhooks (peça 6).
-5. **E2E com lead de teste** (número da equipe, em `TEST_LEAD_IDS`, com a tag `anna`):
+4. Relógio: `npx tsx scripts/criar-relogio.ts --criar` e conferir no log do QStash o primeiro tique com 200.
+5. Webhooks (peça 6).
+6. **E2E com lead de teste** (número da equipe, em `TEST_LEAD_IDS`, com a tag `anna`):
    - ☐ primeiro contato chega no celular pelo modelo;
    - ☐ "3" → pergunta 2;
    - ☐ valores em partes → pede só o que falta;
@@ -61,7 +62,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
    - ☐ resposta cancela a régua;
    - ☐ `reset` recomeça;
    - ☐ tudo aparece em `/api/executions`.
-6. Rampagem: 10 leads com a tag → todos → `AUTO_GATE_FORM_LEADS=true`.
+7. Rampagem: 10 leads com a tag → todos → `AUTO_GATE_FORM_LEADS=true`.
 
 ## Arquivos
 
