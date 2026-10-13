@@ -1,0 +1,47 @@
+import { k, redis } from './redis'
+
+/**
+ * Estado do lead na conversa com a Anna. A etapa é decisão do CÓDIGO (o roteiro
+ * da Dra. é fixo); o modelo só interpreta o que o lead escreveu.
+ *
+ *   q1 → q2 → q3 → analise (pausa 30 min) → oferta ⇄ preferencia → agendado
+ *                └→ sem_reuniao (renda < R$ 10 mil)
+ *   qualquer etapa → humano (passou para a equipe)
+ */
+
+export type Etapa = 'q1' | 'q2' | 'q3' | 'analise' | 'oferta' | 'preferencia' | 'agendado' | 'sem_reuniao' | 'humano'
+
+export interface Oferta { chave: string; inicio: string; fim: string; em: number }
+
+export interface LeadState {
+  etapa?: Etapa
+  /** ts (ms) do início deste ciclo com a Anna — o intérprete só vê a conversa daí em diante */
+  inicioEm?: number
+  objetivo?: 1 | 2 | 3
+  rendaBruta?: number
+  rendaLiquida?: number
+  descontoConta?: number
+  oferta?: Oferta
+  /** quantas vezes o lead recusou um horário oferecido */
+  recusas?: number
+  reuniao?: { eventId: string; inicio: string; link: string; criadaEm: string }
+  /** token do job da 5ª mensagem (pausa de 30 min); trocar o token cancela o job */
+  msg5Token?: string
+  finalizado?: { motivo: string; em: string; resumo?: string }
+}
+
+const TTL = 90 * 86400
+
+export async function getState(leadId: number): Promise<LeadState> {
+  return (await redis.get<LeadState>(k('state', leadId))) || {}
+}
+
+export async function patchState(leadId: number, patch: Partial<LeadState>): Promise<LeadState> {
+  const next = { ...(await getState(leadId)), ...patch }
+  await redis.set(k('state', leadId), next, { ex: TTL })
+  return next
+}
+
+export async function clearState(leadId: number): Promise<void> {
+  await redis.del(k('state', leadId))
+}

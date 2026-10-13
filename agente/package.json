@@ -1,0 +1,25 @@
+{
+  "name": "anna-carolina-calvo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Anna, SDR de IA da Carolina Calvo Advogados (Kommo, Desenho A/Salesbot) — motor Control Gestão + roteiro da Dra., agenda Google, réguas de follow-up.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx scripts/test.ts",
+    "evals": "tsx scripts/evals.ts",
+    "validate": "tsx scripts/validate.ts",
+    "discover": "tsx scripts/discover.ts",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3",
+    "@vercel/functions": "^1.5.2",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@vercel/node": "^5.0.2",
+    "tsx": "^4.23.13",
+    "typescript": "^5.7.2"
+  }
+}

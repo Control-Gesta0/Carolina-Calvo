@@ -3,3 +3,5 @@
 .env*
 scripts/kommo/templates_payload.json
 scripts/kommo/templates_review.json
+!.env.local.example
+node_modules/

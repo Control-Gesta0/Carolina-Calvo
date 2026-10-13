@@ -173,4 +173,4 @@ Os demais modelos de pós-reunião não aparecem em nenhuma automação, ou seja
 4. **Encerramento:** continua indo para **Gestão operacional › Venda perdida**.
 5. **Renda abaixo de R$ 10 mil:** recebe a régua de qualificação normalmente. A única diferença é que a Anna não marca reunião.
 
-A configuração para a construção está em `config/follow-ups.json`.
+A configuração para a construção está em `agente/config/follow-ups.json`. A Anna marca cada envio com uma nota no card, e não com tag, para não acionar as automações antigas que usam FOLLOW 1 a 4.
