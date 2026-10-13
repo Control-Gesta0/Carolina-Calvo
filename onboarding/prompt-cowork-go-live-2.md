@@ -1,44 +1,25 @@
 # Prompt para o Cowork: segunda rodada do go-live da Anna (no Chrome do Guilherme)
 
-> Continuação de `prompt-cowork-go-live.md`, a partir do relatório de 13/10/2026 17:20. O prompt não leva nenhum segredo.
-> O Guilherme fica junto em 3 momentos:
-> - colar as 6 variáveis secretas na Vercel;
-> - desligar a proteção da Vercel, se for preciso;
-> - entrar na conta Google da Dra.
+> Continuação de `prompt-cowork-go-live.md`, a partir do relatório de 13/10/2026 17:20. Só ficou aqui o que precisa da tela do Kommo ou da conta Google da Dra.
+> A Vercel, o relógio e os webhooks são feitos pelo Claude Code, pela API. O prompt não leva nenhum segredo.
 
 ```text
 Continuação da implantação da Anna (Carolina Calvo Advogados). Faça pelo meu Chrome, nesta ordem, e no fim me devolva um relatório único.
 
 AUTORIZAÇÃO
 Eu, Guilherme (Control Gestão, responsável técnico), autorizo você a fazer sem nova confirmação:
-- Na Vercel: concluir o deploy do projeto anna-carolina-calvo.
 - No Kommo: criar 4 modelos novos de WhatsApp e enviá-los para revisão da Meta.
 - No Kommo: abrir bots e gatilhos só para ler.
 - No Google Cloud: criar as credenciais da agenda, quando eu entrar na conta da Dra.
-A branch claude/gallant-johnson-bytcbo é a correta para produção. É a branch padrão do repositório.
+A Vercel não é mais com você: se a tela "New Project" da rodada anterior ainda estiver aberta, feche sem clicar em Deploy. O projeto será criado pela API.
 
 LIMITES
 - Não exclua, não desative e não edite nada que já existe. Os 4 rascunhos antigos (51584, 51586, 51588 e 51590) ficam como estão.
-- Segredos, senhas, códigos e proteções de segurança são comigo. Quando chegar nesses pontos, me chame e espere.
+- Senhas, códigos e chaves são comigo. Quando chegar nesses pontos, me chame e espere.
 - Se um passo travar, anote o que a tela mostrou, pule só aquele item e siga.
 
 ==================================================
-PARTE 1 · VERCEL: CONCLUIR O DEPLOY
-==================================================
-a. Volte à tela do projeto anna-carolina-calvo no time Control Gestão. Se a tela "New Project" fechou, refaça a configuração do relatório anterior:
-   - repositório Control-Gesta0/Carolina-Calvo, branch claude/gallant-johnson-bytcbo;
-   - Root Directory agente, preset Other;
-   - variáveis KOMMO_DOMAIN, KOMMO_ACCOUNT_ID, REDIS_PREFIX, GOOGLE_CALENDAR_ID e KOMMO_BOT_ID=54152.
-b. Me escreva "COLE AS 6 VARIÁVEIS" e espere eu dizer "pronto". São elas: KOMMO_TOKEN, OPENAI_API_KEY, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, WEBHOOK_SECRET, CRON_SECRET.
-   Depois confira só os nomes das chaves e clique em Deploy.
-c. O deploy precisa usar o commit mais recente da branch. Se usou um commit antigo, faça Redeploy do último.
-d. Se o build falhar, copie as últimas 40 linhas do log.
-e. Anote a URL de produção e abra URL/api/tick.
-   - O certo é {"error":"unauthorized"}.
-   - Se aparecer o login da Vercel, me avise: eu desligo a Vercel Authentication. Teste de novo depois.
-
-==================================================
-PARTE 2 · KOMMO: 4 MODELOS NOVOS PARA A META
+PARTE 1 · KOMMO: 4 MODELOS NOVOS PARA A META
 ==================================================
 Os rascunhos antigos não têm o campo de número, por isso vamos criar modelos novos pelo fluxo completo.
 
@@ -113,7 +94,7 @@ Se algum já sair aprovado na hora, abra o bot correspondente e escolha esse mod
 - D → bot 54160
 
 ==================================================
-PARTE 3 · KOMMO: LER O QUE FALTOU (SÓ LEITURA)
+PARTE 2 · KOMMO: LER O QUE FALTOU (SÓ LEITURA)
 ==================================================
 Abra cada item, anote e feche sem salvar. Use o "</>" para ver o JSON, se ajudar.
 1. O robô "Campanha", ligado ao entrar em SDR › CONTATO INICIAL.
@@ -128,7 +109,7 @@ Abra cada item, anote e feche sem salvar. Use o "</>" para ver o JSON, se ajudar
    - quais condições a tela oferece.
 
 ==================================================
-PARTE 4 · GOOGLE: CREDENCIAIS DA AGENDA (QUANDO EU ENTRAR NA CONTA DA DRA.)
+PARTE 3 · GOOGLE: CREDENCIAIS DA AGENDA (QUANDO EU ENTRAR NA CONTA DA DRA.)
 ==================================================
 Me pergunte se a conta Google da Dra. Carolina já está no Chrome. Se ela não estiver, pule esta parte.
 Se estiver, siga o plano da seção 3 do relatório anterior:
@@ -136,14 +117,13 @@ Se estiver, siga o plano da seção 3 do relatório anterior:
 - Google Auth Platform com o app publicado "Em produção";
 - cliente Web "Anna" com o redirecionamento https://developers.google.com/oauthplayground;
 - Playground com o escopo https://www.googleapis.com/auth/calendar.
-Quando o ID e a chave do cliente aparecerem, me chame para eu copiar e colar no Playground e na Vercel.
+Quando o ID e a chave do cliente aparecerem, me chame para eu copiar e colar no Playground. O refresh token eu levo para o Claude Code.
 
 ==================================================
 RELATÓRIO FINAL
 ==================================================
-1. Vercel: URL de produção, commit implantado, resultado do /api/tick e o que travou.
-2. Modelos: tabela com modelo | ID novo | categoria | status | bot preenchido (sim/não).
-3. Leituras da Parte 3, item a item.
-4. Google: feito, ou pulado e por quê.
-5. Tudo o que foi pulado, com o que a tela mostrou.
+1. Modelos: tabela com modelo | ID novo | categoria | status | bot preenchido (sim/não).
+2. Leituras da Parte 2, item a item.
+3. Google: feito, ou pulado e por quê.
+4. Tudo o que foi pulado, com o que a tela mostrou.
 ```

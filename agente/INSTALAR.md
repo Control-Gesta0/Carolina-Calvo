@@ -29,7 +29,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 
 ## Peças que faltam (o validate lista ao vivo)
 
-> Atalho: as peças 1, 2, 3, 5 e a leitura da 7 estão nos prompts do Cowork no Chrome: `onboarding/prompt-cowork-go-live.md` (1ª rodada, feita em 13/10) e `onboarding/prompt-cowork-go-live-2.md` (o que falta). Os segredos não vão no prompt: o Guilherme cola na Vercel.
+> Atalho: as peças 1, 2, 3, 5 e a leitura da 7 estão nos prompts do Cowork no Chrome: `onboarding/prompt-cowork-go-live.md` (1ª rodada, feita em 13/10) e `onboarding/prompt-cowork-go-live-2.md` (só o que precisa da tela do Kommo ou da conta da Dra.). Vercel, relógio e webhooks saem daqui pela API.
 
 | # | Peça | Quem | Como |
 |---|---|---|---|
@@ -37,7 +37,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 | 2 | 13 Salesbots | **feito em 13/10** | Texto livre = **54152** (`KOMMO_BOT_ID`). Modelos 54162–54176 já no `crm-map.ts`. Os bots 54154–54160 esperam a aprovação dos 4 modelos para escolher o modelo; até lá o `botId` deles fica 0 e a Anna só começa quando o lead escreve |
 | 3 | Credenciais do Google | Dra. ou Guilherme com a conta dela | `tutoriais/01-google-agenda.mp4` ou Parte 4 do prompt 2 → `GOOGLE_*` |
 | 4 | Redis e relógio | Control Gestão | **Redis: pronto** (database compartilhada, prefixo `anna-cc:` livre). **QStash: credencial ok**; o schedule nasce depois do deploy com `npx tsx scripts/criar-relogio.ts --criar` (`*/5 * * * *` → `DEPLOY_URL/api/tick`, Bearer `CRON_SECRET`) |
-| 5 | Deploy | Control Gestão | Projeto `anna-carolina-calvo` configurado na Vercel (time Control Gestão, Pro). Falta colar as 6 variáveis secretas e clicar em Deploy (Parte 1 do prompt 2) |
+| 5 | Deploy | Claude Code, com um `VERCEL_TOKEN` do Guilherme | `npx tsx scripts/vercel.ts --publicar`: cria o projeto `anna-carolina-calvo` (time Control Gestão, Pro) ligado ao GitHub, grava as variáveis e publica a produção |
 | 6 | Webhooks | Control Gestão, com OK do escritório | `npx tsx scripts/create-webhook.ts` (lista) → `--criar` |
 | 7 | Automações antigas | lidas em 13/10 | `onboarding/automacoes-existentes.md`: o código já evita duplicar lembretes e preenche o campo Agendamento. Falta o OK do escritório para a exceção da tag `anna` nos robôs de "retorno imediato" |
 
