@@ -33,12 +33,12 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 
 | # | Peça | Quem | Como |
 |---|---|---|---|
-| 1 | Aprovar os 4 modelos novos na Meta | Cowork | Os rascunhos da API (51584–51590) não têm número WABA e a tela não deixa ligar. Criar de novo pela tela: `onboarding/prompt-cowork-go-live-2.md` (Parte 2) → trocar os `templateId` em `lib/crm-map.ts` |
+| 1 | Aprovar os 4 modelos novos na Meta | Cowork | Os rascunhos da API (51584–51590) não têm número WABA e a tela não deixa ligar. Criar de novo pela tela: `onboarding/prompt-cowork-go-live-2.md` (Parte 1) → trocar os `templateId` em `lib/crm-map.ts` |
 | 2 | 13 Salesbots | **feito em 13/10** | Texto livre = **54152** (`KOMMO_BOT_ID`). Modelos 54162–54176 já no `crm-map.ts`. Os bots 54154–54160 esperam a aprovação dos 4 modelos para escolher o modelo; até lá o `botId` deles fica 0 e a Anna só começa quando o lead escreve |
-| 3 | Credenciais do Google | Dra. ou Guilherme com a conta dela | `tutoriais/01-google-agenda.mp4` ou Parte 4 do prompt 2 → `GOOGLE_*` |
-| 4 | Redis e relógio | Control Gestão | **Redis: pronto** (database compartilhada, prefixo `anna-cc:` livre). **QStash: credencial ok**; o schedule nasce depois do deploy com `npx tsx scripts/criar-relogio.ts --criar` (`*/5 * * * *` → `DEPLOY_URL/api/tick`, Bearer `CRON_SECRET`) |
-| 5 | Deploy | Claude Code, com um `VERCEL_TOKEN` do Guilherme | `npx tsx scripts/vercel.ts --publicar`: cria o projeto `anna-carolina-calvo` (time Control Gestão, Pro) ligado ao GitHub, grava as variáveis e publica a produção |
-| 6 | Webhooks | Control Gestão, com OK do escritório | `npx tsx scripts/create-webhook.ts` (lista) → `--criar` |
+| 3 | Credenciais do Google | Dra. ou Guilherme com a conta dela | `tutoriais/01-google-agenda.mp4` ou Parte 3 do prompt 2 → `GOOGLE_*` |
+| 4 | Redis e relógio | **feito em 13/10** | Redis compartilhado com prefixo `anna-cc:`. QStash `anna-carolina-calvo-tick` (`*/5 * * * *` → `/api/tick`, Bearer `CRON_SECRET`), criado com `scripts/criar-relogio.ts --criar` |
+| 5 | Deploy | **feito em 13/10** | https://anna-carolina-calvo.vercel.app (time Control Gestão, ligado ao GitHub: cada push no branch republica). Criado com `scripts/vercel.ts --publicar`. `/api/validate` em produção: `ok: true`, sem problemas |
+| 6 | Webhooks | **falta** (o controle de permissões desta sessão barrou o acesso aos webhooks do Kommo) | `npx tsx scripts/create-webhook.ts` (lista) → `--criar` |
 | 7 | Automações antigas | lidas em 13/10 | `onboarding/automacoes-existentes.md`: o código já evita duplicar lembretes e preenche o campo Agendamento. Falta o OK do escritório para a exceção da tag `ia` nos robôs de "retorno imediato" |
 
 ## Ordem para ligar
