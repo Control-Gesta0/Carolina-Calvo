@@ -179,3 +179,22 @@ Os modelos de primeiro contato, lembretes de reunião, antes do vencimento e pag
 >
 > Agradecemos. O seu contrato segue em dia.
 
+
+## Modelos recriados pela tela e aprovados (situação em 14/10/2026)
+
+Os rascunhos criados pela API (51584 a 51606) não tinham número WABA. Por isso os modelos foram recriados pela tela do Kommo, na conta "Carolina Calvo Advocacia", número +55 61 3246-7013. Os rascunhos antigos continuam lá, sem uso. O código usa só os IDs abaixo.
+
+| ID | Modelo | Categoria | Status |
+|---|---|---|---|
+| 51744 | Anna - Primeiro contato | Marketing | aprovado (13/10) |
+| 51746 | Anna - Lembrete reunião 24h | Utilidade | aprovado (13/10) |
+| 51748 | Anna - Lembrete reunião 1h | Utilidade | aprovado (13/10) |
+| 51750 | Anna - Lembrete reunião 15min | Utilidade | aprovado (13/10) |
+| 51754 | Cobrança - Antes do vencimento | Utilidade | aprovado (14/10) |
+| 51756 | Cobrança - Dia do vencimento | Utilidade | aprovado (14/10) |
+| 51758 | Cobrança - Vencimento 17h | Utilidade | aprovado (14/10) |
+| 51760 | Cobrança - 1 dia de atraso | Utilidade | aprovado (14/10) |
+| 51762 | Cobrança - 5 dias de atraso | Utilidade | em revisão (14/10) |
+| 51764 | Cobrança - 10 dias de atraso | Utilidade | aprovado (14/10) |
+| 51766 | Cobrança - 18 dias de atraso | Utilidade | aprovado (14/10) |
+| 51768 | Cobrança - Pagamento confirmado | Utilidade | aprovado (14/10) |
