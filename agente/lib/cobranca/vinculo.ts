@@ -41,6 +41,7 @@ export async function leadDoCliente(cli: ClienteAsaas): Promise<{ leadId: number
   const l = escolherLead(d?._embedded?.leads || [])
   if (!l) return null
   const r = { leadId: l.id, nomeCard: l.name || '', cliente: l.pipeline_id === PIPELINES.gestao || l.pipeline_id === PIPELINES.financeiro }
-  await redis.set(memoria, r, { ex: 7 * 86400 }).catch(() => undefined)
+  // card fora do Financeiro/Gestão guarda só 1 h: a equipe pode mover o card ou criar o de cliente
+  await redis.set(memoria, r, { ex: r.cliente ? 7 * 86400 : 3600 }).catch(() => undefined)
   return r
 }
