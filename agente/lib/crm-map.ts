@@ -69,12 +69,13 @@ export const CRM_MAP = {
   etapasProtegidas: [STATUS.ganho, STATUS.perdido, STATUS.clienteDecisao] as number[],
 
   modelos: {
-    // botId 0 = o bot existe mas ainda está sem o modelo (só dá para escolher depois da aprovação da Meta).
-    // Depois de aprovado: abrir o bot indicado, escolher o modelo no bloco e trocar o 0 pelo ID.
-    primeiroContato: modelo(51584, 'Anna - Primeiro contato', 0), // bot 54154
-    lembrete24h: modelo(51586, 'Anna - Lembrete reunião 24h', 0), // bot 54156
-    lembrete1h: modelo(51588, 'Anna - Lembrete reunião 1h', 0), // bot 54158
-    lembrete15m: modelo(51590, 'Anna - Lembrete reunião 15min', 0), // bot 54160
+    // Os 4 da Anna foram recriados pela tela (os rascunhos 51584–51590 da API não tinham número WABA)
+    // e a Meta aprovou em 13/10. botId 0 = o bot existe mas o modelo ainda não foi escolhido no bloco:
+    // abrir o bot indicado, escolher o modelo e trocar o 0 pelo ID.
+    primeiroContato: modelo(51744, 'Anna - Primeiro contato', 0), // bot 54154
+    lembrete24h: modelo(51746, 'Anna - Lembrete reunião 24h', 0), // bot 54156
+    lembrete1h: modelo(51748, 'Anna - Lembrete reunião 1h', 0), // bot 54158
+    lembrete15m: modelo(51750, 'Anna - Lembrete reunião 15min', 0), // bot 54160
     follow1: modelo(49790, 'Follow 1', 54162),
     follow2: modelo(49666, 'Follow 2', 54164),
     follow3: modelo(49452, 'Follow up 3', 54166),
