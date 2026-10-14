@@ -66,6 +66,37 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
    - ☐ tudo aparece em `/api/executions`.
 7. Rampagem: 10 leads com a tag → todos → `AUTO_GATE_FORM_LEADS=true`.
 
+## Painel (Central v5)
+
+Projeto Vercel separado, `central-carolina-calvo` (pasta `central/`), com login por senha. Quatro abas:
+- **Estatísticas**, só leitura e zero tokens: atendidos, renda informada, acima e abaixo de 10 mil, reuniões marcadas, passagens com o motivo, follow-ups, custo, o funil SDR e Closer lido do Kommo e o último aviso de cada webhook.
+- **Teste**: conversa com a Anna de verdade, com Kommo, WhatsApp e agenda em memória. A 5ª mensagem sai sem a pausa de 30 min.
+- **Ensinar**: a equipe pede mudanças em português e o curador decide o destino:
+  - troca exata num texto vai para o rascunho;
+  - informação nova é acrescentada;
+  - regra do roteiro vira pedido para a Control Gestão;
+  - o que a Anna nunca faz é recusado.
+  Publicar roda o exame dos 21 cenários (US$ 0,01 a 0,02).
+- **Como usar**: o manual da equipe, com os textos que estão no ar.
+
+Lado do agente:
+- `api/central.ts`, `api/base.ts`, `api/teste.ts`.
+- `lib/central-data.ts`: o contrato. O espelho fica em `central/lib/types.ts`.
+- `lib/base-core.ts` e `lib/base.ts`: textos editáveis e versões.
+- `lib/curador.ts`, `lib/exame.ts`, `lib/teste.ts`.
+- `evals/cenarios.ts` e `lib/evals-runner.ts`: os mesmos da CLI.
+
+Variáveis:
+- No agente: `CENTRAL_SECRET` e `COST_USD_BRL`.
+- Na Central: `AGENT_URL`, `AGENT_SECRET` (é o `CENTRAL_SECRET`), `APP_PASSWORD` e `AUTH_SECRET`.
+
+Os textos editáveis moram no Redis do agente:
+- `anna-cc:base:vigente`;
+- `anna-cc:base:historico` (20 versões);
+- `anna-cc:base:rascunho`.
+
+O atendimento lê a versão publicada a cada turno, com 10 s de memória. Sem nada publicado, textos e prompt saem byte a byte iguais aos do código (`npm test` prova).
+
 ## Arquivos
 
 | Do cliente (patch) | Motor (asset do template Kommo v2) |
