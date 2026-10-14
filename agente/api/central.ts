@@ -7,6 +7,7 @@ import { CONFIG } from '../lib/config'
 import { PIPELINES, STATUS } from '../lib/crm-map'
 import { lerWebhooks, readExecs } from '../lib/execlog'
 import { kommoGet } from '../lib/kommo'
+import { k, redis } from '../lib/redis'
 import { validar } from './validate'
 
 /**
@@ -43,11 +44,9 @@ async function live(): Promise<LiveData> {
   } catch (e) {
     problemas.push(`O Kommo não respondeu à conferência do mapa: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}`)
   }
-  let etapas: KommoEtapa[] = []
-  let leads: KommoLeadResumo[] = []
+  let funil: Pick<LiveData, 'funil' | 'leads'> = buildFunil([], [], CONFIG.gateTag)
   try {
-    etapas = await lerEtapas()
-    leads = await lerLeads(etapas)
+    funil = await lerFunil()
   } catch (e) {
     problemas.push(`O Kommo não respondeu à leitura do funil: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}`)
   }
@@ -55,7 +54,7 @@ async function live(): Promise<LiveData> {
     geradoEm: new Date().toISOString(),
     ...base,
     pipeline: { nome: 'SDR e Closer' },
-    ...buildFunil(etapas, leads, CONFIG.gateTag),
+    ...funil,
     regras: {
       modoGate: CONFIG.gateTag ? 'tag' : 'todos',
       gateTag: CONFIG.gateTag,
@@ -79,18 +78,31 @@ async function lerEtapas(): Promise<KommoEtapa[]> {
   return out
 }
 
-/** Leads abertos das etapas (até 2.500) + fechados nos últimos 30 dias nos dois funis. */
+/** O funil contado (pequeno) fica 5 min no Redis: a leitura do Kommo pagina milhares de leads. */
+async function lerFunil(): Promise<Pick<LiveData, 'funil' | 'leads'>> {
+  const chave = k('central', 'funil')
+  const guardado = await redis.get<Pick<LiveData, 'funil' | 'leads'>>(chave).catch(() => null)
+  if (guardado) return guardado
+  const etapas = await lerEtapas()
+  const r = buildFunil(etapas, await lerLeads(etapas), CONFIG.gateTag)
+  await redis.set(chave, r, { ex: 300 }).catch(() => undefined)
+  return r
+}
+
+/** Leads abertos das etapas (até 10 mil) + fechados nos últimos 30 dias nos dois funis. */
 async function lerLeads(etapas: KommoEtapa[]): Promise<KommoLeadResumo[]> {
   const filtroAbertos = etapas.map((e, i) => `filter[statuses][${i}][pipeline_id]=${FUNIS.find(f => f.nome === e.funil)!.id}&filter[statuses][${i}][status_id]=${e.id}`).join('&')
   const desde = Math.floor(Date.now() / 1000) - 30 * 86400
   const filtroFechados = FUNIS.flatMap((f, i) => [STATUS.ganho, STATUS.perdido].map((s, j) => `filter[statuses][${i * 2 + j}][pipeline_id]=${f.id}&filter[statuses][${i * 2 + j}][status_id]=${s}`)).join('&')
   const out: KommoLeadResumo[] = []
+  type Bruto = KommoLeadResumo & { _embedded?: { tags?: Array<{ name: string }> } }
+  const pagina = (filtro: string, page: number) => kommoGet<{ _embedded?: { leads?: Bruto[] } }>(`/api/v4/leads?${filtro}&limit=250&page=${page}`).then(d => d?._embedded?.leads || [])
   for (const filtro of [filtroAbertos, `${filtroFechados}&filter[closed_at][from]=${desde}`]) {
-    for (let page = 1; page <= 10; page++) {
-      const d = await kommoGet<{ _embedded?: { leads?: Array<KommoLeadResumo & { _embedded?: { tags?: Array<{ name: string }> } }> } }>(`/api/v4/leads?${filtro}&limit=250&page=${page}`)
-      const lote = d?._embedded?.leads || []
-      out.push(...lote.map(l => ({ id: l.id, name: l.name, price: l.price, status_id: l.status_id, pipeline_id: l.pipeline_id, updated_at: l.updated_at, created_at: l.created_at, tags: (l._embedded?.tags || []).map(t => t.name) })))
-      if (lote.length < 250) break
+    // lotes de 5 páginas em paralelo (o Kommo aceita 7 pedidos por segundo); para na primeira página incompleta
+    for (let inicio = 1; inicio <= 40; inicio += 5) {
+      const lotes = await Promise.all([0, 1, 2, 3, 4].map(i => pagina(filtro, inicio + i)))
+      for (const lote of lotes) out.push(...lote.map(l => ({ id: l.id, name: l.name, price: l.price, status_id: l.status_id, pipeline_id: l.pipeline_id, updated_at: l.updated_at, created_at: l.created_at, tags: (l._embedded?.tags || []).map(t => t.name) })))
+      if (lotes.some(l => l.length < 250)) break
     }
   }
   return out
