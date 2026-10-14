@@ -75,7 +75,7 @@ Detalhes, ordem para ligar e decisões pendentes: `onboarding/cobranca.md`.
 A chave do Asaas, os relógios e o webhook do Asaas estão prontos desde 14/10. A régua roda em simulação e registra o que sairia.
 
 Faltam:
-- 3 dos 8 Salesbots: 18 dias e Pagamento confirmado (continuação em `onboarding/prompt-cowork-bots-cobranca.md`) e o modelo no bot de 5 dias, quando a Meta aprovar;
+- o modelo no bot de 5 dias (54192), quando a Meta aprovar (`onboarding/prompt-cowork-bots-cobranca.md`). Os outros 7 bots estão prontos;
 - as notificações do próprio Asaas desligadas;
 - o teste com uma cobrança de R$ 5,00.
 
