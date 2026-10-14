@@ -66,6 +66,19 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
    - ☐ tudo aparece em `/api/executions`.
 7. Rampagem: 10 leads com a tag → todos → `AUTO_GATE_FORM_LEADS=true`.
 
+## Cobrança (Asaas)
+
+Construída em 14/10/2026 e **desligada até o teste**. A régua (9h e 17h) lê o Asaas, acha o card do cliente pelo telefone e dispara os 8 modelos de cobrança aprovados.
+
+Detalhes, ordem para ligar e decisões pendentes: `onboarding/cobranca.md`.
+
+Faltam:
+- a chave do Asaas;
+- os 8 Salesbots (`onboarding/prompt-cowork-bots-cobranca.md`);
+- o webhook do Asaas;
+- os relógios (`scripts/criar-relogio.ts --criar --cobranca`);
+- o teste com uma cobrança de R$ 5,00.
+
 ## Painel (Central v5)
 
 **No ar desde 14/10/2026: https://central-carolina-calvo.vercel.app** (projeto Vercel `central-carolina-calvo`, pasta `central/`, login por senha; a senha fica com o Guilherme, fora do repositório). `/` e `/painel` do agente redirecionam para lá. Quatro abas:

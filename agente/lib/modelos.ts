@@ -12,7 +12,7 @@ import { k, redis } from './redis'
  * código preenche ANTES de disparar o bot.
  */
 
-export type VarsModelo = Partial<Record<'primeiroNome' | 'horarioReuniao' | 'linkMeet', string>>
+export type VarsModelo = Partial<Record<'primeiroNome' | 'horarioReuniao' | 'linkMeet' | 'linkPagamento' | 'vencimento' | 'diasAtraso' | 'prazoLimite', string>>
 
 export function renderizar(conteudo: string, valores: Record<number, string>): string {
   return conteudo.replace(/\{\{lead\.cf\.(\d+)\}\}/g, (m, id) => valores[Number(id)] ?? m)

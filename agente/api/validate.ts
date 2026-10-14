@@ -19,6 +19,7 @@ interface LiveTemplate { id: number; name: string; _embedded?: { reviews?: Array
 export async function validar() {
   const problemas: string[] = []
   const pendencias: string[] = []
+  const cobranca: string[] = []
 
   try { prompt() } catch { problemas.push('prompts/anna.md não está no bundle (includeFiles)') }
   if (!CONFIG.kommoBotId) pendencias.push('KOMMO_BOT_ID: Salesbot de texto livre ainda não criado')
@@ -44,16 +45,24 @@ export async function validar() {
     for (const [nome, id] of Object.entries(STATUS)) if (!statuses.has(id)) problemas.push(`etapa "${nome}" (${id}) NÃO existe`)
 
     for (const [chave, m] of Object.entries(CRM_MAP.modelos)) {
+      // os modelos de cobrança têm pendências próprias: não seguram a Anna
+      const lista = chave.startsWith('cobranca') ? cobranca : pendencias
       const t = await kommoGet<LiveTemplate>(`/api/v4/chats/templates/${m.templateId}?with=reviews`).catch(() => null)
       if (!t) { problemas.push(`modelo "${m.nome}" (${m.templateId}) NÃO existe`); continue }
       const status = (t._embedded?.reviews || []).map(r => r.status)
-      if (!status.includes('approved')) pendencias.push(`modelo "${m.nome}" ainda não aprovado pela Meta (${status.join(', ') || 'rascunho'})`)
-      if (!m.botId) pendencias.push(`modelo "${m.nome}": falta o Salesbot de envio (CRM_MAP.modelos.${chave}.botId)`)
+      if (!status.includes('approved')) lista.push(`modelo "${m.nome}" ainda não aprovado pela Meta (${status.join(', ') || 'rascunho'})`)
+      if (!m.botId) lista.push(`modelo "${m.nome}": falta o Salesbot de envio (CRM_MAP.modelos.${chave}.botId)`)
     }
   } catch (e) {
     problemas.push(`falha ao consultar o Kommo: ${e instanceof Error ? e.message : String(e)}`)
   }
-  return { ok: problemas.length === 0, prontoParaLeadReal: problemas.length === 0 && pendencias.length === 0, cliente: CONFIG.clientName, problemas, pendencias }
+  if (!CONFIG.asaas.apiKey) cobranca.unshift('ASAAS_API_KEY: chave do Asaas ainda não recebida (tutoriais/02-asaas.mp4)')
+  if (!CONFIG.asaas.webhookToken) cobranca.push('ASAAS_WEBHOOK_TOKEN: sem ele a confirmação de pagamento só sai na rodada das 9h')
+  if (!CONFIG.cobrancaAtiva) cobranca.push('COBRANCA_ATIVA desligada: a régua só simula (ligar depois de conferir /api/cobranca?simular=1)')
+  return {
+    ok: problemas.length === 0, prontoParaLeadReal: problemas.length === 0 && pendencias.length === 0, cliente: CONFIG.clientName, problemas, pendencias,
+    cobranca: { pronta: problemas.length === 0 && cobranca.length === 0, pendencias: cobranca },
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

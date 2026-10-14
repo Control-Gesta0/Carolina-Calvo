@@ -303,6 +303,40 @@ async function main() {
     eq('conversa real para corrigir', [reais[0].contato, reais[0].passou], ['2', 'perguntou_robo'])
   }
 
+  console.log('\n— Cobrança (Asaas): calendário, régua e vínculo')
+  {
+    const R = await import('../lib/cobranca/regua')
+    const { escolherLead } = await import('../lib/cobranca/vinculo')
+    eq('Páscoa 2026 e 2027', [R.pascoa(2026), R.pascoa(2027)], ['2026-04-05', '2027-03-28'])
+    eq('feriados móveis 2026 (Carnaval, Sexta Santa, Corpus Christi)', ['2026-02-16', '2026-02-17', '2026-04-03', '2026-06-04'].every(d => R.feriados(2026).has(d)), true)
+    eq('dia útil: Finados, sábado e 30/11 (DF) não contam', [R.diaUtil('2026-11-02'), R.diaUtil('2026-11-07'), R.diaUtil('2026-11-30'), R.diaUtil('2026-11-03')], [false, false, false, true])
+    eq('4º dia útil', [R.quartoDiaUtil(2026, 10), R.quartoDiaUtil(2026, 11), R.quartoDiaUtil(2026, 12)], ['2026-10-06', '2026-11-06', '2026-12-04'])
+    eq('antes do vencimento dia 07 = 4º dia útil', R.diaDoAntes('2026-11-07'), '2026-11-06')
+    eq('janeiro: 4º dia útil cai no dia 07 → último dia útil antes', R.diaDoAntes('2027-01-07'), '2027-01-06')
+    eq('outro vencimento: 4 dias antes', R.diaDoAntes('2026-11-15'), '2026-11-11')
+    const p = (dueDate: string, status = 'PENDING') => ({ dueDate, status })
+    eq('régua de manhã', [
+      R.etapaDoDia(p('2026-11-07'), '2026-11-06', 'manha'), R.etapaDoDia(p('2026-11-07'), '2026-11-07', 'manha'),
+      R.etapaDoDia(p('2026-11-07', 'OVERDUE'), '2026-11-08', 'manha'), R.etapaDoDia(p('2026-11-07', 'OVERDUE'), '2026-11-12', 'manha'),
+      R.etapaDoDia(p('2026-11-07', 'OVERDUE'), '2026-11-17', 'manha'), R.etapaDoDia(p('2026-11-07', 'OVERDUE'), '2026-11-25', 'manha'),
+      R.etapaDoDia(p('2026-11-07', 'OVERDUE'), '2026-11-09', 'manha'), R.etapaDoDia(p('2026-11-07'), '2026-11-05', 'manha'),
+    ], ['antes', 'dia', 'd1', 'd5', 'd10', 'd18', null, null])
+    eq('régua das 17h só no vencimento e não pago', [R.etapaDoDia(p('2026-11-07'), '2026-11-07', 'tarde'), R.etapaDoDia(p('2026-11-07', 'RECEIVED'), '2026-11-07', 'tarde'), R.etapaDoDia(p('2026-11-07', 'OVERDUE'), '2026-11-08', 'tarde')], ['dia17', null, null])
+    eq('pago não recebe cobrança', R.etapaDoDia(p('2026-11-07', 'RECEIVED'), '2026-11-08', 'manha'), null)
+    eq('variáveis do D+18 (prazo = envio + 2 dias)', R.variaveis({ dueDate: '2026-11-07', invoiceUrl: 'https://www.asaas.com/i/x' }, '2026-11-25', 'd18'), { vencimento: '07/11/2026', linkPagamento: 'https://www.asaas.com/i/x', diasAtraso: '18', prazoLimite: '27/11/2026' })
+    eq('variáveis do D+1 sem dias nem prazo', R.variaveis({ dueDate: '2026-11-07', bankSlipUrl: 'https://b' }, '2026-11-08', 'd1'), { vencimento: '07/11/2026', linkPagamento: 'https://b' })
+    eq('telefone do Asaas casa com o do Kommo', ['+5561999998888', '61999998888', '(61) 9999-8888', '+556132467013', '123'].map(R.chaveTelefone), ['6199998888', '6199998888', '6199998888', '6132467013', null])
+    eq('card do cliente: Gestão operacional antes do Financeiro e do SDR', escolherLead([
+      { id: 1, pipeline_id: PIPELINES.sdr, status_id: 1, updated_at: 900 },
+      { id: 2, pipeline_id: PIPELINES.financeiro, status_id: 1, updated_at: 500 },
+      { id: 3, pipeline_id: PIPELINES.gestao, status_id: 142, updated_at: 100 },
+    ])?.id, 3)
+    eq('card perdido perde para o aberto', escolherLead([
+      { id: 4, pipeline_id: PIPELINES.gestao, status_id: 143, updated_at: 900 },
+      { id: 5, pipeline_id: PIPELINES.gestao, status_id: 1, updated_at: 100 },
+    ])?.id, 5)
+  }
+
   console.log(`\n${falhas ? `❌ ${falhas} de ${total} falharam` : `✅ ${total}/${total} passaram`}`)
   process.exit(falhas ? 1 : 0)
 }

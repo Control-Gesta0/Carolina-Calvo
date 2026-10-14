@@ -50,6 +50,17 @@ export const CONFIG = {
   /** régua pós-proposta (24h depois de Cliente decisão). Ligar só depois de desligar a automação antiga do Kommo */
   posPropostaAtivo: process.env.POS_PROPOSTA_ATIVO === 'true',
 
+  /** Cobrança pelo Asaas (lib/cobranca). Nasce DESLIGADA: sem COBRANCA_ATIVA=true só simula e registra o que sairia. */
+  asaas: {
+    apiKey: process.env.ASAAS_API_KEY || '',
+    url: (process.env.ASAAS_URL || 'https://api.asaas.com/v3').replace(/\/+$/, ''),
+    /** o Asaas manda no header asaas-access-token de cada webhook */
+    webhookToken: process.env.ASAAS_WEBHOOK_TOKEN || '',
+  },
+  cobrancaAtiva: process.env.COBRANCA_ATIVA === 'true',
+  /** só estes leads recebem cobrança (teste ponta a ponta); vazio = todos os vinculados */
+  cobrancaTesteLeads: list(process.env.COBRANCA_TESTE_LEADS).map(Number).filter(Boolean),
+
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',

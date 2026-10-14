@@ -51,6 +51,11 @@ export const CRM_MAP = {
     formVoceE: 803678,
     formSalario: 803682,
     formDescontos: 803838,
+    // cobrança (variáveis dos modelos de cobrança; o código preenche antes de disparar o bot)
+    linkPagamento: 805164,
+    vencimento: 805166,
+    diasAtraso: 805168,
+    prazoLimite: 805170,
   },
 
   tags: {
@@ -58,6 +63,8 @@ export const CRM_MAP = {
     semReuniao: 'ANNA renda abaixo 10k',
     passouHumano: 'ANNA passou para humano',
     agendou: 'ANNA agendou',
+    /** cobrança: entra no D+1 e sai quando o cliente não tem mais parcela vencida */
+    inadimplente: 'inadimplentes',
   },
 
   /** tarefa criada para a equipe quando a Anna passa o atendimento */
@@ -84,6 +91,16 @@ export const CRM_MAP = {
     se524h: modelo(47012, 'SE 5 24h', 54172),
     fupEncerramento: modelo(46746, 'FUP encerramento 48h', 54174),
     perguntaReuniao: modelo(48922, 'Pergunta reunião', 54176),
+    // Cobrança (Asaas): recriados pela tela e aprovados em 14/10 (51762 em revisão nesse dia).
+    // botId 0 até o Salesbot de cada um ser criado (onboarding/prompt-cowork-bots-cobranca.md).
+    cobrancaAntes: modelo(51754, 'Cobrança - Antes do vencimento', 0),
+    cobrancaDia: modelo(51756, 'Cobrança - Dia do vencimento', 0),
+    cobranca17h: modelo(51758, 'Cobrança - Vencimento 17h', 0),
+    cobrancaD1: modelo(51760, 'Cobrança - 1 dia de atraso', 0),
+    cobrancaD5: modelo(51762, 'Cobrança - 5 dias de atraso', 0),
+    cobrancaD10: modelo(51764, 'Cobrança - 10 dias de atraso', 0),
+    cobrancaD18: modelo(51766, 'Cobrança - 18 dias de atraso', 0),
+    cobrancaPago: modelo(51768, 'Cobrança - Pagamento confirmado', 0),
   } satisfies Record<string, Modelo>,
 
   midia: {
