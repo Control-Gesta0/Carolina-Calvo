@@ -67,14 +67,32 @@ export async function lerCobranca(id: string): Promise<Cobranca> {
   return asaas<Cobranca>(`/payments/${encodeURIComponent(id)}`)
 }
 
-/** Cliente do Asaas, com 1 dia de memória no Redis (nome e telefone mudam pouco). */
+const resumo = (c: ClienteAsaas): ClienteAsaas => ({ id: c.id, name: c.name, mobilePhone: c.mobilePhone, phone: c.phone, cpfCnpj: c.cpfCnpj, deleted: c.deleted })
+let clientesMemoria: { em: number; mapa: Map<string, ClienteAsaas> } | null = null
+
+/** Todos os clientes de uma vez (349 em out/2026 = 4 páginas), com 6 h de memória no Redis. */
+export async function carregarClientes(): Promise<Map<string, ClienteAsaas>> {
+  if (clientesMemoria && Date.now() - clientesMemoria.em < 10 * 60_000) return clientesMemoria.mapa
+  const chave = k('cob', 'clientes')
+  let lista = await redis.get<ClienteAsaas[]>(chave).catch(() => null)
+  if (!lista) {
+    lista = []
+    for (let offset = 0; offset < 20_000; offset += 100) {
+      const d = await asaas<{ data?: ClienteAsaas[]; hasMore?: boolean }>(`/customers?limit=100&offset=${offset}`)
+      lista.push(...(d.data || []).map(resumo))
+      if (!d.hasMore) break
+    }
+    await redis.set(chave, lista, { ex: 6 * 3600 }).catch(() => undefined)
+  }
+  clientesMemoria = { em: Date.now(), mapa: new Map(lista.map(c => [c.id, c])) }
+  return clientesMemoria.mapa
+}
+
+/** Cliente do Asaas: da lista carregada; se for novo (criado depois), busca só ele. */
 export async function lerCliente(id: string): Promise<ClienteAsaas> {
-  const chave = k('cob', 'cliente', id)
-  const guardado = await redis.get<ClienteAsaas>(chave).catch(() => null)
-  if (guardado) return guardado
-  const c = await asaas<ClienteAsaas>(`/customers/${encodeURIComponent(id)}`)
-  await redis.set(chave, { id: c.id, name: c.name, mobilePhone: c.mobilePhone, phone: c.phone, cpfCnpj: c.cpfCnpj, deleted: c.deleted }, { ex: 86400 }).catch(() => undefined)
-  return c
+  const daLista = (await carregarClientes().catch(() => null))?.get(id)
+  if (daLista) return daLista
+  return resumo(await asaas<ClienteAsaas>(`/customers/${encodeURIComponent(id)}`))
 }
 
 /** Cobranças vencidas e não pagas de um cliente (para saber se a tag de inadimplente pode sair). */

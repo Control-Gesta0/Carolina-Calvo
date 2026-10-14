@@ -73,6 +73,8 @@ export async function processar(c: Cobranca, etapa: EtapaOuPago, hoje: string, e
   const modelo = CRM_MAP.modelos[chave]
   const cli = await lerCliente(c.customer)
   const item: ItemCobranca = { cobranca: c.id, cliente: c.customer, nome: cli.name, valor: c.value, vencimento: c.dueDate, etapa, modelo: modelo.nome, resultado: 'simulado' }
+  // já enviada (rodada anterior ou continuação): sai antes de procurar o card
+  if (enviar && (await redis.exists(K_ENVIADO(c.id, etapa)))) return { ...item, resultado: 'já enviado' }
   const v = await leadDoCliente(cli)
   if (!v) return { ...item, resultado: 'sem card', detalhe: 'nenhum card no Kommo com o telefone do cliente no Asaas' }
   item.leadId = v.leadId
@@ -93,15 +95,31 @@ export async function processar(c: Cobranca, etapa: EtapaOuPago, hoje: string, e
   }
 }
 
+const K_CONTINUAR = () => k('cob', 'continuar')
+const K_LOCK = () => k('cob', 'lock')
+/** tempo de trabalho por chamada (a função tem 300 s): o resto fica para a continuação */
+const ORCAMENTO_MS = 200_000
+
+/**
+ * Uma rodada envia até 80 mensagens e trabalha até 200 s. Se sobrou cobrança, ela
+ * marca "continuar" e o tique de 5 min (api/tick.ts) chama de novo até acabar
+ * (dia 06 tem ~130 lembretes; dia 07 ~120 de manhã e ~120 às 17h).
+ */
 export async function rodarCobranca(turno: Turno, o: { simular?: boolean; agora?: Date } = {}): Promise<Rodada> {
   if (!asaasConfigurado()) throw new Error('ASAAS_API_KEY ausente: a cobrança não roda sem a chave do Asaas')
   const agora = o.agora || new Date()
   const hoje = diaSP(agora)
   const enviar = CONFIG.cobrancaAtiva && !o.simular
+  if (!o.simular && (await redis.set(K_LOCK(), '1', { nx: true, ex: 290 })) !== 'OK') {
+    return { em: agora.toISOString(), hoje, turno, ativa: CONFIG.cobrancaAtiva, itens: [] } // outra rodada em andamento
+  }
   const itens: ItemCobranca[] = []
   let enviados = 0
+  let sobrou = false
+  const t0 = Date.now()
+  try {
   for (const { c, etapa } of await candidatos(hoje, turno)) {
-    if (enviar && enviados >= MAX_ENVIOS) { itens.push({ cobranca: c.id, cliente: c.customer, nome: '', valor: c.value, vencimento: c.dueDate, etapa, modelo: CRM_MAP.modelos[MODELO_DA_ETAPA[etapa]].nome, resultado: 'limite da rodada' }); continue }
+    if (enviar && (enviados >= MAX_ENVIOS || Date.now() - t0 > ORCAMENTO_MS)) { sobrou = true; itens.push({ cobranca: c.id, cliente: c.customer, nome: '', valor: c.value, vencimento: c.dueDate, etapa, modelo: CRM_MAP.modelos[MODELO_DA_ETAPA[etapa]].nome, resultado: 'limite da rodada' }); continue }
     const it = await processar(c, etapa, hoje, enviar).catch(e => ({
       cobranca: c.id, cliente: c.customer, nome: '', valor: c.value, vencimento: c.dueDate, etapa, modelo: CRM_MAP.modelos[MODELO_DA_ETAPA[etapa]].nome,
       resultado: 'erro' as const, detalhe: (e instanceof Error ? e.message : String(e)).slice(0, 300),
@@ -109,12 +127,24 @@ export async function rodarCobranca(turno: Turno, o: { simular?: boolean; agora?
     if (it.resultado === 'enviado') enviados++
     itens.push(it)
   }
+  } finally {
+    if (!o.simular) await redis.del(K_LOCK())
+  }
   const rodada: Rodada = { em: agora.toISOString(), hoje, turno, ativa: CONFIG.cobrancaAtiva, itens }
   if (!o.simular) {
-    await redis.lpush(K_LOG(), rodada)
+    // o log guarda só o que aconteceu (envio, erro, sem card…), não as já enviadas de rodadas anteriores
+    await redis.lpush(K_LOG(), { ...rodada, itens: itens.filter(i => i.resultado !== 'já enviado' && i.resultado !== 'limite da rodada') })
     await redis.ltrim(K_LOG(), 0, 199)
+    if (sobrou) await redis.set(K_CONTINUAR(), { hoje, turno }, { ex: 3 * 3600 })
+    else await redis.del(K_CONTINUAR())
   }
   return rodada
+}
+
+/** O tique chama: se a rodada de hoje não terminou, devolve o turno para continuar. */
+export async function cobrancaPorContinuar(agora = new Date()): Promise<Turno | null> {
+  const c = await redis.get<{ hoje: string; turno: Turno }>(K_CONTINUAR()).catch(() => null)
+  return c && c.hoje === diaSP(agora) ? c.turno : null
 }
 
 export async function lerRodadas(n = 30): Promise<Rodada[]> {

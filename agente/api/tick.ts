@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { waitUntil } from '@vercel/functions'
 import crypto from 'crypto'
 import { bloqueio } from '../lib/agent'
 import { quintaMensagem } from '../lib/anna/fluxo'
+import { cobrancaPorContinuar, rodarCobranca } from '../lib/cobranca/executar'
 import { comTextos } from '../lib/anna/textos'
 import { baseVigente } from '../lib/base'
 import { textosDoRoteiro } from '../lib/base-core'
@@ -39,7 +41,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await logExec({ tipo: 'erro', leadId: job.leadId, detalhe: `job ${job.tipo}: ${msg}` })
     }
   }
-  return res.status(200).json({ ok: true, executados: feitos.length, feitos })
+  // cobrança grande (dia 06 e 07): a rodada que não terminou continua por aqui, de 5 em 5 min
+  const turnoCobranca = await cobrancaPorContinuar().catch(() => null)
+  if (turnoCobranca) waitUntil(rodarCobranca(turnoCobranca).then(() => undefined).catch(e => console.error('[tick] continuação da cobrança falhou:', e)))
+  return res.status(200).json({ ok: true, executados: feitos.length, feitos, ...(turnoCobranca ? { cobranca: `continuando ${turnoCobranca}` } : {}) })
 }
 
 function safeEq(a: string, b: string): boolean {
