@@ -30,15 +30,34 @@ Módulo construído em 14/10/2026. O código está em `agente/lib/asaas.ts`, `ag
 6. **Pagamento confirmado:** chega na hora pelo webhook do Asaas, entre 8h e 20h. Fora desse horário, ou sem webhook, sai na rodada das 9h.
 7. **Respostas dos clientes:** a Anna não fala com cards do Financeiro nem da Gestão operacional. O comprovante e as dúvidas ficam com a equipe, como hoje.
 
+## Situação em 14/10/2026
+
+- **Chave do Asaas** recebida e gravada na Vercel. Ela enxerga:
+  - 3.779 cobranças (1.191 em aberto e 109 vencidas);
+  - 349 clientes;
+  - 1.133 das 1.191 cobranças em aberto vencem no dia 07.
+- **Relógios** das 9h e das 17h criados. Como a cobrança está desligada, cada rodada só registra o que sairia: `GET /api/cobranca?log=1`.
+- **Simulação com dados reais:**
+  - 14/10: 6 confirmações de pagamento, 2 sem card;
+  - 06/11 (antes do vencimento): 130 mensagens, 9 sem card;
+  - 07/11: 120 de manhã e 118 às 17h.
+
+  Rodadas grandes continuam sozinhas, de 5 em 5 minutos, até acabar (80 envios ou 200 s por vez).
+- **Achados que precisam de ação do escritório:**
+  - **os 349 clientes estão com as notificações do próprio Asaas ligadas.** Ligar a régua assim manda cobrança em dobro;
+  - **112 clientes não têm telefone no Asaas.** Sem telefone não há como achar o card, e esses clientes não recebem nada. Por dia de cobrança, uns 10 aparecem como "sem card";
+  - alguns clientes só têm card fora do Financeiro e da Gestão operacional, e a régua não cobra no SDR nem no Closer. O caminho é mover o card ou criar o card de cliente;
+  - já existe um webhook do **Linklei** no Asaas. O da Anna seria um segundo webhook, sem mexer no dele.
+
 ## Para ligar (nesta ordem)
 
-1. **Chave do Asaas:** a Dra. gera pelo tutorial `tutoriais/02-asaas.mp4` e manda. Ela vai na Vercel como `ASAAS_API_KEY`.
+1. **Chave do Asaas:** feito em 14/10.
 2. **Simulação com dados reais:** `GET /api/cobranca?simular=1&turno=manha` mostra cada cobrança do dia, a mensagem e o card achado. Confira com a equipe:
    - os "sem card", que pedem para corrigir o telefone no Asaas ou no Kommo;
    - se algum cliente está no card errado.
 3. **Os 8 Salesbots:** pelo Cowork, com `onboarding/prompt-cowork-bots-cobranca.md`. Os IDs entram em `agente/lib/crm-map.ts`.
 4. **Webhook do Asaas:** `npx tsx scripts/criar-webhook-asaas.ts --criar`, com `ASAAS_WEBHOOK_TOKEN`. Isso mexe na conta do escritório: só com o OK dele.
-5. **Relógio:** `npx tsx scripts/criar-relogio.ts --criar --cobranca`.
+5. **Relógio:** feito em 14/10 (`anna-carolina-calvo-cobranca-manha` e `-tarde`).
 6. **Teste ponta a ponta:**
    - cobrança de R$ 5,00 no Asaas para o celular de alguém da equipe, vencendo hoje;
    - o card desse contato em `COBRANCA_TESTE_LEADS`;

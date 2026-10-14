@@ -72,11 +72,12 @@ Construída em 14/10/2026 e **desligada até o teste**. A régua (9h e 17h) lê 
 
 Detalhes, ordem para ligar e decisões pendentes: `onboarding/cobranca.md`.
 
+A chave do Asaas e os relógios estão prontos desde 14/10. A régua roda em simulação e registra o que sairia.
+
 Faltam:
-- a chave do Asaas;
 - os 8 Salesbots (`onboarding/prompt-cowork-bots-cobranca.md`);
 - o webhook do Asaas;
-- os relógios (`scripts/criar-relogio.ts --criar --cobranca`);
+- as notificações do próprio Asaas desligadas;
 - o teste com uma cobrança de R$ 5,00.
 
 ## Painel (Central v5)
