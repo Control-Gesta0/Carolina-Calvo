@@ -67,3 +67,33 @@ RELATÓRIO
 ```
 
 Depois, cole o relatório na sessão do Claude Code. Os IDs entram em `agente/lib/crm-map.ts`, nos `botId` dos modelos `cobranca*`, e o `/api/validate` deixa de apontar os bots como pendentes.
+
+## Rodada 1 (14/10/2026) e continuação
+
+O Cowork salvou 6 dos 8 bots. Os IDs conferem com a lista de bots do Kommo:
+
+| Nº | Bot | ID | Situação |
+|---|---|---|---|
+| 1 | Cobrança · Antes do vencimento | 54184 | pronto, modelo 51754 conferido |
+| 2 | Cobrança · Dia do vencimento | 54186 | pronto, falta conferir o modelo salvo |
+| 3 | Cobrança · Vencimento 17h | 54188 | pronto, falta conferir o modelo salvo |
+| 4 | Cobrança · 1 dia de atraso | 54190 | pronto, falta conferir o modelo salvo |
+| 5 | Cobrança · 5 dias de atraso | 54192 | bloco vazio: o 51762 segue em revisão na Meta |
+| 6 | Cobrança · 10 dias de atraso | 54194 | pronto, falta conferir o modelo salvo |
+| 7 | Cobrança · 18 dias de atraso | — | editor aberto com o modelo, ainda não salvo |
+| 8 | Cobrança · Pagamento confirmado | — | não iniciado |
+
+Os bots 1, 2, 3, 4 e 6 já estão em `agente/lib/crm-map.ts`. O 5 fica com `botId` 0 até o modelo ser escolhido nele, e assim a régua não dispara um bot vazio.
+
+Para terminar, cole no Cowork:
+
+```text
+Continuação dos Salesbots de cobrança na conta Kommo do escritório Carolina Calvo Advogados (https://advogadacarolinacalvo.kommo.com), pelo meu Chrome. Valem a mesma autorização e os mesmos limites da tarefa anterior: criar e salvar sem gatilho só os bots abaixo, sem excluir, desativar ou editar nada que já existe.
+
+1. Bot 7 "Cobrança · 18 dias de atraso": se o editor ainda estiver aberto, confira que o bloco "Enviar mensagem" tem o modelo "Cobrança - 18 dias de atraso" (51766) e salve sem gatilho ("Condição de execução" > Cancelar > "Sair sem salvar", só nesse modal). Se o editor foi fechado, procure o bot na lista antes de criar outro, para não duplicar. Anote o ID.
+2. Bot 8 "Cobrança · Pagamento confirmado": crie do mesmo jeito, com o modelo "Cobrança - Pagamento confirmado" (51768). Salve sem gatilho e anote o ID.
+3. Reabra os bots 54186, 54188, 54190 e 54194, um por vez, e confira que o bloco "Enviar mensagem" tem o modelo certo (Dia do vencimento, Vencimento 17h, 1 dia de atraso e 10 dias de atraso). Feche sem salvar.
+4. Abra o bot 54192 ("Cobrança · 5 dias de atraso"). Se o modelo "Cobrança - 5 dias de atraso" (51762) já aparecer no seletor, escolha e salve sem gatilho. Se não aparecer, feche sem salvar.
+
+Relatório: nº | nome do bot | ID | modelo no bloco | pronto ou aguardando aprovação.
+```

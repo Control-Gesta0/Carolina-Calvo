@@ -92,13 +92,15 @@ export const CRM_MAP = {
     fupEncerramento: modelo(46746, 'FUP encerramento 48h', 54174),
     perguntaReuniao: modelo(48922, 'Pergunta reunião', 54176),
     // Cobrança (Asaas): recriados pela tela e aprovados em 14/10 (51762 em revisão nesse dia).
-    // botId 0 até o Salesbot de cada um ser criado (onboarding/prompt-cowork-bots-cobranca.md).
-    cobrancaAntes: modelo(51754, 'Cobrança - Antes do vencimento', 0),
-    cobrancaDia: modelo(51756, 'Cobrança - Dia do vencimento', 0),
-    cobranca17h: modelo(51758, 'Cobrança - Vencimento 17h', 0),
-    cobrancaD1: modelo(51760, 'Cobrança - 1 dia de atraso', 0),
+    // Salesbots "Cobrança · ..." criados pelo Cowork em 14/10 (onboarding/prompt-cowork-bots-cobranca.md).
+    // botId 0 = não dispara (resultado "sem bot"). O 5 dias (bot 54192) está com o bloco vazio até a Meta
+    // aprovar o 51762: só entra aqui depois que o modelo for escolhido nele. 18 dias e Pago: bots por salvar.
+    cobrancaAntes: modelo(51754, 'Cobrança - Antes do vencimento', 54184),
+    cobrancaDia: modelo(51756, 'Cobrança - Dia do vencimento', 54186),
+    cobranca17h: modelo(51758, 'Cobrança - Vencimento 17h', 54188),
+    cobrancaD1: modelo(51760, 'Cobrança - 1 dia de atraso', 54190),
     cobrancaD5: modelo(51762, 'Cobrança - 5 dias de atraso', 0),
-    cobrancaD10: modelo(51764, 'Cobrança - 10 dias de atraso', 0),
+    cobrancaD10: modelo(51764, 'Cobrança - 10 dias de atraso', 54194),
     cobrancaD18: modelo(51766, 'Cobrança - 18 dias de atraso', 0),
     cobrancaPago: modelo(51768, 'Cobrança - Pagamento confirmado', 0),
   } satisfies Record<string, Modelo>,

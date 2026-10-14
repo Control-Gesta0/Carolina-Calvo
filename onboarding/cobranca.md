@@ -56,7 +56,7 @@ Módulo construído em 14/10/2026. O código está em `agente/lib/asaas.ts`, `ag
 2. **Simulação com dados reais:** `GET /api/cobranca?simular=1&turno=manha` mostra cada cobrança do dia, a mensagem e o card achado. Confira com a equipe:
    - os "sem card", que pedem para corrigir o telefone no Asaas ou no Kommo;
    - se algum cliente está no card errado.
-3. **Os 8 Salesbots:** pelo Cowork, com `onboarding/prompt-cowork-bots-cobranca.md`. Os IDs entram em `agente/lib/crm-map.ts`.
+3. **Os 8 Salesbots:** pelo Cowork, com `onboarding/prompt-cowork-bots-cobranca.md`. Em 14/10 ficaram prontos 5 (54184, 54186, 54188, 54190 e 54194), já em `agente/lib/crm-map.ts`. O de 5 dias (54192) espera a Meta aprovar o modelo. Os de 18 dias e Pagamento confirmado estão na continuação do prompt.
 4. **Webhook do Asaas:** feito em 14/10 (`scripts/criar-webhook-asaas.ts --criar`). Testado: sem o token, 401; com o token, 200.
 5. **Relógio:** feito em 14/10 (`anna-carolina-calvo-cobranca-manha` e `-tarde`).
 6. **Teste ponta a ponta:**
