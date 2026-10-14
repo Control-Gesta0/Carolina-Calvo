@@ -82,7 +82,7 @@ async function lerEtapas(): Promise<KommoEtapa[]> {
 /**
  * O funil contado (pequeno) fica no Redis: a leitura do Kommo pagina milhares de leads (≈15 s).
  * Até 5 min devolve o guardado; depois disso devolve o guardado NA HORA e recalcula por trás
- * (o painel nunca espera os 15 s, só na primeira leitura de todas). Guardado some em 6 h.
+ * (o painel nunca espera os 15 s, só na primeira leitura de todas). Guardado some em 7 dias.
  */
 async function lerFunil(): Promise<Pick<LiveData, 'funil' | 'leads'>> {
   const chave = k('central', 'funil')
@@ -90,7 +90,7 @@ async function lerFunil(): Promise<Pick<LiveData, 'funil' | 'leads'>> {
   const recalcular = async () => {
     const etapas = await lerEtapas()
     const dado = buildFunil(etapas, await lerLeads(etapas), CONFIG.gateTag)
-    await redis.set(chave, { em: Date.now(), dado }, { ex: 6 * 3600 }).catch(() => undefined)
+    await redis.set(chave, { em: Date.now(), dado }, { ex: 7 * 86400 }).catch(() => undefined)
     return dado
   }
   if (guardado?.dado) {
