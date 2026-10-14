@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { waitUntil } from '@vercel/functions'
 import {
   buildConversas, buildExecutionData, buildFunil, type KommoEtapa, type KommoLeadResumo, type LiveData,
 } from '../lib/central-data'
@@ -78,15 +79,27 @@ async function lerEtapas(): Promise<KommoEtapa[]> {
   return out
 }
 
-/** O funil contado (pequeno) fica 5 min no Redis: a leitura do Kommo pagina milhares de leads. */
+/**
+ * O funil contado (pequeno) fica no Redis: a leitura do Kommo pagina milhares de leads (≈15 s).
+ * Até 5 min devolve o guardado; depois disso devolve o guardado NA HORA e recalcula por trás
+ * (o painel nunca espera os 15 s, só na primeira leitura de todas). Guardado some em 6 h.
+ */
 async function lerFunil(): Promise<Pick<LiveData, 'funil' | 'leads'>> {
   const chave = k('central', 'funil')
-  const guardado = await redis.get<Pick<LiveData, 'funil' | 'leads'>>(chave).catch(() => null)
-  if (guardado) return guardado
-  const etapas = await lerEtapas()
-  const r = buildFunil(etapas, await lerLeads(etapas), CONFIG.gateTag)
-  await redis.set(chave, r, { ex: 300 }).catch(() => undefined)
-  return r
+  const guardado = await redis.get<{ em: number; dado: Pick<LiveData, 'funil' | 'leads'> }>(chave).catch(() => null)
+  const recalcular = async () => {
+    const etapas = await lerEtapas()
+    const dado = buildFunil(etapas, await lerLeads(etapas), CONFIG.gateTag)
+    await redis.set(chave, { em: Date.now(), dado }, { ex: 6 * 3600 }).catch(() => undefined)
+    return dado
+  }
+  if (guardado?.dado) {
+    if (Date.now() - guardado.em > 5 * 60_000 && (await redis.set(k('central', 'funil', 'lock'), '1', { nx: true, ex: 60 }).catch(() => null)) === 'OK') {
+      waitUntil(recalcular().catch(e => console.error('[central] funil não recalculou:', e)))
+    }
+    return guardado.dado
+  }
+  return recalcular()
 }
 
 /** Leads abertos das etapas (até 10 mil) + fechados nos últimos 30 dias nos dois funis. */
