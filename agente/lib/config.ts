@@ -33,6 +33,10 @@ export const CONFIG = {
   redisPrefix: process.env.REDIS_PREFIX || 'anna-cc:',
 
   webhookSecret: required('WEBHOOK_SECRET'),
+  /** a Central (painel) fala com o agente com este segredo; sem ele, só o WEBHOOK_SECRET (Central só da agência) */
+  centralSecret: process.env.CENTRAL_SECRET || '',
+  /** custo do modelo convertido em reais na Central */
+  usdBrl: Number(process.env.COST_USD_BRL || 5.4),
   /** relógio (/api/tick): QStash manda Authorization: Bearer <CRON_SECRET> */
   cronSecret: process.env.CRON_SECRET || '',
   debounceSeconds: Number(process.env.DEBOUNCE_SECONDS || 10),

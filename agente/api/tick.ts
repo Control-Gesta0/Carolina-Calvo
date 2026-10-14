@@ -2,10 +2,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import { bloqueio } from '../lib/agent'
 import { quintaMensagem } from '../lib/anna/fluxo'
+import { comTextos } from '../lib/anna/textos'
+import { baseVigente } from '../lib/base'
+import { textosDoRoteiro } from '../lib/base-core'
 import { depsProducao, montarCtx, primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
+import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { executarFu, type Regua } from '../lib/followup'
 import { humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
@@ -64,8 +68,15 @@ async function executar(job: Job): Promise<string> {
       if (b) return `msg5 cancelada: ${b}`
       const tel = { usage: emptyUsage(), guard: [] as string[] }
       const { ctx } = await montarCtx(leadId, lead)
-      const r = await quintaMensagem(ctx, depsProducao(leadId, lead, tel), job.token)
-      await logExec({ tipo: 'job', leadId, nome: lead.name, etapa: (await getState(leadId)).etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160) })
+      const base = await baseVigente()
+      const r = await comTextos(textosDoRoteiro(base.textos), () => quintaMensagem(ctx, depsProducao(leadId, lead, tel), job.token))
+      const depois = await getState(leadId)
+      const passou = r.acao.startsWith('passou para humano')
+      await logExec({
+        tipo: passou ? 'humano' : 'job', leadId, nome: lead.name, etapa: depois.etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160),
+        ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')) } : {}),
+        perfil: perfilDaRenda(depois.rendaBruta), respostaIA: r.enviado,
+      })
       return r.acao
     }, job))
   }

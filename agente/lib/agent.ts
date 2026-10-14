@@ -7,6 +7,10 @@ import { getLead, leadTags, type KommoLead } from './kommo'
 import { turno } from './anna/fluxo'
 import { depsProducao, montarCtx, type Telemetria } from './anna/producao'
 import { clearState, getState } from './state'
+import { motivoDaFrase, perfilDaRenda } from './central-data'
+import { comTextos } from './anna/textos'
+import { baseVigente } from './base'
+import { textosDoRoteiro } from './base-core'
 
 /**
  * Núcleo: gate → buffer → roteiro da Anna (código) + intérprete (LLM) → envio.
@@ -69,13 +73,20 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
       const tok = await currentToken(leadId)
       if (tok && tok !== myToken) { myToken = tok; await adoptToken(leadId, myToken); continue }
 
-      const r = await turno(ctx, deps)
+      // textos do roteiro: o que a equipe publicou pela Central (padrão se nada foi publicado)
+      const base = await baseVigente()
+      const r = await comTextos(textosDoRoteiro(base.textos), () => turno(ctx, deps))
       await markAnswered(leadId, target.id)
+      const depois = await getState(leadId)
+      const passou = r.acao.startsWith('passou para humano')
       await logExec({
-        tipo: r.acao.startsWith('agendou') ? 'agendou' : r.acao.startsWith('passou para humano') ? 'humano' : r.acao.startsWith('abriu') ? 'inicio' : 'resposta',
-        leadId, nome, etapa: (await getState(leadId)).etapa, ms: Date.now() - t0,
+        tipo: r.acao.startsWith('agendou') ? 'agendou' : passou ? 'humano' : r.acao.startsWith('abriu') ? 'inicio' : 'resposta',
+        leadId, nome, etapa: depois.etapa, ms: Date.now() - t0,
         tools: [r.acao, ...(r.leitura ? [`intenção: ${r.leitura.intencao}`] : [])], guard: tel.guard,
         usage: tel.usage.calls ? tel.usage : undefined, detalhe: r.enviado?.slice(0, 160),
+        ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')) } : {}),
+        perfil: perfilDaRenda(depois.rendaBruta),
+        turnoLead: ctx.textoTurno, respostaIA: r.enviado,
       })
       console.log(`[anna] lead ${leadId} em ${Date.now() - t0}ms: ${r.acao}`)
       // Chegou mensagem durante o turno? O webhook dela não pegou o lock: o dono re-checa aqui

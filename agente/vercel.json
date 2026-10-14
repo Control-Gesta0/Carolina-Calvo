@@ -1,11 +1,39 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/inbound.ts": { "maxDuration": 300, "includeFiles": "{prompts/**,config/**}" },
-    "api/tick.ts": { "maxDuration": 300, "includeFiles": "{prompts/**,config/**}" },
-    "api/lead.ts": { "maxDuration": 120, "includeFiles": "config/**" },
-    "api/validate.ts": { "maxDuration": 60, "includeFiles": "{prompts/**,config/**}" },
-    "api/executions.ts": { "maxDuration": 30 },
-    "api/salesbot.ts": { "maxDuration": 30 }
+    "api/inbound.ts": {
+      "maxDuration": 300,
+      "includeFiles": "{prompts/**,config/**}"
+    },
+    "api/tick.ts": {
+      "maxDuration": 300,
+      "includeFiles": "{prompts/**,config/**}"
+    },
+    "api/lead.ts": {
+      "maxDuration": 120,
+      "includeFiles": "config/**"
+    },
+    "api/validate.ts": {
+      "maxDuration": 60,
+      "includeFiles": "{prompts/**,config/**}"
+    },
+    "api/executions.ts": {
+      "maxDuration": 30
+    },
+    "api/salesbot.ts": {
+      "maxDuration": 30
+    },
+    "api/central.ts": {
+      "maxDuration": 60,
+      "includeFiles": "{prompts/**,config/**}"
+    },
+    "api/base.ts": {
+      "maxDuration": 300,
+      "includeFiles": "{prompts/**,config/**}"
+    },
+    "api/teste.ts": {
+      "maxDuration": 120,
+      "includeFiles": "{prompts/**,config/**}"
+    }
   }
 }

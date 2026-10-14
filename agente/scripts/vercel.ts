@@ -1,8 +1,9 @@
 /**
- * Publica a Anna na Vercel pela API, sem tela.
+ * Publica a Anna (ou a Central dela) na Vercel pela API, sem tela.
  *   npx tsx scripts/vercel.ts               → mostra times, o projeto e o último deploy (só lê)
  *   npx tsx scripts/vercel.ts --publicar    → cria o projeto ligado ao GitHub (se não existir), grava as
  *                                            variáveis do ambiente/.env.local e faz o deploy de produção
+ *   --central                               → o mesmo para o painel (projeto central-carolina-calvo, pasta central/)
  * Precisa de VERCEL_TOKEN (e VERCEL_TEAM = slug do time, se a conta tiver mais de um).
  * Só os NOMES das variáveis aparecem na saída.
  */
@@ -10,11 +11,13 @@ import { loadEnv } from './env'
 
 loadEnv()
 const API = 'https://api.vercel.com'
-const NOME = 'anna-carolina-calvo'
+const CENTRAL = process.argv.includes('--central')
+const NOME = CENTRAL ? 'central-carolina-calvo' : 'anna-carolina-calvo'
+const RAIZ = CENTRAL ? 'central' : 'agente'
 const REPO = { org: 'Control-Gesta0', repo: 'Carolina-Calvo', ref: 'claude/gallant-johnson-bytcbo' }
-const CHAVES = [
+const CHAVES = CENTRAL ? ['AGENT_URL', 'AGENT_SECRET', 'APP_PASSWORD', 'AUTH_SECRET'] : [
   'KOMMO_DOMAIN', 'KOMMO_TOKEN', 'KOMMO_ACCOUNT_ID', 'KOMMO_BOT_ID', 'OPENAI_API_KEY',
-  'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'REDIS_PREFIX', 'WEBHOOK_SECRET', 'CRON_SECRET',
+  'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'REDIS_PREFIX', 'WEBHOOK_SECRET', 'CRON_SECRET', 'CENTRAL_SECRET', 'COST_USD_BRL',
   'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'GOOGLE_CALENDAR_ID',
   'GATE_TAG', 'HUMAN_TAG', 'TEST_LEAD_IDS', 'AUTO_GATE_FORM_LEADS', 'POS_PROPOSTA_ATIVO',
 ]
@@ -51,7 +54,7 @@ async function main() {
 
   if (proj.status !== 200) {
     proj = await v('POST', '/v11/projects', {
-      name: NOME, framework: null, rootDirectory: 'agente',
+      name: NOME, framework: CENTRAL ? 'nextjs' : null, rootDirectory: RAIZ,
       gitRepository: { type: 'github', repo: `${REPO.org}/${REPO.repo}` },
     })
     if (proj.status >= 300) throw new Error(`criar projeto: ${proj.status} ${JSON.stringify(proj.json).slice(0, 400)}`)

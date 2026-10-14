@@ -11,6 +11,7 @@ import { getState, patchState, type LeadState } from '../state'
 import { sendReply } from '../transport'
 import { AGENDA, proximoSlot, type Slot } from './agenda'
 import type { Ctx, Deps } from './fluxo'
+import { baseVigente } from '../base'
 import { createInterprete } from './interprete'
 import crypto from 'crypto'
 
@@ -20,7 +21,8 @@ import crypto from 'crypto'
  * fail-closed: lead fora do SDR, de cliente ou em etapa da equipe não é movido.
  */
 
-const interprete = createInterprete({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel })
+// o prompt publicado na base (fatos e informações que a equipe pediu pela Central), lido a cada turno com 10 s de cache
+const interprete = createInterprete({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel, prompt: async () => (await baseVigente()).prompt })
 
 /** "MARIA DOLORES DA SILVA" → "Maria". Nome que não parece nome vira vazio. */
 export function primeiroNome(nome: string): string {

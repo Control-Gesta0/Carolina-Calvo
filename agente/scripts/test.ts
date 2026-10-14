@@ -242,6 +242,67 @@ async function main() {
   }
   void PIPELINES
 
+  console.log('\n— Base editável da Central (painel v5)')
+  {
+    const B = await import('../lib/base-core')
+    const { promptTemplate, prompt } = await import('../lib/anna/interprete')
+    const { comTextos, TEXTOS_PADRAO } = await import('../lib/anna/textos')
+    const tpl = promptTemplate()
+    const padrao = B.textosPadrao(tpl)
+    eq('todo item da base tem texto padrão', B.ITENS.filter(i => !padrao[i.id]).map(i => i.id), [])
+    eq('os textos padrão passam nas travas da base', B.ITENS.map(i => [i.id, B.validarTexto(i.id, padrao[i.id])]).filter(([, p]) => (p as string[]).length), [])
+    eq('marcadores nunca chegam ao modelo', /<!--/.test(B.renderPrompt(tpl)), false)
+    eq('sem edição o prompt é o arquivo sem os marcadores', B.renderPrompt(tpl), tpl.replace('<!-- base:fatos -->\n', '').replace('\n<!-- /base -->', ''))
+    eq('prompt() usa o render padrão', prompt(), B.renderPrompt(tpl))
+    eq('fatos editados entram no prompt', B.renderPrompt(tpl, { fatos: '- Fato novo.' }).includes('- Fato novo.\n\n## Como escrever'), true)
+    eq('informação acrescentada vira seção no fim', B.renderPrompt(tpl, {}, [{ id: 'extra_abcd1234', titulo: 'Sábados', texto: 'O escritório não abre aos sábados.' }]).trimEnd().endsWith('**Sábados**\nO escritório não abre aos sábados.'), true)
+    eq('textos do roteiro = os do código', Object.keys(B.textosDoRoteiro(padrao)).sort(), Object.keys(TEXTOS_PADRAO).sort())
+    eq('comTextos troca o texto só dentro da execução', [comTextos({ mensagem4: 'Novo texto.' }, () => TEXTOS.mensagem4), TEXTOS.mensagem4 === TEXTOS_PADRAO.mensagem4], ['Novo texto.', true])
+    eq('variável preenchida no texto editado', comTextos({ nova_oferta: 'Que tal {quando}?' }, () => TEXTOS.novaOferta('AMANHÃ às 15:00')), 'Que tal AMANHÃ às 15:00?')
+    eq('retomada editada vale na pergunta pendente', await comTextos({ pendente_q1: 'Qual opção: 1, 2 ou 3?' }, async () => (await import('../lib/anna/interprete')).PENDENTE.q1({})), 'Qual opção: 1, 2 ou 3?')
+    const erros = (id: string, t: string) => B.validarTexto(id, t).length > 0
+    eq('trava: oferta sem {quando}', erros('mensagem5', 'Ela pode atender você amanhã. Posso agendar?'), true)
+    eq('trava: variável que não existe', erros('agendado', '*Agendado!* {quando} com {nome}. Link: {link}'), true)
+    eq('trava: pergunta depois da passagem', erros('passa_humano', 'Vou chamar a equipe, tudo bem?'), true)
+    eq('trava: emoji', erros('desistiu', 'Tudo bem 🙂'), true)
+    eq('trava: dizer que é IA', erros('pergunta2', 'Sou uma assistente virtual. Qual é a sua renda?'), true)
+    eq('trava: honorários com valor', erros('fatos', '- Os honorários são de R$ 3.000.'), false)
+    eq('trava: honorários com valor em mensagem', erros('mensagem4', 'Os honorários ficam em R$ 3.000, combinado.'), true)
+    eq('trava: travessão', erros('mensagem4', 'A Dra. analisa — e volto a falar com você.'), true)
+    eq('a confirmação pode citar contracheque em mãos', B.validarTexto('agendado', padrao.agendado), [])
+    eq('troca exata: trecho único', B.aplicarTroca('em alguns minutos', 'alguns', 'poucos').texto, 'em poucos minutos')
+    eq('troca exata: trecho repetido é recusado', !!B.aplicarTroca('a a', 'a', 'b').erro, true)
+  }
+
+  console.log('\n— Painel: diário → números (zero tokens)')
+  {
+    const C = await import('../lib/central-data')
+    const agora = Date.parse('2026-10-14T15:00:00Z')
+    const at = (min: number) => new Date(agora - min * 60_000).toISOString()
+    const entradas = [
+      { at: at(5), tipo: 'agendou', leadId: 1, nome: 'Ana', perfil: 'acima_10k', respostaIA: '*Agendado!* Quarta-feira, 14/10, às 15:00', usage: { input: 1000, cached: 0, output: 100, calls: 1 }, custoUsd: 0.001 },
+      { at: at(40), tipo: 'job', leadId: 1, nome: 'Ana', perfil: 'acima_10k' },
+      { at: at(70), tipo: 'resposta', leadId: 1, nome: 'Ana', perfil: 'acima_10k' },
+      { at: at(10), tipo: 'humano', leadId: 2, nome: 'Bia', porta: 'perguntou_robo', perfil: 'abaixo_10k' },
+      { at: at(20), tipo: 'resposta', leadId: 3, nome: 'Caio', perfil: 'abaixo_10k' },
+      { at: at(30), tipo: 'followup', leadId: 4, nome: 'Duda' },
+      { at: at(50), tipo: 'pulou', leadId: 5, detalhe: 'a equipe falou pelo Kommo' },
+      { at: at(60), tipo: 'reset', leadId: 6 },
+    ] as unknown as import('../lib/execlog').ExecEntry[]
+    const d = C.buildExecutionData(entradas, 5.4, 'gpt-5.4-mini', agora, 'https://x.kommo.com')
+    eq('marcos de hoje', d.marcos.hoje, { atendidos: 3, rendaInformada: 3, acima10k: 1, abaixo10k: 2, agendados: 1, passagens: 1, followups: 1 })
+    eq('motivo da passagem', d.motivos.hoje, [{ motivo: 'perguntou_robo', rotulo: 'Perguntou se é robô', n: 1 }])
+    eq('agendamento com link do lead', [d.agendamentos.length, d.agendamentos[0].link], [1, 'https://x.kommo.com/leads/detail/1'])
+    eq('custo em reais', d.financeiro.hoje, 0.0054)
+    eq('toda frase de passagem do fluxo tem motivo', ['perguntou se é robô', 'pediu atendimento humano', 'já tem advogado no caso', 'já é cliente', 'assunto de outra área', 'pediu para remarcar', 'agenda indisponível', 'sem horário livre nos próximos dias', 'renda abaixo de 10 mil pediu reunião'].map(C.motivoDaFrase).filter(m => m === 'outro'), [])
+    eq('faixa de renda', [C.perfilDaRenda(10000), C.perfilDaRenda(9999), C.perfilDaRenda(null)], ['acima_10k', 'abaixo_10k', undefined])
+    const conv = C.buildConversas(d.execucoes, agora)
+    eq('estado das conversas (reset de teste conta como com a Anna)', conv.grupos, { iaAtendendo: 4, comHumano: 2, foraDaIA: 0 })
+    const R = await import('../lib/conversas-reais')
+    const reais = R.listarConversas([{ at: at(5), tipo: 'humano', leadId: 2, nome: 'Bia', porta: 'perguntou_robo', turnoLead: 'é robô?', respostaIA: 'Vou pedir para alguém da equipe.' }] as unknown as import('../lib/execlog').ExecEntry[])
+    eq('conversa real para corrigir', [reais[0].contato, reais[0].passou], ['2', 'perguntou_robo'])
+  }
+
   console.log(`\n${falhas ? `❌ ${falhas} de ${total} falharam` : `✅ ${total}/${total} passaram`}`)
   process.exit(falhas ? 1 : 0)
 }

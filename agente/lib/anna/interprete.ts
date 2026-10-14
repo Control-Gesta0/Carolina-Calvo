@@ -5,6 +5,8 @@ import { addUsage, emptyUsage, type Usage } from '../execlog'
 import { checkReply, semTravessao } from '../guards'
 import type { ChatMsg } from '../history'
 import type { Etapa, LeadState } from '../state'
+import { renderPrompt } from '../base-core'
+import { texto } from './textos'
 
 /**
  * O intérprete: lê o turno do lead e devolve dados estruturados (JSON com
@@ -42,12 +44,12 @@ export interface Entrada {
 
 /** A pergunta em aberto em cada etapa ('' = nenhuma). Vai para o lead: o código emenda depois da resposta livre. */
 export const PENDENTE: Record<Etapa, (s: LeadState, quando?: string) => string> = {
-  q1: () => 'Qual das opções você quer saber: 1, 2 ou 3?',
-  q2: () => 'Pode me passar a sua renda bruta, o valor líquido e quanto o banco desconta da sua conta corrente?',
-  q3: () => 'Concorda que, sem esses descontos, seria um alívio financeiro?',
+  q1: () => texto('pendente_q1'),
+  q2: () => texto('pendente_q2'),
+  q3: () => texto('pendente_q3'),
   analise: () => '',
   oferta: (_s, quando) => `Posso agendar${quando ? ` para ${quando}` : ''}?`,
-  preferencia: () => 'Você prefere de manhã ou à tarde?',
+  preferencia: () => texto('pendente_preferencia'),
   agendado: () => '',
   sem_reuniao: () => '',
   humano: () => '',
@@ -81,15 +83,18 @@ const SCHEMA = {
   },
 } as const
 
-let promptCache: string | null = null
-/** O prompt da Anna, do jeito que o bundle da Vercel o entrega (o validate usa o mesmo caminho). */
-export function prompt(): string {
-  if (promptCache) return promptCache
+let templateCache: string | null = null
+/** O arquivo prompts/anna.md COM os marcadores da base, do jeito que o bundle da Vercel o entrega. */
+export function promptTemplate(): string {
+  if (templateCache) return templateCache
   for (const base of [process.cwd(), path.join(__dirname, '..', '..'), path.join(__dirname, '..', '..', '..')]) {
-    try { promptCache = fs.readFileSync(path.join(base, 'prompts', 'anna.md'), 'utf-8'); return promptCache } catch { /* próximo */ }
+    try { templateCache = fs.readFileSync(path.join(base, 'prompts', 'anna.md'), 'utf-8'); return templateCache } catch { /* próximo */ }
   }
   throw new Error('prompts/anna.md não encontrado no bundle — confira includeFiles no vercel.json')
 }
+
+/** O prompt padrão (sem edição da equipe e sem os marcadores). O validate usa o mesmo caminho. */
+export const prompt = (): string => renderPrompt(promptTemplate())
 
 function contexto(e: Entrada): string {
   const hoje = e.agora.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -128,7 +133,8 @@ export function violacoes(texto: string) {
   return checkReply(texto)
 }
 
-export function createInterprete(opts: { apiKey: string; model: string }) {
+/** prompt: o publicado na base (produção) ou o candidato (laboratório e exame); sem ele, o padrão. */
+export function createInterprete(opts: { apiKey: string; model: string; prompt?: () => string | Promise<string> }) {
   const openai = new OpenAI({ apiKey: opts.apiKey })
 
   async function chamar(messages: Msg[], usage: Usage): Promise<Leitura> {
@@ -146,7 +152,7 @@ export function createInterprete(opts: { apiKey: string; model: string }) {
   async function interpretar(e: Entrada): Promise<{ leitura: Leitura; usage: Usage; guard: string[] }> {
     const usage = emptyUsage()
     const messages: Msg[] = [
-      { role: 'system', content: prompt() },
+      { role: 'system', content: opts.prompt ? await opts.prompt() : prompt() },
       { role: 'system', content: contexto(e) },
       ...conversaParaMensagens(e.conversa),
     ]

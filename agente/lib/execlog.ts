@@ -45,11 +45,30 @@ export interface ExecEntry {
   custoUsd?: number | null
   urgente?: boolean
   detalhe?: string
+  /** na passagem para a equipe: o motivo (perguntou_robo, pediu_humano, remarcar…, ver central-data.ts) */
+  porta?: string
+  /** faixa da renda bruta informada, quando já se sabe */
+  perfil?: 'acima_10k' | 'abaixo_10k'
+  /** o que o lead escreveu neste turno (PII mascarada): replay na Central */
+  turnoLead?: string
+  /** o que a Anna enviou (PII mascarada) */
+  respostaIA?: string
+}
+
+/** CPF, CNPJ, telefone e e-mail não ficam no diário (a Central mostra conversas reais). */
+export function mascararPII(t: string): string {
+  return t
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '[e-mail]')
+    .replace(/\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, '[cnpj]')
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '[cpf]')
+    .replace(/(?:\+?55\s?)?\(?\b\d{2}\)?\s?9?\d{4}[-\s]?\d{4}\b/g, '[telefone]')
 }
 
 export async function logExec(e: Omit<ExecEntry, 'at'>): Promise<void> {
   const entry: ExecEntry = { at: new Date().toISOString(), ...e }
   if (e.usage && e.custoUsd === undefined) entry.custoUsd = costUsd(CONFIG.llmModel, e.usage)
+  if (entry.turnoLead) entry.turnoLead = mascararPII(entry.turnoLead).slice(0, 2000)
+  if (entry.respostaIA) entry.respostaIA = mascararPII(entry.respostaIA).slice(0, 3000)
   try {
     await redis.lpush(k('execlog'), entry)
     await redis.ltrim(k('execlog'), 0, 1999)
