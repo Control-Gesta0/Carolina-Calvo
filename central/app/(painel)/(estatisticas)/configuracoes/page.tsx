@@ -27,7 +27,7 @@ export default function Configuracoes() {
           <Linha icon={Server} titulo="Agente (diário de execuções)" ok={!!exec && !execErro && !exec.saude24h.erros} carregando={!exec && !execErro}
             texto={execErro || (exec ? `${exec.saude24h.erros ? `${exec.saude24h.erros} erro(s) em ${exec.saude24h.total} execuções nas últimas 24h` : `sem erro nas últimas 24h (${exec.saude24h.total} execuções)`} · ${exec.cobertura.registros} no diário · modelo ${exec.modelo}` : 'verificando…')} />
           <Linha icon={Database} titulo="CRM (Kommo)" ok={crmOk} carregando={carregando}
-            texto={liveErro || (live ? (live.saude.crmOk ? `Mapa conferido com a conta: funis ${live.pipeline.nome}, campos da Anna, tags e modelos batem · ${live.leads.abertas} leads abertos` : `${live.saude.problemas.length} ponto(s) para conferir no Kommo`) : 'verificando…')} />
+            texto={liveErro || (live ? (live.saude.crmOk ? `Mapa conferido com a conta: funis, etapas, campos da Anna e modelos da Meta batem · ${live.leads.abertas} leads abertos em ${live.pipeline.nome}` : `${live.saude.problemas.length} ponto(s) para conferir no Kommo`) : 'verificando…')} />
           <Linha icon={Tags} titulo="Quem a Anna atende" ok neutro carregando={!live}
             texto={live ? regraGate(live.regras) : 'verificando…'} />
         </div>

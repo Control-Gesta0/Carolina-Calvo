@@ -48,10 +48,10 @@ export function buildBriefing(live: LiveData | null, data: ExecutionData | null)
     decisions.push({
       id: 'urgentes', tone: 'critical',
       title: `${urgentes.length} ${plural(urgentes.length, 'lead espera', 'leads esperam')} a equipe para acertar o horário`,
-      evidence: [
+      evidence: `${urgentes.map(p => p.nome).slice(0, 3).join(', ')}${urgentes.length > 3 ? ` e mais ${urgentes.length - 3}` : ''}. ` + [
         remarcar ? `${remarcar} ${plural(remarcar, 'pediu', 'pediram')} para remarcar` : '',
-        semAgenda ? `${semAgenda} sem horário livre na agenda da Dra.` : '',
-      ].filter(Boolean).join(' · ') + `: ${urgentes.map(p => p.nome).slice(0, 3).join(', ')}.`,
+        semAgenda ? `${semAgenda} ${plural(semAgenda, 'ficou', 'ficaram')} sem horário livre na agenda da Dra.` : '',
+      ].filter(Boolean).join(', ') + '.',
       impact: 'Reunião marcada pode estar perto, e quem pediu horário esfria rápido. A tarefa para a Dra. tem prazo de 60 minutos.',
       action: 'Ver passagens', href: '/operacao?aba=passagens',
     })

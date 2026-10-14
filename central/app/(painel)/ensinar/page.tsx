@@ -8,7 +8,7 @@ import { PageIntro } from '@/components/ProductUI'
 import RefreshButton from '@/components/RefreshButton'
 import CorrigirPainel from '@/components/CorrigirPainel'
 import MudancasBase from '@/components/MudancasBase'
-import { brl, dataHora, MOTIVO_ROTULO } from '@/lib/format'
+import { brl, dataHora, MOTIVO_ROTULO, PERFIL_ROTULO } from '@/lib/format'
 import { esquecer } from '@/lib/hooks'
 import type { BaseEstado, BaseItem, ConversaResumo, Exame, MsgConversa, TurnoReal } from '@/lib/types'
 
@@ -24,22 +24,31 @@ const ALIAS: Record<string, View> = { textos: 'sabe', conduz: 'sabe', historico:
 /** o resultado do último exame some do topo depois de 15 minutos (a versão no ar já diz o que vale) */
 const EXAME_RECENTE = 15 * 60_000
 
+/** Cenários do exame (ids de agente/evals/cenarios.ts). */
 const CENARIO: Record<string, string> = {
-  'cliente-maquininha': 'Cliente com problema na maquininha',
-  'cliente-estorno-hoje': 'Estorno de venda de hoje',
-  'cliente-estorno-anterior': 'Cancelamento de venda de dias anteriores',
-  'cliente-portal-split': 'Dúvida no portal (split)',
-  'atendente-direto': 'Pede um atendente logo de cara',
-  'texto-livre-cliente': 'Cliente explica o problema sem menu',
-  'nao-cliente-qualificacao': 'Não cliente: as seis perguntas',
-  'nao-cliente-pede-humano': 'Não cliente pede uma pessoa',
-  'nao-cliente-pede-taxa': 'Não cliente pergunta a taxa',
-  'cliente-pergunta-taxa': 'Cliente pergunta a taxa',
-  'fora-do-horario-estorno': 'Fora do horário',
-  'cpf-invalido': 'CPF inválido',
-  'documento-no-cadastro-nao-pergunta': 'Documento já no cadastro',
-  'nao-cliente-documento-no-cadastro': 'Não cliente com documento no cadastro',
+  'q1-as-duas': '1ª pergunta: quer as duas opções',
+  'q1-numero': '1ª pergunta: responde só o número',
+  'q1-desiste': '1ª pergunta: não quer continuar',
+  'q1-preco': '1ª pergunta: quanto custa a consulta',
+  'q1-endereco': '1ª pergunta: onde fica o escritório',
+  'q2-tudo': '2ª pergunta: manda bruto, líquido e desconto',
+  'q2-parcial': '2ª pergunta: manda só o bruto',
+  'q2-sem-desconto-conta': '2ª pergunta: sem desconto na conta',
+  'q2-documento': '2ª pergunta: precisa mandar contracheque?',
+  'q2-valor-acao': '2ª pergunta: quanto custa a ação',
+  'q3-concorda': '3ª mensagem: concorda',
+  'q3-garantia': '3ª mensagem: pede garantia de resultado',
+  'oferta-aceita': 'Oferta: aceita o horário',
+  'oferta-recusa': 'Oferta: não pode no horário',
+  'oferta-manha': 'Oferta: só pode de manhã',
+  'preferencia-sexta-tarde': 'Manhã ou tarde: sexta à tarde',
+  'pede-doutora': 'Quer falar direto com a Dra.',
+  'robo': 'Pergunta se é robô',
+  'advogado': 'Já tem advogado no processo',
+  'icms': 'Assunto de outra área (ICMS)',
+  'agendado-remarcar': 'Reunião marcada: pede para remarcar',
 }
+const N_CENARIOS = Object.keys(CENARIO).length
 
 export default function Ensinar() {
   const [view, setViewBruto] = useState<View>('conversa')
@@ -143,7 +152,7 @@ export default function Ensinar() {
 
   return (
     <div className="space-y-8">
-      <PageIntro eyebrow="ENSINAR" title="O que a assistente" accent="sabe." description="Peça em português, com arquivo ou link se quiser. A IA muda o rascunho e o exame automático decide se vale no WhatsApp." action={<RefreshButton />} />
+      <PageIntro eyebrow="ENSINAR" title="O que a Anna" accent="sabe." description="Peça em português, com arquivo ou link se quiser. A IA muda o rascunho e o exame automático decide se vale no WhatsApp." action={<RefreshButton />} />
 
       {dados?.demo && <p className="text-[12px] text-warning">Modo demonstração: os textos são os de verdade, mas pedir mudança e publicar precisam do agente.</p>}
       {erro && <div className="panel p-5 text-[13px] text-warning">Não consegui ler a base: {erro}</div>}
@@ -156,9 +165,9 @@ export default function Ensinar() {
           <div className="min-w-0 flex-1">
             <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-cyan">{dados ? `Versão ${dados.versao} no ar` : 'Carregando'}{dados?.publicadoEm ? ` · publicada em ${dataHora(dados.publicadoEm)}${dados.nota ? ` · ${dados.nota}` : ''}` : dados ? ' · textos originais' : ''}</div>
             <h2 className="font-impact font-bold text-[18px] md:text-[20px] text-ink mt-2">
-              {!dados ? 'Lendo a base…' : alteracoes ? `${alteracoes} ${alteracoes === 1 ? 'mudança da IA espera' : 'mudanças da IA esperam'} o exame para valer.` : 'É isso que a assistente usa agora.'}
+              {!dados ? 'Lendo a base…' : alteracoes ? `${alteracoes} ${alteracoes === 1 ? 'mudança da IA espera' : 'mudanças da IA esperam'} o exame para valer.` : 'É isso que a Anna usa agora.'}
             </h2>
-            {alteracoes > 0 && <p className="text-[12.5px] text-body-mid leading-relaxed mt-1.5">O exame roda 14 conversas de teste com o rascunho (menos de 1 minuto) e só publica se todas passarem.</p>}
+            {alteracoes > 0 && <p className="text-[12.5px] text-body-mid leading-relaxed mt-1.5">O exame roda {N_CENARIOS} conversas de teste com o rascunho (uns 2 minutos) e só publica se todas passarem.</p>}
           </div>
         </div>
 
@@ -209,7 +218,7 @@ export default function Ensinar() {
 
       {abertas.has('sabe') && (
         <div className={`space-y-8 ${view === 'sabe' ? '' : 'hidden'}`}>
-          <p className="text-[12.5px] text-body-muted">Só leitura: para mudar, peça em Pedir mudança. Clique num texto para abrir. O roteiro e as travas estão em <Link href="/como-usar?ver=fluxo" className="text-cyan">Como usar › Fluxo do cliente</Link>.</p>
+          <p className="text-[12.5px] text-body-muted">Só leitura: para mudar, peça em Pedir mudança. Clique num texto para abrir. O roteiro e as travas estão em <Link href="/como-usar?ver=fluxo" className="text-cyan">Como usar › Fluxo do lead</Link>.</p>
           {grupos.map(([g, titulo]) => (
             <section key={g} className="space-y-3">
               <h2 className="font-impact font-bold text-[18px] md:text-[20px] text-ink">{titulo}</h2>
@@ -270,10 +279,10 @@ function Item({ item, post, bloqueado, destacado }: { item: BaseItem; post: Post
 }
 
 const EXEMPLOS = [
-  'O split D+0 agora pode ser criado até 13h',
-  'Acrescenta que a maquininha aceita Pix por QR Code',
-  'O encerramento do suporte está frio, deixa mais acolhedor',
-  'Tira a informação sobre o horário de sábado',
+  'Na 4ª mensagem, troca "em alguns minutos" por "em instantes"',
+  'A retomada da 2ª pergunta está seca, deixa mais educada',
+  'Quero que a Anna marque reunião para quem ganha a partir de 8 mil',
+  'A Anna pode dizer quanto custa a ação?',
 ]
 
 const DESTINO: Record<string, { rotulo: string; cor: string }> = {
@@ -322,7 +331,7 @@ function Conversa({ dados, post, bloqueado }: { dados: (BaseEstado & { demo?: bo
     setErro(null)
     const novos: Arquivo[] = []
     for (const f of Array.from(lista)) {
-      const ext = (f.name.split('.').pop() || '').toLowerCase()
+      const ext = (f.name.match(/\.([^.]+)$/)?.[1] || '').toLowerCase()
       if (!ACEITOS.includes(ext)) { setErro(`"${f.name}": formato não aceito. Use PDF, Word (.docx), texto, CSV ou imagem${ext === 'xlsx' || ext === 'xls' ? ' (planilha: salve como CSV)' : ''}.`); continue }
       if (arquivos.length + novos.length >= 3) { setErro('No máximo 3 arquivos por pedido.'); break }
       const total = [...arquivos, ...novos].reduce((n, a) => n + a.tamanho, 0) + f.size
@@ -426,13 +435,13 @@ function Conversa({ dados, post, bloqueado }: { dados: (BaseEstado & { demo?: bo
             <input ref={seletor} type="file" multiple hidden accept={ACEITOS.map(e => `.${e}`).join(',')} onChange={e => adicionar(e.target.files)} />
             <button type="button" onClick={() => seletor.current?.click()} disabled={bloqueado || enviando || arquivos.length >= 3} aria-label="Anexar arquivo" title="Anexar arquivo (PDF, Word, texto, CSV ou imagem)"
               className="px-3 rounded-[10px] border border-line-soft text-body-mid hover:text-ink hover:border-cyan/25 disabled:opacity-30"><Paperclip size={16} /></button>
-            <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2} disabled={bloqueado} placeholder={arquivos.length ? 'O que a IA deve fazer com o material? (opcional)' : 'Ex.: o horário do D+0 mudou para 13h · acrescenta que aceitamos Pix por QR Code'}
+            <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={2} disabled={bloqueado} placeholder={arquivos.length ? 'O que a IA deve fazer com o material? (opcional)' : 'Ex.: na confirmação, pede para o lead entrar no Meet 5 minutos antes · acrescenta o horário de atendimento da equipe por telefone'}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
               className="campo flex-1 min-w-0 rounded-[10px] px-3.5 py-2.5 text-[13px] resize-none" />
             <button type="button" onClick={() => enviar()} disabled={(!texto.trim() && !arquivos.length) || enviando || bloqueado} aria-label="Enviar pedido"
               className="px-4 rounded-[10px] border border-cyan/30 bg-cyan/[0.12] text-cyan disabled:opacity-30">{enviando ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}</button>
           </div>
-          <p className="text-[10.5px] text-body-faint mt-2 leading-relaxed">Pode anexar PDF, Word, texto, CSV ou imagem (até 3 arquivos, 3 MB, ou arraste para cá) ou colar um link de site, Google Docs ou Planilhas. Taxa e preço não entram; regra de atendimento vira pedido para a Control Gestão{dados?.pedidosControlGestao ? ` (${dados.pedidosControlGestao} registrado${dados.pedidosControlGestao === 1 ? '' : 's'})` : ''}.</p>
+          <p className="text-[10.5px] text-body-faint mt-2 leading-relaxed">Pode anexar PDF, Word, texto, CSV ou imagem (até 3 arquivos, 3 MB, ou arraste para cá) ou colar um link de site, Google Docs ou Planilhas. Honorários, valor da ação, promessa de resultado e pedido de documento não entram; regra do roteiro (R$ 10 mil, horários da agenda, follow-ups, colunas e tags) vira pedido para a Control Gestão{dados?.pedidosControlGestao ? ` (${dados.pedidosControlGestao} registrado${dados.pedidosControlGestao === 1 ? '' : 's'})` : ''}.</p>
         </div>
       </div>
     </section>
@@ -453,6 +462,13 @@ function ChipMaterial({ a }: { a: NonNullable<MsgConversa['anexos']>[number] }) 
   return a.url
     ? <a href={a.url} target="_blank" rel="noopener noreferrer" title={a.erro || a.url} className={`${cls} hover:text-ink`}>{corpo}</a>
     : <span title={a.erro || a.tipo} className={cls}>{corpo}</span>
+}
+
+/** O que cada resposta real foi, além de uma resposta comum. */
+const TIPO_TURNO: Record<string, string> = {
+  inicio: ' · 1ª pergunta',
+  agendou: ' · reunião marcada',
+  job: ' · 5ª mensagem, depois da pausa de 30 min',
 }
 
 /** Conversas reais do WhatsApp (do diário, com PII mascarada): abrir, ver cada resposta e corrigir. */
@@ -504,14 +520,14 @@ function ConversasReais({ onMudou, bloqueado }: { onMudou: () => void; bloqueado
                 </div>
                 <p className="text-[11.5px] text-body-mid truncate mt-1">{c.previa}</p>
                 <div className="flex items-center gap-2 mt-1.5">
-                  {c.perfil && <span className="font-mono text-[8.5px] text-body-faint">{c.perfil === 'cliente' ? 'CLIENTE' : 'NÃO CLIENTE'}</span>}
+                  {c.perfil && <span className="font-mono text-[8.5px] text-body-faint">{PERFIL_ROTULO[c.perfil]}</span>}
                   {c.passou && <span className="font-mono text-[8.5px] text-purple-400">PASSOU · {(MOTIVO_ROTULO[c.passou] || c.passou).toUpperCase()}</span>}
                   <span className="font-mono text-[8.5px] text-body-faint ml-auto">{c.respostas} resp.</span>
                 </div>
               </button>
             ))}
             {lista && !filtradas.length && (
-              <p className="p-6 text-center text-[12px] text-body-muted">{lista.length ? 'Nada com essa busca.' : 'Ainda não há conversa real com texto guardado. Quando a assistente atender pelo WhatsApp, as conversas aparecem aqui.'}</p>
+              <p className="p-6 text-center text-[12px] text-body-muted">{lista.length ? 'Nada com essa busca.' : 'Ainda não há conversa real com texto guardado. Quando a Anna atender pelo WhatsApp, as conversas aparecem aqui.'}</p>
             )}
             {!lista && !erro && <div className="h-40 animate-pulse surface-alt" />}
           </div>
@@ -540,7 +556,7 @@ function ConversasReais({ onMudou, bloqueado }: { onMudou: () => void; bloqueado
                         <div className="rounded-[12px] rounded-bl-[4px] px-3.5 py-2.5 surface-alt border border-line-soft text-[13px] text-ink whitespace-pre-wrap break-words">{t.resposta}</div>
                         <div className="flex items-center gap-3 flex-wrap mt-1">
                           <span className="font-mono text-[9px] text-body-faint">
-                            {dataHora(t.ts)}{t.tipo === 'aviso' ? ' · aviso automático de fora do horário' : ''}{t.tipo === 'passou' ? ` · passou para a equipe (${MOTIVO_ROTULO[t.motivo || ''] || t.motivo || 'outro'})` : ''}{t.travas.length ? ` · ${t.travas.length} trava(s)` : ''}
+                            {dataHora(t.ts)}{TIPO_TURNO[t.tipo] || ''}{t.tipo === 'humano' ? ` · passou para a equipe (${MOTIVO_ROTULO[t.motivo || ''] || t.motivo || 'outro'})` : ''}{t.travas.length ? ` · ${t.travas.length} trava(s)` : ''}
                           </span>
                           {!bloqueado && (
                             <button type="button" onClick={() => setCorrigindo(t)} className={`inline-flex items-center gap-1 text-[10.5px] font-medium ${correcoes[chave(t)] ? 'text-success' : 'text-cyan'} hover:underline`}>
@@ -588,7 +604,7 @@ function ResultadoExame({ exame: e }: { exame: Exame }) {
     return (
       <div className="border-t border-line-soft px-5 md:px-6 py-4 flex items-start gap-3">
         <CheckCircle2 size={16} className="text-success shrink-0 mt-0.5" />
-        <p className="text-[12.5px] text-body-mid leading-relaxed"><strong className="text-ink">Publicado: versão {e.versao}.</strong> Passou nos 14 cenários{e.instaveis?.length ? ` (${e.instaveis.length} precisou de nova tentativa e passou nas duas)` : ''}{e.fim ? `, em ${dataHora(e.fim)}` : ''}. A assistente já usa os textos novos no WhatsApp.</p>
+        <p className="text-[12.5px] text-body-mid leading-relaxed"><strong className="text-ink">Publicado: versão {e.versao}.</strong> Passou nos {e.total || N_CENARIOS} cenários{e.instaveis?.length ? ` (${e.instaveis.length} precisou de nova tentativa e passou nas duas)` : ''}{e.fim ? `, em ${dataHora(e.fim)}` : ''}. A Anna já usa os textos novos no WhatsApp.</p>
       </div>
     )
   }
@@ -597,7 +613,7 @@ function ResultadoExame({ exame: e }: { exame: Exame }) {
       <div className="flex items-start gap-3">
         <XCircle size={16} className="text-danger shrink-0 mt-0.5" />
         <p className="text-[12.5px] text-body-mid leading-relaxed">
-          <strong className="text-ink">{e.status === 'erro' ? 'O exame não terminou.' : `Não publicado: ${new Set((e.falhas || []).map(f => f.cenario)).size} de 14 cenários falharam.`}</strong>{' '}
+          <strong className="text-ink">{e.status === 'erro' ? 'O exame não terminou.' : `Não publicado: ${new Set((e.falhas || []).map(f => f.cenario)).size} de ${e.total || N_CENARIOS} cenários falharam.`}</strong>{' '}
           {e.status === 'erro' ? e.erro : 'Nada mudou no WhatsApp. Veja abaixo o que falhou, ajuste o texto e publique de novo.'}
         </p>
       </div>
@@ -612,8 +628,8 @@ function ResultadoExame({ exame: e }: { exame: Exame }) {
             <div className="space-y-2">
               {f.conversa.map((t, i) => (
                 <div key={i} className="text-[11.5px] leading-relaxed">
-                  <div className="text-body-muted"><strong className="text-body-mid">Cliente:</strong> {t.lead}</div>
-                  <div className="text-body-mid whitespace-pre-wrap break-words mt-0.5"><strong className="text-ink">Assistente:</strong> {t.resposta}</div>
+                  <div className="text-body-muted"><strong className="text-body-mid">Lead:</strong> {t.lead}</div>
+                  <div className="text-body-mid whitespace-pre-wrap break-words mt-0.5"><strong className="text-ink">Anna:</strong> {t.resposta}</div>
                 </div>
               ))}
             </div>

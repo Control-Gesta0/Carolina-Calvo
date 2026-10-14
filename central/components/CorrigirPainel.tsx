@@ -1,8 +1,8 @@
 'use client'
 
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { ArrowRight, FlaskConical, Loader2, PenLine, X } from 'lucide-react'
 import MudancasBase from './MudancasBase'
 import type { MsgConversa } from '@/lib/types'
@@ -72,7 +72,7 @@ export default function CorrigirPainel({ origem, nome, cliente, resposta, pedido
           <span className="w-8 h-8 rounded-lg border border-cyan/25 bg-cyan/[0.08] text-cyan flex items-center justify-center"><PenLine size={15} /></span>
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-medium text-ink">Corrigir esta resposta{origem === 'real' ? ` · conversa real${nome ? ` com ${nome}` : ''}` : ''}</div>
-            <div className="text-[10.5px] text-body-muted">A IA ajusta o que a assistente sabe, no rascunho. Nada muda no WhatsApp antes de publicar.</div>
+            <div className="text-[10.5px] text-body-muted">A IA ajusta o que a Anna sabe, no rascunho. Nada muda no WhatsApp antes de publicar.</div>
           </div>
           <button type="button" onClick={onFechar} className="p-2 rounded-lg text-body-muted hover:text-ink" aria-label="Fechar"><X size={15} /></button>
         </div>
@@ -80,12 +80,12 @@ export default function CorrigirPainel({ origem, nome, cliente, resposta, pedido
         <div className="p-5 space-y-5">
           {cliente && (
             <div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-body-muted">O cliente escreveu{origem === 'real' ? ' (CPF, CNPJ e telefone mascarados)' : ''}</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-body-muted">O lead escreveu{origem === 'real' ? ' (CPF, CNPJ e telefone mascarados)' : ''}</div>
               <div className="mt-1.5 rounded-[10px] bg-cyan/[0.10] border border-cyan/25 px-3.5 py-2.5 text-[12.5px] text-ink whitespace-pre-wrap break-words">{cliente}</div>
             </div>
           )}
           <div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-body-muted">A assistente respondeu</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-body-muted">A Anna respondeu</div>
             <div className="mt-1.5 rounded-[10px] surface-alt border border-line-soft px-3.5 py-2.5 text-[12.5px] text-ink whitespace-pre-wrap break-words">{resposta}</div>
           </div>
 
@@ -93,12 +93,12 @@ export default function CorrigirPainel({ origem, nome, cliente, resposta, pedido
             <div className="space-y-4">
               <label className="block">
                 <span className="text-[12.5px] font-medium text-ink">Como deveria ser</span>
-                <textarea value={comoDeveria} onChange={e => setComoDeveria(e.target.value)} rows={3} placeholder="Ex.: deveria responder a pergunta antes de pedir o CPF"
+                <textarea value={comoDeveria} onChange={e => setComoDeveria(e.target.value)} rows={3} placeholder="Ex.: deveria dizer que a reunião é on-line, pelo Google Meet, e voltar para a pergunta da renda"
                   className="campo mt-1.5 w-full rounded-[8px] px-3.5 py-2.5 text-[13px] resize-y" />
               </label>
               <label className="block">
                 <span className="text-[12.5px] font-medium text-ink">Por que está errado</span>
-                <textarea value={porque} onChange={e => setPorque(e.target.value)} rows={3} placeholder="Ex.: ela não respondeu o que o cliente perguntou"
+                <textarea value={porque} onChange={e => setPorque(e.target.value)} rows={3} placeholder="Ex.: ela não respondeu o que o lead perguntou"
                   className="campo mt-1.5 w-full rounded-[8px] px-3.5 py-2.5 text-[13px] resize-y" />
               </label>
               {erro && <p className="text-[12px] text-warning">{erro}</p>}
@@ -106,7 +106,7 @@ export default function CorrigirPainel({ origem, nome, cliente, resposta, pedido
                 className="w-full inline-flex items-center justify-center gap-2 rounded-[8px] border border-cyan/30 bg-cyan/[0.12] text-cyan py-3 text-[13px] font-medium disabled:opacity-40">
                 {enviando ? <><Loader2 size={14} className="animate-spin" /> A IA está analisando… (uns 10 segundos)</> : <>Pedir para a IA corrigir <ArrowRight size={14} /></>}
               </button>
-              <p className="text-[10.5px] text-body-faint leading-relaxed">Basta preencher um dos dois. Texto ou informação errada, a IA muda na base. Regra de atendimento (ordem das perguntas, quando passar para a equipe) vira pedido para a Control Gestão.</p>
+              <p className="text-[10.5px] text-body-faint leading-relaxed">Basta preencher um dos dois. Texto ou informação errada, a IA muda na base. Regra do roteiro (R$ 10 mil, horários da agenda, follow-ups, quando passar para a equipe) vira pedido para a Control Gestão.</p>
             </div>
           ) : (
             <div className="space-y-4">

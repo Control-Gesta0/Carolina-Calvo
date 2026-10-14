@@ -74,7 +74,7 @@ async function executar(job: Job): Promise<string> {
       const passou = r.acao.startsWith('passou para humano')
       await logExec({
         tipo: passou ? 'humano' : 'job', leadId, nome: lead.name, etapa: depois.etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160),
-        ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')) } : {}),
+        ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')), detalhe: r.resumo?.slice(0, 600) } : {}),
         perfil: perfilDaRenda(depois.rendaBruta), respostaIA: r.enviado,
       })
       return r.acao

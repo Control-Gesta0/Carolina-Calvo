@@ -58,7 +58,7 @@ export default function Operacao() {
 
       {tab === 'agora' && (
         <section>
-          <SectionTitle eyebrow="ÚLTIMAS 24 HORAS" title="Quem falou com a Anna." description="O estado é o do último evento de cada lead: com a Anna, com a equipe ou fora da IA (sem a tag ia, ou a equipe falou pelo Kommo nas últimas 6 horas)." />
+          <SectionTitle eyebrow="ÚLTIMAS 24 HORAS" title="Quem falou com a Anna." description="O estado é o do último evento de cada lead: com a Anna, com a equipe (ela passou, ou alguém da equipe respondeu pelo Kommo) ou fora da IA (ela não respondeu por causa de tag ou de funil)." />
           <div className="grid grid-cols-3 gap-3 mb-5">
             <Mini label="Com a Anna" value={live?.grupos.iaAtendendo ?? 0} color="#22c55e" />
             <Mini label="Com a equipe" value={live?.grupos.comHumano ?? 0} color="#a78bfa" />
@@ -228,7 +228,7 @@ function ReuniaoLinha({ a }: { a: Agendamento }) {
             <span className="text-[13px] font-medium text-ink">{a.nome}</span>
             <span className="font-mono text-[8.5px] tracking-[0.1em] px-1.5 py-0.5 rounded border text-success border-success/30">REUNIÃO MARCADA</span>
           </div>
-          <p className="text-[12px] text-body-mid truncate mt-1 group-open:hidden">{a.resumo.split('\n')[0].replace(/\*/g, '')}</p>
+          <p className="text-[12px] text-body-mid truncate mt-1 group-open:hidden">{a.resumo.replace(/\n[\s\S]*$/, '').replace(/\*/g, '')}</p>
         </div>
         <span className="font-mono text-[9.5px] text-body-faint shrink-0">{dataHora(a.ts)}</span>
       </summary>

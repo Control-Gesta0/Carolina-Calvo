@@ -72,7 +72,7 @@ export default function Resultados() {
                       {brl(d.custo, 3)} · {d.execucoes} exec.
                     </div>
                     <div className="w-full rounded-t-[4px] min-h-[3px]" style={{ height: `${Math.max(2, (d.custo / maxCusto) * 100)}%`, background: 'linear-gradient(180deg,#22d3ee,#2563eb)' }} />
-                    <div className="font-mono text-[7px] text-body-faint text-center mt-2">{i % 2 === 0 ? d.data.slice(5).split('-').reverse().join('/') : ''}</div>
+                    <div className="font-mono text-[7px] text-body-faint text-center mt-2">{i % 2 === 0 ? d.data.replace(/^\d{4}-(\d{2})-(\d{2})$/, '$2/$1') : ''}</div>
                   </div>
                 ))}
               </div>
@@ -145,7 +145,7 @@ function Conversao({ m, motivos }: { m: Marcos; motivos: MotivoN[] }) {
         </div>
       </div>
       <p className="text-[11px] text-body-faint leading-relaxed pt-3 border-t border-line-soft">
-        {m.abaixo10k} lead(s) com renda abaixo de R$ 10 mil ficaram registrados para a equipe avaliar, sem reunião marcada pela Anna. {m.followups} lead(s) receberam follow-up ou lembrete. Em vermelho, os motivos urgentes: pediu para remarcar e sem horário na agenda.
+        {m.abaixo10k} lead(s) informaram renda abaixo de R$ 10 mil: para eles a Anna não marca reunião, e a equipe avalia o caso. {m.followups} lead(s) receberam follow-up ou lembrete. Em vermelho, os motivos urgentes: pediu para remarcar e sem horário na agenda.
       </p>
     </div>
   )

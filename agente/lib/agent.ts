@@ -84,7 +84,7 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
         leadId, nome, etapa: depois.etapa, ms: Date.now() - t0,
         tools: [r.acao, ...(r.leitura ? [`intenção: ${r.leitura.intencao}`] : [])], guard: tel.guard,
         usage: tel.usage.calls ? tel.usage : undefined, detalhe: r.enviado?.slice(0, 160),
-        ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')) } : {}),
+        ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')), detalhe: r.resumo?.slice(0, 600) } : {}),
         perfil: perfilDaRenda(depois.rendaBruta),
         turnoLead: ctx.textoTurno, respostaIA: r.enviado,
       })

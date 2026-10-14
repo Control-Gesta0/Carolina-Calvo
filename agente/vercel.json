@@ -35,5 +35,17 @@
       "maxDuration": 120,
       "includeFiles": "{prompts/**,config/**}"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://central-carolina-calvo.vercel.app",
+      "permanent": false
+    },
+    {
+      "source": "/painel",
+      "destination": "https://central-carolina-calvo.vercel.app",
+      "permanent": false
+    }
+  ]
 }

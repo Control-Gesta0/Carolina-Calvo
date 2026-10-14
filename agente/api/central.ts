@@ -93,7 +93,9 @@ async function lerFunil(): Promise<Pick<LiveData, 'funil' | 'leads'>> {
 async function lerLeads(etapas: KommoEtapa[]): Promise<KommoLeadResumo[]> {
   const filtroAbertos = etapas.map((e, i) => `filter[statuses][${i}][pipeline_id]=${FUNIS.find(f => f.nome === e.funil)!.id}&filter[statuses][${i}][status_id]=${e.id}`).join('&')
   const desde = Math.floor(Date.now() / 1000) - 30 * 86400
-  const filtroFechados = FUNIS.flatMap((f, i) => [STATUS.ganho, STATUS.perdido].map((s, j) => `filter[statuses][${i * 2 + j}][pipeline_id]=${f.id}&filter[statuses][${i * 2 + j}][status_id]=${s}`)).join('&')
+  // fechados: SDR, Closer e Gestão operacional (a régua da Anna encerra em Gestão operacional › Venda perdida)
+  const fechados = [...FUNIS.map(f => f.id), PIPELINES.gestao]
+  const filtroFechados = fechados.flatMap((id, i) => [STATUS.ganho, STATUS.perdido].map((s, j) => `filter[statuses][${i * 2 + j}][pipeline_id]=${id}&filter[statuses][${i * 2 + j}][status_id]=${s}`)).join('&')
   const out: KommoLeadResumo[] = []
   type Bruto = KommoLeadResumo & { _embedded?: { tags?: Array<{ name: string }> } }
   const pagina = (filtro: string, page: number) => kommoGet<{ _embedded?: { leads?: Bruto[] } }>(`/api/v4/leads?${filtro}&limit=250&page=${page}`).then(d => d?._embedded?.leads || [])

@@ -3,31 +3,31 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
-  ArrowDown, ArrowRight, Ban, Building2, CircleHelp, Compass, FileText, Handshake, Headset, ListOrdered,
-  MessageCircle, Moon, ShieldCheck, Sparkles, Tag, UserRound, Users, Workflow, Wrench,
+  AlertTriangle, ArrowDown, ArrowRight, Ban, CalendarCheck, CircleHelp, ClipboardList, Columns3, Compass, FileText, Headset, ListOrdered,
+  MessageCircle, PenLine, ShieldCheck, Sparkles, Tag, Timer, UserRound, Users, Workflow, Wrench,
 } from 'lucide-react'
 import FocusNav, { type FocusItem } from '@/components/FocusNav'
 import { PageIntro, SectionTitle } from '@/components/ProductUI'
 import { abrirPergunta } from '@/lib/pergunta'
-import { dataHora, MOTIVO_ROTULO } from '@/lib/format'
+import { dataHora, MOTIVO_ROTULO, MOTIVO_URGENTE } from '@/lib/format'
 import { useBase } from '@/lib/hooks'
 import type { BaseEstado, BaseItem } from '@/lib/types'
 import {
-  ACOES, CLIENTE, COMBINADOS, ENTRADA, ENTRADA_NOTA, FAQ, FORA_DO_HORARIO, INICIO, NAO_CLIENTE, PASSAGEM, PASSOS,
-  QUALQUER_MOMENTO, QUEM_MUDA, TAGS, TRAVAS, type Assunto,
+  ABAIXO_10K, ACIMA_10K, ACOES, AGENDADO, CAMPOS_IA, CENARIOS_EXAME, COMBINADOS, DESISTIU, ENTRADA, ENTRADA_NOTA, FAQ, FOLLOWUP,
+  INICIO, PASSAGEM, PASSOS, QUALQUER_MOMENTO, QUALQUER_MOMENTO_BASE, QUEM_MUDA, ROTEIRO, TAGS, TRAVAS,
 } from '@/lib/como-usar'
 
 type View = 'passos' | 'fluxo' | 'base' | 'equipe'
 
 const VIEWS: FocusItem<View>[] = [
   { id: 'passos', label: 'Passo a passo', description: 'Como usar a Central e a IA', icon: ListOrdered },
-  { id: 'fluxo', label: 'Fluxo do cliente', description: 'Do WhatsApp até a equipe', icon: Workflow },
+  { id: 'fluxo', label: 'Fluxo do lead', description: 'Do WhatsApp até a reunião', icon: Workflow },
   { id: 'base', label: 'Sua base', description: 'O que ela sabe e quem muda', icon: FileText },
-  { id: 'equipe', label: 'Equipe no GHL', description: 'Tags, combinados e dúvidas', icon: Users },
+  { id: 'equipe', label: 'Equipe no Kommo', description: 'Tags, combinados e dúvidas', icon: Users },
 ]
 
 /**
- * Como usar: o manual vivo da Central. O fluxo do cliente e "Sua base" leem a
+ * Como usar: o manual vivo da Central. O fluxo do lead e "Sua base" leem a
  * base publicada (GET /api/base), então mudou um texto em Ensinar, mudou aqui.
  */
 export default function ComoUsar() {
@@ -45,8 +45,8 @@ export default function ComoUsar() {
 
   return (
     <div className="space-y-8">
-      <PageIntro eyebrow="COMO USAR" title="Como a assistente" accent="trabalha com vocês."
-        description="O passo a passo da Central, o caminho que o cliente faz no WhatsApp e o que ela sabe hoje, lido da base publicada." />
+      <PageIntro eyebrow="COMO USAR" title="Como a Anna" accent="trabalha com vocês."
+        description="O passo a passo da Central, o caminho que o lead faz no WhatsApp até a reunião com a Dra. e o que ela sabe hoje, lido da base publicada." />
       <FocusNav items={VIEWS} value={view} onChange={trocar} label="Partes do Como usar" />
       {erro && view !== 'passos' && view !== 'equipe' && <p className="text-[12px] text-warning">Não consegui ler a base agora ({erro}). O fluxo aparece sem os textos.</p>}
 
@@ -73,14 +73,14 @@ function Passos() {
       ))}
       <button type="button" onClick={abrirPergunta} className="panel interactive-card w-full p-4 flex items-center gap-3 text-left">
         <Sparkles size={15} className="text-cyan shrink-0" />
-        <span className="text-[12.5px] text-body-mid flex-1">Quer um número rápido? Use o <strong className="text-ink">Pergunte à Central</strong> (no menu ou Ctrl K): &quot;quantos foram para a equipe?&quot;, &quot;quanto estamos gastando?&quot;.</span>
+        <span className="text-[12.5px] text-body-mid flex-1">Quer um número rápido? Use o <strong className="text-ink">Pergunte à Central</strong> (no menu ou Ctrl K): &quot;quantas reuniões a Anna marcou?&quot;, &quot;quem está com a equipe agora?&quot;.</span>
         <ArrowRight size={13} className="text-cyan shrink-0" />
       </button>
     </section>
   )
 }
 
-/* ---------- Fluxo do cliente ---------- */
+/* ---------- Fluxo do lead ---------- */
 
 function Fluxo({ base }: { base: BaseEstado | null }) {
   const itens = new Map((base?.itens || []).map(i => [i.id, i]))
@@ -94,44 +94,96 @@ function Fluxo({ base }: { base: BaseEstado | null }) {
         <p className="text-[11.5px] text-body-muted leading-relaxed mt-3">{ENTRADA_NOTA}</p>
       </Etapa>
       <Seta />
-      <Etapa icon={Moon} titulo={FORA_DO_HORARIO.titulo} discreto>
-        <p className="text-[12.5px] text-body-mid leading-relaxed">{FORA_DO_HORARIO.texto}</p>
-        <TextosDaBase ids={FORA_DO_HORARIO.base} itens={itens} />
-      </Etapa>
-      <Seta />
-      <div className="grid md:grid-cols-2 gap-3">
+      <div className="grid md:grid-cols-2 gap-3 items-start">
         {INICIO.map((s, i) => (
-          <Etapa key={s.titulo} numero={i + 1} titulo={s.titulo}><p className="text-[12.5px] text-body-mid leading-relaxed">{s.texto}</p></Etapa>
+          <Etapa key={s.titulo} icon={i === 0 ? UserRound : ClipboardList} titulo={s.titulo} discreto={i > 0}>
+            <p className="text-[12.5px] text-body-mid leading-relaxed">{s.texto}</p>
+            <TextosDaBase ids={s.base} itens={itens} />
+          </Etapa>
         ))}
       </div>
       <Seta />
-      <div className="grid lg:grid-cols-2 gap-3 items-start">
-        <div className="panel overflow-hidden">
-          <Cabeca icon={UserRound} titulo="É cliente: escolhe o assunto" cor="#06b6d4" />
-          {CLIENTE.map((a, i) => <AssuntoLinha key={a.titulo} a={a} itens={itens} primeira={i === 0} />)}
+      {ROTEIRO.map((s, i) => (
+        <div key={s.titulo} className="space-y-3">
+          <Etapa numero={i + 2} titulo={s.titulo}>
+            <p className="text-[12.5px] text-body-mid leading-relaxed">{s.texto}</p>
+            {s.kommo && <NoKommo itens={[s.kommo]} />}
+            <TextosDaBase ids={s.base} itens={itens} />
+          </Etapa>
+          <Seta />
         </div>
-        <div className="panel overflow-hidden">
-          <Cabeca icon={Building2} titulo="Ainda não é cliente: seis perguntas" cor="#a78bfa" />
+      ))}
+      <div className="grid lg:grid-cols-2 gap-3 items-start">
+        <div className="panel overflow-hidden min-w-0">
+          <Cabeca icon={Ban} titulo={ABAIXO_10K.titulo} cor="#f59e0b" />
           <div className="p-5">
-            <p className="text-[12.5px] text-body-mid leading-relaxed">{NAO_CLIENTE.texto}</p>
-            <ol className="mt-3 space-y-1.5">
-              {NAO_CLIENTE.perguntas.map((q, i) => (
-                <li key={q} className="text-[12.5px] text-ink flex gap-2.5"><span className="font-mono text-[10px] text-purple-400 w-4 shrink-0 mt-[2px]">{i + 1}</span>{q}</li>
+            <p className="text-[12.5px] text-body-mid leading-relaxed">{ABAIXO_10K.texto}</p>
+            <NoKommo itens={ABAIXO_10K.kommo} />
+            <TextosDaBase ids={ABAIXO_10K.base} itens={itens} />
+          </div>
+        </div>
+        <div className="panel overflow-hidden min-w-0">
+          <Cabeca icon={CalendarCheck} titulo={ACIMA_10K.titulo} cor="#06b6d4" />
+          <div className="p-5">
+            <ol className="space-y-2">
+              {ACIMA_10K.passos.map(q => (
+                <li key={q} className="text-[12.5px] text-ink leading-relaxed flex gap-2"><ArrowRight size={12} className="text-cyan shrink-0 mt-[4px]" />{q}</li>
               ))}
             </ol>
-            <div className="font-mono text-[9px] tracking-[0.1em] text-purple-400 mt-4">PASSA COMO: {(MOTIVO_ROTULO[NAO_CLIENTE.motivo] || '').toUpperCase()}</div>
-            <TextosDaBase ids={NAO_CLIENTE.base} itens={itens} />
+            <TextosDaBase ids={ACIMA_10K.base} itens={itens} />
           </div>
         </div>
       </div>
-      <p className="text-[12px] text-body-muted px-1 flex gap-2"><Handshake size={13} className="text-cyan shrink-0 mt-[2px]" />{QUALQUER_MOMENTO}</p>
       <Seta />
-      <Etapa icon={Headset} titulo="Passa para a equipe">
-        <ul className="space-y-1.5">
-          {PASSAGEM.map(p => <li key={p} className="text-[12.5px] text-ink flex gap-2"><ArrowRight size={12} className="text-cyan shrink-0 mt-[4px]" />{p}</li>)}
-        </ul>
-        <p className="text-[11.5px] text-body-muted leading-relaxed mt-3">E manda ao cliente o encerramento do motivo, um dos textos de Encerramentos da base. Fora do horário, ele diz quando a equipe continua.</p>
+      <Etapa icon={CalendarCheck} titulo={AGENDADO.titulo}>
+        <p className="text-[12.5px] text-body-mid leading-relaxed">{AGENDADO.texto}</p>
+        <NoKommo itens={AGENDADO.kommo} />
+        <TextosDaBase ids={AGENDADO.base} itens={itens} />
       </Etapa>
+
+      <div className="pt-6">
+        <SectionTitle eyebrow="EM QUALQUER PONTO DO ROTEIRO" title="Quando a Anna passa para a equipe." description="Ela para, avisa o lead e deixa tudo pronto no card. Em vermelho, os motivos urgentes." />
+        <div className="grid lg:grid-cols-2 gap-3 items-start">
+          <div className="panel overflow-hidden min-w-0">
+            {QUALQUER_MOMENTO.map((m, i) => (
+              <div key={m.motivo} className={`px-5 py-3.5 ${i ? 'border-t border-line-soft' : ''}`}>
+                <div className={`font-mono text-[8.5px] tracking-[0.1em] ${MOTIVO_URGENTE.has(m.motivo) ? 'text-danger' : 'text-purple-400'}`}>PASSA COMO: {(MOTIVO_ROTULO[m.motivo] || m.motivo).toUpperCase()}</div>
+                <p className="text-[12.5px] text-body-mid leading-relaxed mt-1">{m.texto}</p>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3 min-w-0">
+            <Etapa icon={Headset} titulo="Na passagem, no Kommo">
+              <ul className="space-y-1.5">
+                {PASSAGEM.map(p => <li key={p} className="text-[12.5px] text-ink flex gap-2"><ArrowRight size={12} className="text-cyan shrink-0 mt-[4px]" />{p}</li>)}
+              </ul>
+              <TextosDaBase ids={QUALQUER_MOMENTO_BASE} itens={itens} />
+            </Etapa>
+            <Etapa icon={AlertTriangle} titulo={DESISTIU.titulo} discreto>
+              <p className="text-[12.5px] text-body-mid leading-relaxed">{DESISTIU.texto}</p>
+              <TextosDaBase ids={DESISTIU.base} itens={itens} />
+            </Etapa>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-6">
+        <SectionTitle eyebrow="FOLLOW-UP" title="Quando o lead para de responder." description={FOLLOWUP.regras} />
+        <div className="grid md:grid-cols-2 gap-3">
+          {FOLLOWUP.reguas.map(r => (
+            <div key={r.titulo} className="panel p-5">
+              <div className="flex items-center gap-2.5">
+                <Timer size={14} className="text-cyan shrink-0" />
+                <h3 className="text-[13.5px] font-medium text-ink">{r.titulo}</h3>
+              </div>
+              <ol className="mt-3 space-y-1.5">
+                {r.etapas.map((e, i) => <li key={e} className="text-[12.5px] text-body-mid flex gap-2.5"><span className="font-mono text-[10px] text-cyan w-4 shrink-0 mt-[2px]">{i + 1}</span>{e}</li>)}
+              </ol>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11.5px] text-body-muted leading-relaxed mt-3 px-1">{FOLLOWUP.nota}</p>
+      </div>
 
       <div className="pt-6">
         <SectionTitle eyebrow="TRAVAS EM CÓDIGO" title="O que ela não faz, mesmo que o modelo tente." description="Mudança no roteiro ou nestas regras passa pela Control Gestão e pelo mesmo exame antes de valer." />
@@ -143,9 +195,21 @@ function Fluxo({ base }: { base: BaseEstado | null }) {
   )
 }
 
+/** O que a etapa faz no card do Kommo. */
+function NoKommo({ itens }: { itens: string[] }) {
+  return (
+    <div className="mt-3 rounded-[8px] border border-line-soft px-3.5 py-3">
+      <div className="font-mono text-[8.5px] tracking-[0.12em] text-body-faint inline-flex items-center gap-1.5"><Columns3 size={10} /> NO KOMMO</div>
+      <ul className="mt-1.5 space-y-1">
+        {itens.map(t => <li key={t} className="text-[12px] text-body-mid leading-relaxed flex gap-2"><span className="text-cyan">·</span><span className="min-w-0">{t}</span></li>)}
+      </ul>
+    </div>
+  )
+}
+
 function Etapa({ icon: Icon, numero, titulo, discreto, children }: { icon?: typeof MessageCircle; numero?: number; titulo: string; discreto?: boolean; children: React.ReactNode }) {
   return (
-    <div className={`panel p-5 ${discreto ? 'border-dashed' : ''}`}>
+    <div className={`panel p-5 min-w-0 ${discreto ? 'border-dashed' : ''}`}>
       <div className="flex items-center gap-3 mb-3">
         <span className="w-8 h-8 rounded-full border border-cyan/30 bg-cyan/[0.08] text-cyan flex items-center justify-center shrink-0">
           {Icon ? <Icon size={14} /> : <span className="font-mono text-[12px]">{numero}</span>}
@@ -170,20 +234,7 @@ function Cabeca({ icon: Icon, titulo, cor }: { icon: typeof UserRound; titulo: s
   )
 }
 
-function AssuntoLinha({ a, itens, primeira }: { a: Assunto; itens: Map<string, BaseItem>; primeira: boolean }) {
-  return (
-    <div className={`px-5 py-4 ${primeira ? '' : 'border-t border-line-soft'}`}>
-      <div className="flex items-baseline justify-between gap-3 flex-wrap">
-        <span className="text-[13px] font-medium text-ink">{a.titulo}</span>
-        <span className="font-mono text-[8.5px] tracking-[0.1em] text-cyan">PASSA COMO: {(MOTIVO_ROTULO[a.motivo] || a.motivo).toUpperCase()}</span>
-      </div>
-      <p className="text-[12px] text-body-mid leading-relaxed mt-1">{a.texto}</p>
-      <TextosDaBase ids={a.base} itens={itens} />
-    </div>
-  )
-}
-
-/** Os textos da base que a assistente usa naquela etapa, como estão no ar agora. */
+/** Os textos da base que a Anna usa naquela etapa, como estão no ar agora. */
 function TextosDaBase({ ids, itens }: { ids: string[]; itens: Map<string, BaseItem> }) {
   const lista = ids.map(id => itens.get(id)).filter((i): i is BaseItem => !!i)
   if (!lista.length) return null
@@ -214,7 +265,7 @@ const CAMINHO = [
   { t: 'Você pede', d: 'Texto, arquivo, link ou a correção de uma resposta.' },
   { t: 'A IA muda o rascunho', d: 'Mostra o antes e o depois; dá para desfazer.' },
   { t: 'Você testa', d: 'Teste › Textos: Rascunho.' },
-  { t: 'O exame confere', d: '14 conversas de teste; se uma falhar, nada muda.' },
+  { t: 'O exame confere', d: `${CENARIOS_EXAME} conversas de teste; se uma falhar, nada muda.` },
   { t: 'Vale no WhatsApp', d: 'E dá para voltar a uma versão anterior.' },
 ]
 
@@ -276,8 +327,8 @@ function SuaBase({ base }: { base: BaseEstado | null }) {
         <SectionTitle eyebrow="QUEM MUDA O QUÊ" title="O que vocês mudam e o que não." />
         <div className="grid md:grid-cols-3 gap-3">
           <Coluna icon={Sparkles} cor="#06b6d4" titulo="Vocês, pela IA em Ensinar" itens={QUEM_MUDA.voce} />
-          <Coluna icon={Wrench} cor="#a78bfa" titulo="A Control Gestão" itens={QUEM_MUDA.control} nota="Peça em Ensinar: a IA registra o pedido." />
-          <Coluna icon={Ban} cor="#f59e0b" titulo="Nunca entra na base" itens={QUEM_MUDA.nunca} nota="Fica com a equipe, que passa ao cliente." />
+          <Coluna icon={Wrench} cor="#a78bfa" titulo="A Control Gestão" itens={QUEM_MUDA.control} nota="Peça em Ensinar: a IA registra o pedido, e a Control Gestão testa e aplica." />
+          <Coluna icon={Ban} cor="#f59e0b" titulo="Nunca entra na base" itens={QUEM_MUDA.nunca} nota="Ética da OAB e decisão do escritório. Valores e estratégia ficam com a Dra. na reunião." />
         </div>
       </div>
     </section>
@@ -299,7 +350,7 @@ function Coluna({ icon: Icon, cor, titulo, itens, nota }: { icon: typeof Sparkle
   )
 }
 
-/* ---------- Equipe no GHL ---------- */
+/* ---------- Equipe no Kommo ---------- */
 
 function Equipe() {
   return (
@@ -308,7 +359,7 @@ function Equipe() {
         <SectionTitle eyebrow="TAGS" title="O que cada tag faz." />
         <div className="panel overflow-hidden">
           {TAGS.map((t, i) => (
-            <div key={t.tag} className={`px-5 py-4 grid md:grid-cols-[170px_1fr_1fr] gap-x-5 gap-y-1.5 ${i ? 'border-t border-line-soft' : ''}`}>
+            <div key={t.tag} className={`px-5 py-4 grid md:grid-cols-[210px_1fr_1fr] gap-x-5 gap-y-1.5 ${i ? 'border-t border-line-soft' : ''}`}>
               <span className="inline-flex items-center gap-2 font-mono text-[11.5px] text-ink"><Tag size={12} className="text-cyan" />{t.tag}</span>
               <span className="text-[12.5px] text-body-mid">{t.significa}</span>
               <span className="text-[11.5px] text-body-muted">{t.quem}</span>
@@ -322,6 +373,13 @@ function Equipe() {
               <p className="text-[12.5px] text-body-mid leading-relaxed mt-1.5">{a.texto}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <SectionTitle eyebrow="CAMPOS DA ANNA" title="Os campos IA do card são dela." description="A Anna preenche e lê estes campos. A equipe não edita." />
+        <div className="panel p-5 flex flex-wrap gap-1.5">
+          {CAMPOS_IA.map(c => <span key={c} className="inline-flex items-center gap-1.5 font-mono text-[10.5px] px-2.5 py-1 rounded border border-line-soft text-ink"><PenLine size={10} className="text-cyan" />{c}</span>)}
         </div>
       </div>
 
@@ -352,7 +410,7 @@ function Equipe() {
           ))}
         </div>
       </div>
-      <p className="text-[11px] text-body-faint flex items-center gap-2"><Compass size={12} /> O guia em PDF tem o mesmo conteúdo para imprimir; esta aba acompanha a base publicada.</p>
+      <p className="text-[11px] text-body-faint flex items-center gap-2"><Compass size={12} /> Esta aba acompanha a base publicada: mudou um texto em Ensinar, mudou aqui.</p>
     </section>
   )
 }

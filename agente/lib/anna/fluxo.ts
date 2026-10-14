@@ -52,7 +52,7 @@ export interface Deps {
   agendarLembretes(inicio: Date, eventId: string): Promise<void>
 }
 
-export interface Resultado { acao: string; enviado?: string; leitura?: Leitura }
+export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string }
 
 const PAUSA_ANALISE_MS = 30 * 60_000
 
@@ -87,10 +87,11 @@ export async function abrir(ctx: Ctx, deps: Deps): Promise<Resultado> {
 }
 
 async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitura?: Leitura): Promise<Resultado> {
+  const resumo = `${leitura?.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`
   await deps.enviar(texto)
-  await deps.passarParaHumano(motivo, `${leitura?.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`)
+  await deps.passarParaHumano(motivo, resumo)
   await deps.patch({ etapa: 'humano', finalizado: { motivo, em: ctx.agora.toISOString() } })
-  return { acao: `passou para humano: ${motivo}`, enviado: texto, leitura }
+  return { acao: `passou para humano: ${motivo}`, enviado: texto, leitura, resumo }
 }
 
 async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string }, textoDe: (q: string) => string): Promise<Resultado> {

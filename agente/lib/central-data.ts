@@ -249,7 +249,8 @@ export function buildExecutionData(entries: ExecEntry[], usdBrl: number, modelo:
       const motivo = e.motivo || 'outro'
       return {
         ts: e.ts, contactId: e.contactId, nome: e.nome, motivo, rotulo: rotuloMotivo(motivo), perfil: e.perfil,
-        resumo: (e.respostaIA || e.detalhe).slice(0, 600), urgente: !!MOTIVOS[motivo]?.urgente, link: linkLead(dominio, e.contactId),
+        // detalhe da passagem = o resumo que foi para a tarefa da Dra. (objetivo, renda, desconto); sem ele, a mensagem ao lead
+        resumo: (e.detalhe || e.respostaIA || '').slice(0, 600), urgente: !!MOTIVOS[motivo]?.urgente, link: linkLead(dominio, e.contactId),
       }
     }),
     agendamentos: reais.filter(e => e.marco === 'agendou').slice(0, 60).map(e => ({

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { chamarAgente } from '@/lib/agent'
 
 export const dynamic = 'force-dynamic'
-// a assistente pode levar uns 20 s numa resposta com ferramentas e travas
+// a Anna pode levar uns 20 s numa resposta (intérprete, travas e, na 4ª mensagem, a 5ª logo em seguida)
 export const maxDuration = 120
 
 export async function GET(req: NextRequest) {

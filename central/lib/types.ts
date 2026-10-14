@@ -121,7 +121,7 @@ export interface LiveData {
   respostaMedianaSegundos: number | null
   pipeline: { nome: string }
   funil: FunilEtapa[]
-  /** abertas = leads abertos nas etapas dos funis SDR e Closer; ganhas e perdidas = fechados nos últimos 30 dias */
+  /** abertas = leads abertos nas etapas dos funis SDR e Closer; ganhas e perdidas = fechados nos últimos 30 dias (SDR, Closer e Gestão operacional) */
   leads: { total: number; abertas: number; ganhas: number; perdidas: number; comIA: number; tagsDisponiveis: boolean }
   regras: { modoGate: string; gateTag: string; humanTag: string; expediente: string }
   saude: { crmOk: boolean; problemas: string[] }

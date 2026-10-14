@@ -2,25 +2,31 @@
  * Conteúdo da aba "Como usar" (o que muda por cliente). A página
  * (app/(painel)/como-usar) é a estrutura e liga cada etapa do fluxo aos textos
  * da base do cliente, lidos ao vivo: quando a equipe muda um texto em Ensinar,
- * o fluxo já mostra o novo. `base` são ids de lib/base-core.ts (ITENS).
+ * o fluxo já mostra o novo. `base` são ids de agente/lib/base-core.ts (ITENS).
+ *
+ * Fonte do roteiro: agente/lib/anna/fluxo.ts (textos da Dra. em lib/anna/textos.ts),
+ * réguas em agente/config/follow-ups.json, motivos em agente/lib/central-data.ts.
  */
+
+/** Cenários do exame de publicação (agente/evals/cenarios.ts; o mesmo número do CENARIO de Ensinar). */
+export const CENARIOS_EXAME = 21
 
 export interface Passo { titulo: string; texto: string; href: string; acao: string }
 
 export const PASSOS: Passo[] = [
   {
     titulo: 'Acompanhe',
-    texto: 'Estatísticas mostra se a assistente está bem e o que pede decisão, como um estorno de venda de hoje que foi para a equipe. Em Operação › Passagens fica cada atendimento passado, com o resumo e o link do contato no GHL.',
+    texto: 'Estatísticas mostra se a Anna está bem e o que pede decisão, como um lead que pediu para remarcar. Em Operação ficam as passagens para a equipe, as reuniões marcadas e o link de cada lead no Kommo.',
     href: '/', acao: 'Abrir Estatísticas',
   },
   {
     titulo: 'Atenda o que ela passou',
-    texto: 'No GHL, abra as conversas não lidas ou filtre pela tag atendimento-humano. Leia a nota interna antes de responder: o cliente já contou o caso e não precisa repetir.',
+    texto: 'No Kommo, abra as tarefas da Dra. ou filtre pela tag atendimento-humano. A tarefa traz o motivo e o que o lead já informou: objetivo, renda bruta, líquido e desconto em conta. Ninguém precisa perguntar de novo.',
     href: '/operacao?aba=passagens', acao: 'Ver passagens',
   },
   {
     titulo: 'Teste antes de mudar',
-    texto: 'Em Teste, converse como um cliente. É a mesma assistente do WhatsApp, mas nada vai para o GHL. Resposta errada? Clique em Corrigir embaixo dela e diga como deveria ser.',
+    texto: 'Em Teste, converse como um lead. É a mesma Anna do WhatsApp, mas nada vai para o Kommo nem para a agenda da Dra. Resposta errada? Clique em Corrigir embaixo dela e diga como deveria ser.',
     href: '/teste', acao: 'Abrir Teste',
   },
   {
@@ -30,105 +36,206 @@ export const PASSOS: Passo[] = [
   },
   {
     titulo: 'Publique com o exame',
-    texto: 'Teste o rascunho e clique em Publicar com exame: 14 conversas de teste rodam com os textos novos e só publica se todas passarem. Se não gostar, Versões anteriores › Voltar para esta.',
+    texto: `Teste o rascunho e clique em Publicar com exame: ${CENARIOS_EXAME} conversas de teste rodam com os textos novos e só publica se todas passarem. Se não gostar, Versões anteriores › Voltar para esta.`,
     href: '/ensinar', acao: 'Ir para a publicação',
   },
 ]
 
-/** Quando a assistente responde (tudo junto; se faltar um, ela fica quieta). */
+/** Quando a Anna responde (tudo junto; se faltar um, ela fica quieta). */
 export const ENTRADA = [
-  'o contato tem a tag ia',
-  'não tem a tag atendimento-humano',
-  'ninguém da equipe respondeu pelo GHL nas últimas 6 horas',
-  'não é grupo nem a resposta automática do WhatsApp Business',
+  'o lead tem a tag ia',
+  'não tem a tag atendimento-humano nem a tag cliente',
+  'ninguém da equipe escreveu para ele pelo Kommo nas últimas 6 horas',
+  'o card não está em Gestão operacional nem no Financeiro',
 ]
-export const ENTRADA_NOTA = 'Mensagens seguidas viram uma resposta só: ela espera uns 10 segundos. Áudio, foto e PDF ela ouve ou lê antes de responder.'
+export const ENTRADA_NOTA = 'Mensagens seguidas viram uma resposta só: ela espera uns 10 segundos. Áudio, foto e PDF ela ouve ou lê antes de responder. Ela fala de forma formal e educada e nunca diz que é IA.'
 
-export const FORA_DO_HORARIO = {
-  titulo: 'Fora do horário (segunda a sexta, das 9h às 18h)',
-  texto: 'Manda o aviso uma vez por período e faz a triagem completa. No encerramento, diz quando a equipe continua. Nunca promete resposta imediata.',
-  base: ['aviso_fora'],
-}
+export interface Etapa { titulo: string; texto: string; kommo?: string; base: string[] }
 
-export const INICIO = [
-  { titulo: 'Cliente ou não cliente', texto: 'Cumprimenta e pergunta "Você já é cliente da InovPay?", a não ser que a mensagem já deixe claro (venda na maquininha, estorno ou portal: cliente; quer abrir conta: não cliente).' },
-  { titulo: 'CPF ou CNPJ', texto: 'Pede uma vez, com o aviso da Política de Privacidade, confere se o número é válido e grava no campo CPF/CNPJ do contato. Campo já preenchido: não pede de novo.' },
-]
-
-export interface Assunto { titulo: string; texto: string; motivo: string; base: string[] }
-
-export const CLIENTE: Assunto[] = [
-  { titulo: 'Maquininha', texto: 'Pergunta se ela liga, pede a descrição do problema e uma foto ou vídeo.', motivo: 'suporte_maquininha', base: ['enc_suporte'] },
-  { titulo: 'Estorno de venda de hoje', texto: 'Manda o passo a passo para cancelar na própria maquininha e pergunta se deu certo. Se não deu, passa.', motivo: 'estorno', base: ['estorno_passos', 'enc_suporte'] },
-  { titulo: 'Cancelamento de dias anteriores', texto: 'Pede a foto legível do comprovante, a data e o valor. Só com os três passa para a equipe.', motivo: 'estorno_anterior', base: ['enc_estorno_anterior'] },
-  { titulo: 'Portal ou app', texto: 'Mostra os 5 temas e manda o texto do tema escolhido. Se não resolver, pede a descrição e um print e passa.', motivo: 'portal_app', base: ['portal_split', 'portal_beneficiarios', 'portal_boleto', 'portal_relatorio', 'portal_comprovante', 'enc_suporte'] },
-  { titulo: 'Falar com um atendente', texto: 'Pergunta o assunto em uma linha e passa.', motivo: 'pediu_atendente', base: ['enc_atendente'] },
+/** Como a conversa começa: as duas portas de entrada. */
+export const INICIO: Etapa[] = [
+  {
+    titulo: 'O lead escreve primeiro',
+    texto: 'A Anna se apresenta e faz a 1ª pergunta: o que ele quer saber. 1) suspender os descontos por até 6 meses, 2) reestruturar as dívidas com juros revisados ou 3) as duas.',
+    base: ['pergunta1', 'pendente_q1'],
+  },
+  {
+    titulo: 'O lead veio do formulário',
+    texto: 'A Anna começa com o modelo "Anna - Primeiro contato", aprovado pela Meta, com a mesma 1ª pergunta. O texto do modelo só muda com nova aprovação da Meta: é pedido para a Control Gestão.',
+    base: [],
+  },
 ]
 
-export const NAO_CLIENTE = {
-  texto: 'Pede o CNPJ e faz uma pergunta por mensagem, pulando o que a pessoa já contou. Se perguntarem como funciona, explica com o texto da base. Taxa e preço ficam com o comercial.',
-  perguntas: [
-    'Como funciona o negócio e o repasse',
-    'Se o repasse é feito na mão',
-    'Para quantas pessoas repassa',
-    'Volume de vendas por mês',
-    'Se percebe imposto pago duas vezes',
-    'Quem decide',
+/** O roteiro fixo da Dra., depois da 1ª pergunta. */
+export const ROTEIRO: Etapa[] = [
+  {
+    titulo: '2ª pergunta: renda e descontos',
+    texto: 'Escolhida a opção, pede a renda bruta, o valor líquido e quanto o banco desconta direto da conta corrente. Se faltar um valor, pede só o que falta.',
+    kommo: 'Com a renda bruta, o card vai para a coluna da renda no SDR: ATÉ 5 MIL, 5 A 10 MIL, 10 A 15 MIL ou ACIMA DE 15 MIL. Os valores vão para os campos IA - Renda bruta, IA - Renda líquida e IA - Desconto em conta.',
+    base: ['pergunta2', 'pendente_q2'],
+  },
+  {
+    titulo: '3ª mensagem: o alívio sem o desconto',
+    texto: 'Usa o valor que o banco desconta da conta ("sem esses R$ 2.000 de descontos... concorda?"). Quem não tem desconto em conta recebe a outra versão.',
+    base: ['mensagem3', 'mensagem3_sem_desconto', 'pendente_q3'],
+  },
+]
+
+export const ABAIXO_10K = {
+  titulo: 'Renda bruta abaixo de R$ 10 mil',
+  texto: 'A Anna não marca reunião. Avisa que o caso fica registrado para a equipe e para de conduzir.',
+  kommo: [
+    'Tag "ANNA renda abaixo 10k".',
+    'Tarefa para a Dra. com objetivo, renda e desconto em conta.',
+    'Se o lead pedir reunião depois, ela passa para a equipe.',
   ],
-  motivo: 'qualificacao_concluida',
-  base: ['nao_cliente', 'enc_comercial'],
+  base: ['sem_reuniao'],
 }
 
-export const QUALQUER_MOMENTO = 'Pediu para falar com uma pessoa, em qualquer ponto: passa na hora, sem mais perguntas.'
+export const ACIMA_10K = {
+  titulo: 'Renda bruta de R$ 10 mil ou mais',
+  passos: [
+    '4ª mensagem: vai encaminhar a conversa para a Dra. Carolina analisar. Fica uma nota no card.',
+    '30 minutos depois, a 5ª mensagem oferece um horário real da agenda Google da Dra.',
+    'Reunião on-line de 30 minutos pelo Google Meet, de segunda a sexta. Primeiro as tardes, das 15:00 às 17:30. Depois as manhãs, começando às 11:30 e indo até as 10:00.',
+    'Renda de R$ 13,5 mil ou mais pode ter reunião no mesmo dia.',
+    'Não pode no horário: ela pergunta se prefere manhã ou tarde e oferece outro.',
+  ],
+  base: ['mensagem4', 'mensagem5', 'manha_ou_tarde', 'nova_oferta', 'horario_ocupado', 'pendente_preferencia'],
+}
+
+export const AGENDADO = {
+  titulo: 'Aceitou o horário: reunião marcada',
+  texto: 'A Anna confirma a reunião com o dia, a hora e o link do Meet.',
+  kommo: [
+    'Evento com Google Meet na agenda da Dra.',
+    'Card para Closer › REUNIÃO AGENDADA.',
+    'Campos Reunião e Agendamento preenchidos, além de IA - Horário da reunião e IA - Link do Meet.',
+    'Tag "ANNA agendou".',
+    'O lembrete de 24 horas antes é da Anna. Os de 2 horas, 1 hora e 15 minutos são da automação do escritório. Se o card saiu de Reunião agendada, a Anna cobre os de 1 hora e 15 minutos.',
+  ],
+  base: ['agendado'],
+}
+
+/** Em qualquer ponto do roteiro: a Anna passa para a equipe (chaves de MOTIVOS do agente). */
+export const QUALQUER_MOMENTO: Array<{ motivo: string; texto: string }> = [
+  { motivo: 'perguntou_robo', texto: 'Perguntou se está falando com um robô. Ela não confirma nem nega: passa.' },
+  { motivo: 'pediu_humano', texto: 'Pediu para falar com a Dra. ou com uma pessoa.' },
+  { motivo: 'tem_advogado', texto: 'Já tem advogado atuando no caso. Recebe o texto da Dra. sobre a ética da OAB.' },
+  { motivo: 'ja_e_cliente', texto: 'Já é cliente do escritório.' },
+  { motivo: 'outro_assunto', texto: 'O assunto é de outra área, como tributário ou trabalhista.' },
+  { motivo: 'remarcar', texto: 'Tem reunião marcada e pediu para remarcar. Urgente.' },
+  { motivo: 'sem_agenda', texto: 'A agenda Google não respondeu ou não tem horário livre nos próximos dias. Urgente.' },
+  { motivo: 'abaixo_pediu_reuniao', texto: 'Renda abaixo de R$ 10 mil e pediu reunião mesmo assim.' },
+]
+export const QUALQUER_MOMENTO_BASE = ['passa_humano', 'possui_advogado', 'sem_agenda']
 
 export const PASSAGEM = [
-  'Grava uma nota interna com o motivo, o tipo (cliente ou não), o CPF/CNPJ, o resumo e os dados coletados.',
-  'Coloca a tag atendimento-humano.',
+  'Coloca as tags atendimento-humano e "ANNA passou para humano".',
   'Tira a tag ia: daqui em diante quem responde é a equipe.',
-  'Deixa a conversa como não lida, para aparecer para vocês.',
+  'Cria uma tarefa para a Dra. com prazo de 60 minutos, com o motivo e o que o lead já informou.',
+  'Cancela o follow-up daquele lead.',
 ]
 
-/** Travas em código: valem mesmo que o modelo tente o contrário (as de quando ela fica quieta ou passa na hora já estão no fluxo). */
+export const DESISTIU = {
+  titulo: 'Disse que não quer continuar',
+  texto: 'A Anna responde com educação e para. O card vai para SDR › NÃO QUER CONTINUAR, com uma nota.',
+  base: ['desistiu'],
+}
+
+/** Réguas de follow-up (agente/config/follow-ups.json). */
+export const FOLLOWUP = {
+  regras: 'Só com os modelos aprovados pela Meta, das 7h às 20h. Fora dessa janela, a mensagem sai às 7h do dia seguinte. Qualquer resposta do lead ou mensagem da equipe cancela a régua.',
+  reguas: [
+    {
+      titulo: 'Parou de responder na qualificação',
+      etapas: [
+        'Follow 1: 2 horas depois da última mensagem da Anna',
+        'Follow 2: 21 horas depois do Follow 1',
+        'Follow up 3: 48 horas depois do Follow 2',
+        'Follow up 4: 72 horas depois do Follow up 3',
+        '24 horas sem resposta: card para Gestão operacional › Venda perdida',
+      ],
+    },
+    {
+      titulo: 'Não respondeu à oferta de horário',
+      etapas: [
+        'FUP horário reunião: 2 horas depois da oferta',
+        'SE 5 24h: 24 horas depois da oferta',
+        'FUP encerramento 48h: 48 horas depois da oferta',
+        '24 horas sem resposta: card para Gestão operacional › Venda perdida',
+      ],
+    },
+  ],
+  nota: 'A mensagem 24 horas depois de Cliente decisão é da automação do escritório ("Follow Cliente decisão"), não da Anna.',
+}
+
+/** Travas em código: valem mesmo que o modelo tente o contrário. */
 export const TRAVAS = [
-  'Nunca informa taxa, preço, valor, prazo ou condição comercial: diz que a equipe passa e anota o pedido.',
-  'Uma pergunta por mensagem; a pergunta do roteiro comercial não pode ser pulada.',
-  'Não diz que vai passar para a equipe sem passar de verdade: a trava refaz a resposta com a ferramenta.',
-  'Só passa com os dados mínimos do motivo (cancelamento de dias anteriores: comprovante, data e valor).',
-  'Nunca pede nem envia senha; não promete aprovação de estorno, cadastro ou análise.',
-  'Fora do horário, não promete atendimento imediato.',
+  'Nunca diz que é IA, robô ou assistente virtual. Se perguntarem, passa para a equipe.',
+  'Nunca fala de honorários, valor da ação, parcela ou porcentagem. Isso é assunto da reunião com a Dra.',
+  'Nunca promete resultado ("garantido", "com certeza vamos conseguir").',
+  'Não pede para o lead mandar documento, foto ou print. Na confirmação, pede para ter o contracheque e o extrato em mãos na reunião.',
+  'Uma pergunta por mensagem, sem travessão e sem emoji.',
+  'Quem decide a próxima mensagem, a coluna do card, o horário e a passagem é o código. O modelo só lê o que o lead escreveu.',
+  'Só oferece horário livre na agenda Google da Dra. e confere de novo antes de marcar.',
 ]
 
-/** Quem muda o quê na base. */
+/** Quem muda o quê. */
 export const QUEM_MUDA = {
-  voce: ['Textos do portal e do app', 'Passo a passo do estorno na maquininha', 'O que ela explica para quem não é cliente', 'Encerramentos de cada passagem', 'Aviso de fora do horário', 'Informações novas (produto, procedimento, prazo operacional)'],
-  control: ['Ordem das perguntas do roteiro', 'Quando ela passa para a equipe', 'Tags e quem ela atende', 'Horário da equipe e feriados', 'Tarefas novas (agendar, follow-up, mover card)'],
-  nunca: ['Taxa e porcentagem', 'Preço e valor em reais', 'Senha', 'Dados pessoais de clientes'],
+  voce: [
+    'Os textos do roteiro: 1ª e 2ª perguntas, 3ª, 4ª e 5ª mensagens',
+    'As ofertas de horário e a confirmação da reunião',
+    'Os textos de quando a Anna para: passagem, renda abaixo de 10 mil, sem horário, advogado',
+    'As retomadas depois de uma dúvida do lead',
+    'Os fatos que ela responde: reunião, endereço, atendimento presencial',
+    'Informações novas sobre o escritório',
+  ],
+  control: [
+    'A regra dos R$ 10 mil e a dos R$ 13,5 mil (reunião no mesmo dia)',
+    'Dias e horários da agenda da Dra.',
+    'Os follow-ups: quando e quantos',
+    'Os modelos aprovados pela Meta',
+    'Colunas, tags, campos e tarefas do Kommo',
+    'Quando ela passa para a equipe',
+  ],
+  nunca: ['Dizer que é IA', 'Falar de honorários ou do valor da ação', 'Prometer resultado', 'Pedir documento ao lead'],
 }
 
 export const TAGS = [
-  { tag: 'ia', significa: 'A assistente atende este contato.', quem: 'Combinado com a Control Gestão (nos testes, só os números de teste).' },
-  { tag: 'atendimento-humano', significa: 'A equipe está com o contato. A assistente não responde.', quem: 'A assistente, na passagem. Vocês também podem colocar a qualquer hora.' },
-  { tag: 'em contato', significa: 'O contato já foi atendido (a mesma tag da automação antiga).', quem: 'A assistente.' },
+  { tag: 'ia', significa: 'A Anna atende este lead.', quem: 'Combinado com a Control Gestão. A liberação é em etapas: 1 lead de teste, depois 10 leads, depois todos.' },
+  { tag: 'atendimento-humano', significa: 'A equipe está com o lead. A Anna não responde.', quem: 'A Anna, na passagem. Vocês também podem colocar a qualquer hora.' },
+  { tag: 'ANNA passou para humano', significa: 'Foi a Anna que passou o lead para a equipe.', quem: 'A Anna.' },
+  { tag: 'ANNA agendou', significa: 'Reunião marcada pela Anna.', quem: 'A Anna.' },
+  { tag: 'ANNA renda abaixo 10k', significa: 'Renda bruta abaixo de R$ 10 mil: sem reunião marcada pela Anna, a equipe avalia.', quem: 'A Anna.' },
+  { tag: 'cliente', significa: 'Já é cliente do escritório. A Anna não fala com ele.', quem: 'A equipe.' },
 ]
 
 export const ACOES = [
-  { titulo: 'Tirar a assistente de um contato', texto: 'Coloque a tag atendimento-humano. Ela para de responder na hora.' },
-  { titulo: 'Devolver um contato para a assistente', texto: 'Tire a tag atendimento-humano e coloque a tag ia. Ela começa um atendimento novo, sem perguntar de novo se é cliente.' },
-  { titulo: 'Feriado', texto: 'A assistente não sabe quando é feriado: num feriado de dia útil ela age como num dia normal. Avise a Control Gestão com antecedência para ajustar o aviso.' },
+  { titulo: 'Tirar a Anna de um lead', texto: 'Coloque a tag atendimento-humano. Ela para de responder na hora.' },
+  { titulo: 'Devolver um lead para a Anna', texto: 'Tire a tag atendimento-humano e coloque a tag ia. Ela começa um atendimento novo, do início do roteiro.' },
+  { titulo: 'Responder pelo Kommo', texto: 'Se alguém da equipe escrever para o lead pelo Kommo, a Anna fica 6 horas sem responder aquele lead.' },
+]
+
+/** Campos do card que são da Anna (a equipe não edita). */
+export const CAMPOS_IA = [
+  'IA - Resposta (Anna)', 'IA - Primeiro nome', 'IA - Horário da reunião', 'IA - Link do Meet',
+  'IA - Objetivo', 'IA - Renda bruta', 'IA - Renda líquida', 'IA - Desconto em conta',
 ]
 
 export const COMBINADOS = [
-  { titulo: 'Não apaguem a conversa de um contato no GHL.', porque: 'O GHL deixa de avisar a assistente da próxima mensagem e o cliente fica sem resposta.' },
-  { titulo: 'Não apaguem nem troquem o tipo do campo CPF/CNPJ.', porque: 'É onde ela grava o documento. Renomear pode.' },
-  { titulo: 'Mudou um processo, prazo, caminho do app ou texto?', porque: 'Peça em Ensinar: a IA atualiza e o exame confere. Mudança no roteiro vira pedido para a Control Gestão.' },
-  { titulo: 'Viram uma resposta estranha?', porque: 'Corrija em Ensinar › Conversas reais. Se for regra de atendimento, a IA registra o pedido para a Control Gestão.' },
-  { titulo: 'Evitem mandar senha pelo WhatsApp.', porque: 'A assistente nunca faz isso, e a equipe deve seguir a mesma regra.' },
+  { titulo: 'Não disparem "/follow up" nem "FOLLOW AGENDAR REUNIÃO" em lead com a tag ia.', porque: 'A Anna já faz o follow-up desses leads. Dois follow-ups ao mesmo tempo confundem o lead.' },
+  { titulo: 'Não editem os campos "IA - ..." do card.', porque: 'São da Anna. O IA - Resposta (Anna) é o texto que o Salesbot envia ao lead.' },
+  { titulo: 'Não apaguem colunas ou campos que a Anna usa, nem renomeiem as tags dela.', porque: 'Colunas e campos ela encontra pelo número interno do Kommo; tags, pelo nome. Precisa mudar? Peça para a Control Gestão antes.' },
+  { titulo: 'Mudou um texto, um fato do escritório ou uma informação?', porque: 'Peça em Ensinar: a IA atualiza e o exame confere. Regra do roteiro vira pedido para a Control Gestão.' },
+  { titulo: 'Viram uma resposta estranha?', porque: 'Corrija em Ensinar › Conversas reais. Se for regra do roteiro, a IA registra o pedido para a Control Gestão.' },
 ]
 
 export const FAQ = [
-  { p: 'A assistente diz que é uma IA?', r: 'Sim. Se perguntarem, ela diz que é a assistente virtual da InovPay. Nunca finge ser uma pessoa.' },
-  { p: 'E se o cliente mandar áudio, foto ou PDF?', r: 'Ela ouve o áudio e lê a imagem ou o PDF, responde em texto e usa o que leu na conversa e na nota.' },
-  { p: 'E se o cliente insistir na taxa?', r: 'Ela continua dizendo que a equipe passa as taxas e anota o pedido. Nunca escreve porcentagem nem valor.' },
-  { p: 'Respondi um cliente e a assistente parou. Está com problema?', r: 'Não. Quando alguém da equipe responde pelo GHL, ela fica quieta por 6 horas naquele contato para não atropelar vocês.' },
-  { p: 'Mudei um texto em Ensinar. Já vale no WhatsApp?', r: 'Só depois de publicar. A mudança fica no rascunho até o exame aprovar as 14 conversas de teste.' },
+  { p: 'A Anna diz que é uma IA?', r: 'Não. É decisão do escritório. Se o lead perguntar se é robô, ela não confirma nem nega: passa para a equipe, com tarefa para a Dra.' },
+  { p: 'E se o lead mandar áudio, foto ou PDF?', r: 'Ela ouve o áudio e lê a imagem ou o PDF antes de responder, e usa o que leu na conversa. Ela não pede documento.' },
+  { p: 'E se o lead perguntar quanto custa?', r: 'Ela diz que a primeira reunião on-line não é cobrada. Honorários e valor da ação ficam para a reunião com a Dra.: ela nunca fala de valor.' },
+  { p: 'Por que ela não marcou reunião com um lead?', r: 'Renda bruta abaixo de R$ 10 mil é regra da Dra. Ela registra o caso, põe a tag "ANNA renda abaixo 10k" e cria uma tarefa. A equipe decide.' },
+  { p: 'Respondi um lead e a Anna parou. Está com problema?', r: 'Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead para não atropelar vocês.' },
+  { p: 'Mudei um texto em Ensinar. Já vale no WhatsApp?', r: `Só depois de publicar. A mudança fica no rascunho até o exame aprovar as ${CENARIOS_EXAME} conversas de teste.` },
 ]

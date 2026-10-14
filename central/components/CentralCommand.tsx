@@ -8,11 +8,13 @@ import { answerCentral, type CentralAnswer } from '@/lib/intelligence'
 import { useExecutions, useLive } from '@/lib/hooks'
 
 const SUGESTOES = [
-  'Quantos foram passados para a equipe?',
-  'A operação teve erros?',
+  'Quantas reuniões a Anna marcou?',
+  'Quantos passaram para a equipe?',
+  'Quantos ganham abaixo de 10 mil?',
+  'Quem está com a equipe agora?',
+  'Tem pedido de remarcar?',
   'Quanto estamos gastando?',
-  'Quantos eram clientes?',
-  'E fora do horário?',
+  'A operação teve erros?',
 ]
 
 export default function CentralCommand() {
@@ -86,7 +88,7 @@ function Painel({ fechar }: { fechar: () => void }) {
                 value={pergunta}
                 onChange={e => setPergunta(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') perguntar() }}
-                placeholder="Ex.: quantos estornos foram para a equipe?"
+                placeholder="Ex.: quantas reuniões foram marcadas esta semana?"
                 className="campo w-full rounded-xl pl-11 pr-4 py-3.5 text-[14px]"
               />
             </div>
