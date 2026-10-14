@@ -68,7 +68,7 @@ Lead some ─→ /api/tick (QStash, 5 em 5 min) ─→ réguas de config/follow-
 
 ## Painel (Central v5)
 
-Projeto Vercel separado, `central-carolina-calvo` (pasta `central/`), com login por senha. Quatro abas:
+**No ar desde 14/10/2026: https://central-carolina-calvo.vercel.app** (projeto Vercel `central-carolina-calvo`, pasta `central/`, login por senha; a senha fica com o Guilherme, fora do repositório). `/` e `/painel` do agente redirecionam para lá. Quatro abas:
 - **Estatísticas**, só leitura e zero tokens: atendidos, renda informada, acima e abaixo de 10 mil, reuniões marcadas, passagens com o motivo, follow-ups, custo, o funil SDR e Closer lido do Kommo e o último aviso de cada webhook.
 - **Teste**: conversa com a Anna de verdade, com Kommo, WhatsApp e agenda em memória. A 5ª mensagem sai sem a pausa de 30 min.
 - **Ensinar**: a equipe pede mudanças em português e o curador decide o destino:
@@ -89,6 +89,11 @@ Lado do agente:
 Variáveis:
 - No agente: `CENTRAL_SECRET` e `COST_USD_BRL`.
 - Na Central: `AGENT_URL`, `AGENT_SECRET` (é o `CENTRAL_SECRET`), `APP_PASSWORD` e `AUTH_SECRET`.
+
+Pontos conhecidos:
+- Ganhos e perdidos do funil são dos últimos 30 dias (SDR, Closer e Gestão operacional).
+- A contagem de cenários do exame aparece fixa (21) em `central/lib/como-usar.ts`: se o eval ganhar cenário, mude também lá.
+- Os rótulos roxos têm contraste fraco no tema claro. Isso veio do padrão v5.
 
 Os textos editáveis moram no Redis do agente:
 - `anna-cc:base:vigente`;
