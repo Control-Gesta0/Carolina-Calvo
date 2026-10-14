@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Central da Anna · Guia de uso</title>
+<style>
+  :root {
+    --navy: #1f3d63;
+    --laranja: #ef5a24;
+    --ciano: #0e8fb0;
+    --ciano-claro: #e3f4f8;
+    --tinta: #0f172a;
+    --texto: #334155;
+    --suave: #64748b;
+    --linha: #e2e8f0;
+    --fundo: #f6f8fa;
+    --vermelho: #dc2626;
+    --verde: #15803d;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { font-family: 'Inter', sans-serif; color: var(--texto); font-size: 10pt; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .pagina { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
+  .compacto h2 { margin-top: 4mm; }
+  .compacto td { padding-top: 1.8mm; padding-bottom: 1.8mm; }
+  .pagina:last-child { page-break-after: auto; break-after: auto; }
+  .conteudo { position: absolute; top: 16mm; left: 17mm; right: 17mm; bottom: 20mm; overflow: hidden; }
+  .rodape { position: absolute; left: 17mm; right: 17mm; bottom: 9mm; display: flex; justify-content: space-between; align-items: center; font-family: 'DejaVu Sans Mono', monospace; font-size: 6.6pt; letter-spacing: .08em; color: var(--suave); border-top: 1px solid var(--linha); padding-top: 3mm; text-transform: uppercase; }
+  .rodape b { color: var(--navy); font-weight: 600; }
+
+  .rotulo { font-family: 'DejaVu Sans Mono', monospace; font-size: 7pt; letter-spacing: .16em; color: var(--ciano); text-transform: uppercase; margin-bottom: 2.5mm; }
+  h1 { font-family: 'Inter Display', 'Inter', sans-serif; font-weight: 600; font-size: 25pt; line-height: 1.12; color: var(--tinta); letter-spacing: -.01em; }
+  h1 em, h2 em { font-style: normal; color: var(--ciano); }
+  h2 { font-family: 'Inter Display', 'Inter', sans-serif; font-weight: 600; font-size: 14pt; color: var(--tinta); margin: 6mm 0 2.5mm; letter-spacing: -.005em; }
+  h3 { font-weight: 600; font-size: 10.5pt; color: var(--tinta); margin-bottom: 1mm; }
+  p { margin-bottom: 2.4mm; }
+  .intro { font-size: 11pt; color: var(--texto); margin-top: 3mm; max-width: 158mm; }
+  .divisor { height: 1px; background: var(--linha); margin: 5mm 0 1mm; }
+  strong { color: var(--tinta); font-weight: 600; }
+  .tag { display: inline-block; font-family: 'DejaVu Sans Mono', monospace; font-size: 7.6pt; padding: .2mm 1.8mm; border: 1px solid #cbd5e1; border-radius: 1.4mm; background: #fff; color: var(--tinta); white-space: nowrap; }
+
+  .tela { border: 1px solid var(--linha); border-radius: 2.5mm; overflow: hidden; box-shadow: 0 1.2mm 4mm rgba(15, 23, 42, .07); background: #fff; }
+  .tela img { display: block; width: 100%; }
+  .legenda { font-size: 8pt; color: var(--suave); margin-top: 1.8mm; }
+
+  .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .grade3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3.5mm; }
+  .cartao { border: 1px solid var(--linha); border-radius: 2.2mm; padding: 3.6mm 4mm; background: #fff; }
+  .cartao.suave { background: var(--fundo); }
+  .cartao p:last-child, .cartao ul:last-child { margin-bottom: 0; }
+  .cartao .rotulo { margin-bottom: 1.4mm; }
+
+  ul.lista { list-style: none; margin-bottom: 2.4mm; }
+  ul.lista li { position: relative; padding-left: 4.2mm; margin-bottom: 1.3mm; }
+  ul.lista li::before { content: ''; position: absolute; left: .6mm; top: 2mm; width: 1.5mm; height: 1.5mm; border-radius: 50%; background: var(--ciano); }
+  ul.lista.laranja li::before { background: var(--laranja); }
+  ul.lista.cinza li::before { background: #94a3b8; }
+
+  .passos { counter-reset: passo; display: flex; flex-direction: column; gap: 3mm; }
+  .passo { display: grid; grid-template-columns: 9mm 1fr; gap: 3.5mm; align-items: start; border: 1px solid var(--linha); border-radius: 2.2mm; padding: 3.6mm 4mm; background: #fff; }
+  .passo .num { width: 9mm; height: 9mm; border-radius: 50%; background: var(--ciano-claro); color: var(--ciano); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 11pt; }
+  .passo p { margin-bottom: 0; }
+  .passo .onde { font-family: 'DejaVu Sans Mono', monospace; font-size: 7pt; letter-spacing: .06em; color: var(--ciano); margin-top: 1.2mm; text-transform: uppercase; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  th { text-align: left; font-family: 'DejaVu Sans Mono', monospace; font-weight: 400; font-size: 6.8pt; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); padding: 0 2.5mm 1.8mm 0; border-bottom: 1px solid var(--linha); }
+  td { padding: 2.2mm 2.5mm 2.2mm 0; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.chave { width: 34mm; font-weight: 600; color: var(--tinta); }
+  .urgente, td.chave.urgente { color: var(--vermelho); font-weight: 600; }
+  table.largo td.chave { width: 46mm; }
+
+  .aviso { border-left: 1mm solid var(--laranja); background: #fff6f2; padding: 3mm 4mm; border-radius: 0 2mm 2mm 0; font-size: 9.2pt; }
+  .aviso.ciano { border-left-color: var(--ciano); background: var(--ciano-claro); }
+  .aviso p:last-child { margin-bottom: 0; }
+
+  .fluxo { display: flex; flex-direction: column; gap: 0; }
+  .fluxo .etapa { border: 1px solid var(--linha); border-radius: 2.2mm; padding: 3mm 4mm; background: #fff; }
+  .fluxo .seta { text-align: center; color: #94a3b8; font-size: 9pt; line-height: 1; padding: 1mm 0; }
+  .fluxo .etapa h3 { display: flex; gap: 2.5mm; align-items: center; }
+  .fluxo .etapa h3 .n { display: inline-flex; width: 5.5mm; height: 5.5mm; border-radius: 50%; background: var(--ciano-claro); color: var(--ciano); font-size: 7.5pt; align-items: center; justify-content: center; font-weight: 700; }
+  .fluxo .etapa p { margin-bottom: 0; font-size: 9.2pt; }
+  .kommo { margin-top: 1.6mm; font-size: 8.4pt; color: var(--suave); }
+  .kommo b { font-family: 'DejaVu Sans Mono', monospace; font-weight: 400; font-size: 6.6pt; letter-spacing: .12em; color: var(--navy); margin-right: 1.5mm; }
+
+  /* capa */
+  .capa { background: var(--navy); color: #fff; }
+  .capa .faixa { position: absolute; left: 0; right: 0; bottom: 0; height: 3mm; background: var(--laranja); }
+  .capa .topo { position: absolute; top: 20mm; left: 20mm; right: 20mm; display: flex; justify-content: space-between; align-items: center; }
+  .capa .logo { background: #fff; border-radius: 2.5mm; padding: 4mm 5mm; }
+  .capa .logo img { height: 11mm; display: block; }
+  .capa .topo span { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; letter-spacing: .2em; color: #9fc3dc; text-transform: uppercase; }
+  .capa .meio { position: absolute; left: 20mm; right: 20mm; top: 92mm; }
+  .capa .meio .rotulo { color: #7fd3e8; font-size: 8pt; margin-bottom: 5mm; }
+  .capa h1 { color: #fff; font-size: 46pt; line-height: 1.02; letter-spacing: -.02em; }
+  .capa h1 em { color: #5fd0ea; }
+  .capa .sub { font-size: 14pt; color: #d5e3ee; margin-top: 8mm; max-width: 140mm; line-height: 1.45; }
+  .capa .acesso { position: absolute; left: 20mm; right: 20mm; bottom: 28mm; display: grid; grid-template-columns: 1.45fr 1.1fr .8fr; gap: 0; border-top: 1px solid rgba(255,255,255,.18); padding-top: 6mm; }
+  .capa .acesso div { padding-right: 6mm; }
+  .capa .acesso .rotulo { color: #7fd3e8; margin-bottom: 1.6mm; font-size: 6.8pt; }
+  .capa .acesso p { color: #fff; font-size: 10pt; margin: 0; line-height: 1.35; }
+  .capa .acesso p.fraco { color: #b8cddd; font-size: 8.6pt; }
+</style>
+</head>
+<body>
+
+<!-- 1 · CAPA -->
+<section class="pagina capa">
+  <div class="topo">
+    <div class="logo"><img src="logo.png" alt="Control Gestão"></div>
+    <span>Central de Inteligência</span>
+  </div>
+  <div class="meio">
+    <div class="rotulo">Guia de uso · Carolina Calvo Advogados</div>
+    <h1>Central<br>da <em>Anna.</em></h1>
+    <p class="sub">Como acompanhar o que a Anna faz no WhatsApp, atender os leads que ela passa para a equipe, testar uma conversa e ensinar o que ela precisa saber.</p>
+  </div>
+  <div class="acesso">
+    <div>
+      <div class="rotulo">Endereço</div>
+      <p>central-carolina-calvo.vercel.app</p>
+    </div>
+    <div>
+      <div class="rotulo">Senha</div>
+      <p>Enviada pela Control Gestão</p>
+      <p class="fraco">em mensagem separada deste guia</p>
+    </div>
+    <div>
+      <div class="rotulo">Versão</div>
+      <p>Central v5</p>
+      <p class="fraco">outubro de 2026</p>
+    </div>
+  </div>
+  <div class="faixa"></div>
+</section>
+
+<!-- 2 · ANTES DE COMEÇAR -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Antes de começar</div>
+    <h1>A Anna e a <em>Central.</em></h1>
+    <p class="intro">A Anna atende pelo WhatsApp oficial do escritório os leads de superendividamento. Ela segue o roteiro da Dra. Carolina, faz as perguntas, marca a reunião on-line na agenda da Dra. quando a renda bruta é de R$ 10 mil ou mais e passa o lead para a equipe quando precisa. Tudo o que ela faz fica registrado no card do Kommo.</p>
+    <p class="intro" style="margin-top:0">A Central é o painel da equipe para acompanhar, testar e ensinar a Anna. Ela tem quatro abas, no menu à esquerda:</p>
+
+    <table style="margin-top:3mm">
+      <tr><th>Aba</th><th>Para que serve</th></tr>
+      <tr><td class="chave">Estatísticas</td><td>Se a Anna está bem, o que pede decisão, quem foi para a equipe, as reuniões marcadas, o funil do Kommo e quanto ela custou. Só leitura: abrir não gasta nada.</td></tr>
+      <tr><td class="chave">Teste</td><td>Conversar com a Anna como se fosse um lead. Nada vai para o Kommo, para o WhatsApp nem para a agenda da Dra.</td></tr>
+      <tr><td class="chave">Ensinar</td><td>Pedir mudanças em português: um texto, uma informação nova, a correção de uma resposta. Um exame automático confere antes de valer no WhatsApp.</td></tr>
+      <tr><td class="chave">Como usar</td><td>Este manual dentro da Central, com o fluxo do lead e os textos que estão no ar agora.</td></tr>
+    </table>
+
+    <h2>Como entrar</h2>
+    <div style="display:grid; grid-template-columns: 62mm 1fr; gap: 7mm; align-items: start;">
+      <div class="tela"><img src="login.jpg" alt="Tela de login da Central"></div>
+      <div>
+        <div class="passos">
+          <div class="passo"><div class="num">1</div><div><h3>Abra o endereço</h3><p>central-carolina-calvo.vercel.app, no computador ou no celular.</p></div></div>
+          <div class="passo"><div class="num">2</div><div><h3>Digite a senha</h3><p>É a mesma para toda a equipe. A Control Gestão envia em mensagem separada.</p></div></div>
+          <div class="passo"><div class="num">3</div><div><h3>Pronto</h3><p>O acesso fica aberto por 12 horas naquele navegador. Para sair antes, use o ícone de saída no pé do menu.</p></div></div>
+        </div>
+        <div class="aviso ciano" style="margin-top:4mm">
+          <p><strong>Pergunte à Central.</strong> No menu, ou com Ctrl K, dá para perguntar em português: "quantas reuniões a Anna marcou?", "quem está com a equipe agora?".</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>2</span></div>
+</section>
+
+<!-- 3 · ROTINA -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">A rotina da equipe</div>
+    <h1>Cinco passos, <em>no dia a dia.</em></h1>
+    <p class="intro">É o mesmo passo a passo da aba Como usar. Os dois primeiros são de todo dia. Os outros, quando algo precisa mudar.</p>
+
+    <div class="passos" style="margin-top:6mm">
+      <div class="passo"><div class="num">1</div><div>
+        <h3>Acompanhe</h3>
+        <p>Estatísticas mostra se a Anna está bem e o que pede decisão, como um lead que pediu para remarcar. Em Operação ficam as passagens para a equipe, as reuniões marcadas e o link de cada lead no Kommo.</p>
+        <div class="onde">Estatísticas › Visão geral e Operação</div>
+      </div></div>
+      <div class="passo"><div class="num">2</div><div>
+        <h3>Atenda o que ela passou</h3>
+        <p>No Kommo, abra as tarefas da Dra. ou filtre pela tag <span class="tag">atendimento-humano</span>. A tarefa traz o motivo e o que o lead já informou: objetivo, renda bruta, líquido e desconto em conta. Ninguém precisa perguntar de novo.</p>
+        <div class="onde">Kommo › Tarefas · Estatísticas › Operação › Passagens</div>
+      </div></div>
+      <div class="passo"><div class="num">3</div><div>
+        <h3>Teste antes de mudar</h3>
+        <p>Em Teste, converse como um lead. É a mesma Anna do WhatsApp, mas nada vai para o Kommo nem para a agenda da Dra. Resposta errada? Clique em Corrigir embaixo dela e diga como deveria ser.</p>
+        <div class="onde">Teste</div>
+      </div></div>
+      <div class="passo"><div class="num">4</div><div>
+        <h3>Ensine</h3>
+        <p>Em Ensinar › Pedir mudança, escreva o que mudou, anexe um arquivo (PDF, Word, imagem) ou cole um link. Viu algo errado no WhatsApp? Em Conversas reais, clique em Corrigir. A IA muda o rascunho e mostra o antes e o depois.</p>
+        <div class="onde">Ensinar › Pedir mudança · Conversas reais</div>
+      </div></div>
+      <div class="passo"><div class="num">5</div><div>
+        <h3>Publique com o exame</h3>
+        <p>Teste o rascunho e clique em Publicar com exame: 21 conversas de teste rodam com os textos novos, e só publica se todas passarem. Não gostou depois? Em Versões anteriores, clique em Voltar para esta.</p>
+        <div class="onde">Ensinar › Publicar com exame</div>
+      </div></div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>3</span></div>
+</section>
+
+<!-- 4 · ESTATÍSTICAS -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Aba Estatísticas</div>
+    <h1>Como a Anna <em>está indo.</em></h1>
+    <p class="intro">A primeira tela depois do login. Os números vêm do Kommo e do diário da Anna, calculados sem IA. Atualizar não gasta nada.</p>
+    <div class="tela" style="margin-top:4mm"><img src="visao.jpg" alt="Visão geral"></div>
+    <p class="legenda">Visão geral: a frase do topo diz se a Anna está bem. Logo abaixo, o que pede decisão e os números de hoje.</p>
+
+    <h2>As quatro partes</h2>
+    <div class="grade2">
+      <div class="cartao"><div class="rotulo">Visão geral</div><p>Se a Anna está operando bem, o que pede decisão (urgências e oportunidades no funil) e os números de hoje: leads atendidos, reuniões marcadas, passagens para a equipe e custo.</p></div>
+      <div class="cartao"><div class="rotulo">Operação</div><p><strong>Agora</strong>: quem falou com a Anna nas últimas 24 horas. <strong>Passagens</strong>: quem foi para a equipe e por quê. <strong>Reuniões</strong>: as que ela marcou. <strong>Histórico</strong>: cada resposta. <strong>Funil</strong>: o SDR e o Closer no Kommo.</p></div>
+      <div class="cartao"><div class="rotulo">Resultados</div><p>Em 7 ou 30 dias: quantos leads ela atendeu e qualificou, quantos informaram a renda, quantas reuniões marcou, quantos passou para a equipe e quanto custou.</p></div>
+      <div class="cartao"><div class="rotulo">Sistema</div><p>Se a Anna e o Kommo estão respondendo e quando chegou o último aviso do Kommo. É a tela para conferir quando algo parecer parado.</p></div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>4</span></div>
+</section>
+
+<!-- 5 · PASSAGENS -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Quando a Anna passa para a equipe</div>
+    <h1>Ela para, avisa o lead e <em>deixa tudo no card.</em></h1>
+    <p class="intro">Em qualquer ponto da conversa, a Anna entrega o lead para a equipe quando o caso pede uma pessoa. O lead recebe uma mensagem educada e a equipe recebe a tarefa pronta.</p>
+
+    <h2>O que acontece no Kommo</h2>
+    <ul class="lista">
+      <li>Entram as tags <span class="tag">atendimento-humano</span> e <span class="tag">ANNA passou para humano</span>.</li>
+      <li>Sai a tag <span class="tag">ia</span>: daqui em diante quem responde é a equipe.</li>
+      <li>A Dra. recebe uma tarefa com prazo de 60 minutos, com o motivo e o que o lead já informou.</li>
+      <li>O follow-up automático daquele lead é cancelado.</li>
+    </ul>
+
+    <h2>Os motivos</h2>
+    <table>
+      <tr><th>Motivo</th><th>Quando acontece</th></tr>
+      <tr><td class="chave">Perguntou se é robô</td><td>Ela não confirma nem nega: passa para a equipe.</td></tr>
+      <tr><td class="chave">Pediu uma pessoa</td><td>Pediu para falar com a Dra. ou com alguém da equipe.</td></tr>
+      <tr><td class="chave">Já tem advogado</td><td>Já tem advogado atuando no caso. Recebe o texto da Dra. sobre a ética da OAB.</td></tr>
+      <tr><td class="chave">Já é cliente</td><td>Já é cliente do escritório.</td></tr>
+      <tr><td class="chave">Outro assunto</td><td>O assunto é de outra área, como tributário ou trabalhista.</td></tr>
+      <tr><td class="chave">Abaixo de 10 mil e pediu reunião</td><td>Renda bruta abaixo de R$ 10 mil e pediu reunião mesmo assim.</td></tr>
+      <tr><td class="chave urgente">Remarcar</td><td><span class="urgente">Urgente.</span> Tem reunião marcada e pediu para remarcar.</td></tr>
+      <tr><td class="chave urgente">Sem agenda</td><td><span class="urgente">Urgente.</span> A agenda Google não respondeu ou não tem horário livre nos próximos dias.</td></tr>
+    </table>
+
+    <div class="aviso" style="margin-top:5mm">
+      <p><strong>Onde ver:</strong> nas tarefas da Dra. no Kommo, filtrando pela tag atendimento-humano, ou em Estatísticas › Operação › Passagens. Os urgentes aparecem em vermelho e também em "O que pede decisão", na Visão geral.</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>5</span></div>
+</section>
+
+<!-- 6 · TESTE -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Aba Teste</div>
+    <h1>Converse com a Anna, <em>sem risco.</em></h1>
+    <p class="intro">Mesmo roteiro, mesmo intérprete e mesmas travas do WhatsApp. Nada vai para o Kommo, para o WhatsApp nem para a agenda da Dra.</p>
+    <div class="tela" style="margin-top:4mm"><img src="teste.jpg" alt="Teste"></div>
+    <p class="legenda">À esquerda, a conversa. À direita, o que mudaria no card do Kommo: coluna, etapa do roteiro, tags, campos e follow-up.</p>
+
+    <div class="grade3" style="margin-top:4mm">
+      <div class="cartao suave"><div class="rotulo">Início</div><p><strong>Lead escreve</strong>: o lead manda a primeira mensagem. <strong>Formulário</strong>: a Anna começa, como faz com quem veio do formulário.</p></div>
+      <div class="cartao suave"><div class="rotulo">Agenda da Dra.</div><p><strong>Com horário</strong> ou <strong>Sem horário</strong>, para ver o que ela faz quando a agenda está cheia.</p></div>
+      <div class="cartao suave"><div class="rotulo">Textos</div><p><strong>No ar</strong>: o que vale no WhatsApp hoje. <strong>Rascunho</strong>: as mudanças pedidas em Ensinar, antes de publicar.</p></div>
+    </div>
+    <ul class="lista" style="margin-top:4mm">
+      <li>Resposta errada? Clique em <strong>Corrigir</strong>, embaixo dela, e diga como deveria ser. O pedido vai para Ensinar.</li>
+      <li><strong>Recomeçar</strong> limpa a conversa. A pausa de 30 minutos antes da 5ª mensagem é pulada no teste.</li>
+      <li>Fotos e áudios não entram no teste. O limite é de 300 mensagens por dia.</li>
+    </ul>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>6</span></div>
+</section>
+
+<!-- 7 · ENSINAR -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Aba Ensinar</div>
+    <h1>O que a Anna <em>sabe.</em></h1>
+    <p class="intro">Peça em português, com arquivo ou link se quiser. A IA muda o rascunho e o exame automático decide se vale no WhatsApp.</p>
+    <div class="tela" style="margin-top:4mm"><img src="ensinar.jpg" alt="Ensinar"></div>
+
+    <div class="grade3" style="margin-top:4mm">
+      <div class="cartao"><div class="rotulo">Pedir mudança</div><p>Escreva como falaria com alguém da equipe. Pode anexar PDF, Word, texto, CSV ou imagem (até 3 arquivos) ou colar um link.</p></div>
+      <div class="cartao"><div class="rotulo">Conversas reais</div><p>As conversas do WhatsApp. Viu uma resposta estranha? Clique em Corrigir e diga como deveria ser.</p></div>
+      <div class="cartao"><div class="rotulo">O que ela sabe</div><p>Todos os textos e informações que a Anna usa hoje, por assunto, com o que está no rascunho.</p></div>
+    </div>
+
+    <h2>Da mudança ao WhatsApp</h2>
+    <table class="largo">
+      <tr><td class="chave">1. Você pede</td><td>Texto, arquivo, link ou a correção de uma resposta.</td></tr>
+      <tr><td class="chave">2. A IA muda o rascunho</td><td>Mostra o antes e o depois. Dá para desfazer.</td></tr>
+      <tr><td class="chave">3. Você testa</td><td>Em Teste, com Textos: Rascunho.</td></tr>
+      <tr><td class="chave">4. O exame confere</td><td>21 conversas de teste. Se uma falhar, nada muda no WhatsApp.</td></tr>
+      <tr><td class="chave">5. Vale no WhatsApp</td><td>E dá para voltar a uma versão anterior.</td></tr>
+    </table>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>7</span></div>
+</section>
+
+<!-- 8 · QUEM MUDA O QUÊ + FLUXO -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Quem muda o quê</div>
+    <h1>O que a equipe muda <em>e o que é pedido.</em></h1>
+    <p class="intro">Pedidos fora do que a equipe muda em Ensinar não se perdem: a IA registra como pedido para a Control Gestão.</p>
+
+    <div class="grade3" style="margin-top:5mm">
+      <div class="cartao">
+        <div class="rotulo">A equipe, em Ensinar</div>
+        <ul class="lista">
+          <li>Os textos do roteiro: 1ª e 2ª perguntas, 3ª, 4ª e 5ª mensagens</li>
+          <li>As ofertas de horário e a confirmação da reunião</li>
+          <li>Os textos de quando a Anna para: passagem, renda abaixo de 10 mil, sem horário, advogado</li>
+          <li>As retomadas depois de uma dúvida do lead</li>
+          <li>Os fatos: reunião, endereço, atendimento presencial</li>
+          <li>Informações novas sobre o escritório</li>
+        </ul>
+      </div>
+      <div class="cartao">
+        <div class="rotulo">Pedido à Control Gestão</div>
+        <ul class="lista laranja">
+          <li>A regra dos R$ 10 mil e a dos R$ 13,5 mil (reunião no mesmo dia)</li>
+          <li>Dias e horários da agenda da Dra.</li>
+          <li>Os follow-ups: quando e quantos</li>
+          <li>Os modelos aprovados pela Meta</li>
+          <li>Colunas, tags, campos e tarefas do Kommo</li>
+          <li>Quando ela passa para a equipe</li>
+        </ul>
+      </div>
+      <div class="cartao suave">
+        <div class="rotulo">Ela nunca faz</div>
+        <ul class="lista cinza">
+          <li>Dizer que é IA</li>
+          <li>Falar de honorários ou do valor da ação</li>
+          <li>Prometer resultado</li>
+          <li>Pedir documento ao lead</li>
+        </ul>
+        <p style="font-size:8.4pt; color: var(--suave)">São travas no código. Valem mesmo que alguém peça em Ensinar.</p>
+      </div>
+    </div>
+
+    <h2>Travas da Anna</h2>
+    <ul class="lista">
+      <li>Nunca diz que é IA, robô ou assistente virtual. Se perguntarem, passa para a equipe.</li>
+      <li>Nunca fala de honorários, valor da ação, parcela ou porcentagem. Isso é assunto da reunião com a Dra.</li>
+      <li>Nunca promete resultado ("garantido", "com certeza vamos conseguir").</li>
+      <li>Não pede para o lead mandar documento, foto ou print. Na confirmação, pede para ter o contracheque e o extrato em mãos na reunião.</li>
+      <li>Uma pergunta por mensagem, sem travessão e sem emoji.</li>
+      <li>Quem decide a próxima mensagem, a coluna do card, o horário e a passagem é o código. A IA só lê o que o lead escreveu.</li>
+      <li>Só oferece horário livre na agenda Google da Dra. e confere de novo antes de marcar.</li>
+    </ul>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>8</span></div>
+</section>
+
+<!-- 9 · FLUXO DO LEAD -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">O caminho do lead</div>
+    <h1>Do WhatsApp até <em>a reunião.</em></h1>
+
+    <div class="fluxo" style="margin-top:5mm">
+      <div class="etapa">
+        <h3>Chega uma mensagem</h3>
+        <p>A Anna responde só quando tudo isto vale: o lead tem a tag <span class="tag">ia</span>; não tem <span class="tag">atendimento-humano</span> nem <span class="tag">cliente</span>; ninguém da equipe escreveu para ele pelo Kommo nas últimas 6 horas; e o card não está em Gestão operacional nem no Financeiro. Mensagens seguidas viram uma resposta só. Áudio, foto e PDF ela ouve ou lê antes de responder.</p>
+      </div>
+      <div class="seta">▼</div>
+      <div class="etapa">
+        <h3><span class="n">1</span>1ª pergunta: o que ele quer saber</h3>
+        <p>1) suspender os descontos por até 6 meses, 2) reestruturar as dívidas com juros revisados ou 3) as duas. Quem veio do formulário recebe a mesma pergunta pelo modelo "Anna - Primeiro contato", aprovado pela Meta.</p>
+      </div>
+      <div class="seta">▼</div>
+      <div class="etapa">
+        <h3><span class="n">2</span>2ª pergunta: renda e descontos</h3>
+        <p>Pede a renda bruta, o valor líquido e quanto o banco desconta direto da conta corrente. Se faltar um valor, pede só o que falta.</p>
+        <div class="kommo"><b>NO KOMMO</b>O card vai para a coluna da renda no SDR (até 5 mil, 5 a 10 mil, 10 a 15 mil ou acima de 15 mil) e os valores vão para os campos IA - Renda bruta, IA - Renda líquida e IA - Desconto em conta.</div>
+      </div>
+      <div class="seta">▼</div>
+      <div class="etapa">
+        <h3><span class="n">3</span>3ª mensagem: o alívio sem o desconto</h3>
+        <p>Usa o valor que o banco desconta da conta. Quem não tem desconto em conta recebe outra versão.</p>
+      </div>
+      <div class="seta">▼</div>
+      <div class="grade2">
+        <div class="etapa">
+          <h3>Renda bruta abaixo de R$ 10 mil</h3>
+          <p>A Anna não marca reunião. Avisa que o caso fica registrado para a equipe e para de conduzir.</p>
+          <div class="kommo"><b>NO KOMMO</b>Tag "ANNA renda abaixo 10k" e tarefa para a Dra. Se o lead pedir reunião depois, ela passa para a equipe.</div>
+        </div>
+        <div class="etapa">
+          <h3>Renda bruta de R$ 10 mil ou mais</h3>
+          <p>A 4ª mensagem diz que a Dra. vai analisar. 30 minutos depois, a 5ª oferece um horário real da agenda: reunião on-line de 30 minutos pelo Meet, de segunda a sexta. Renda de R$ 13,5 mil ou mais pode ter reunião no mesmo dia.</p>
+        </div>
+      </div>
+      <div class="seta">▼</div>
+      <div class="etapa">
+        <h3>Aceitou o horário: reunião marcada</h3>
+        <p>A Anna confirma com o dia, a hora e o link do Meet.</p>
+        <div class="kommo"><b>NO KOMMO</b>Evento com Meet na agenda da Dra., card em Closer › Reunião agendada, campos de reunião preenchidos e tag "ANNA agendou". O lembrete de 24 horas é da Anna; os de 2 horas, 1 hora e 15 minutos são da automação do escritório.</div>
+      </div>
+    </div>
+    <p class="legenda" style="margin-top:3mm">Disse que não quer continuar? Ela responde com educação e para. O card vai para SDR › Não quer continuar.</p>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>9</span></div>
+</section>
+
+<!-- 10 · EQUIPE NO KOMMO -->
+<section class="pagina compacto">
+  <div class="conteudo">
+    <div class="rotulo">A equipe no Kommo</div>
+    <h1>Tags, combinados <em>e follow-up.</em></h1>
+
+    <h2 style="margin-top:5mm">As tags</h2>
+    <table>
+      <tr><th>Tag</th><th>Significa</th><th>Quem coloca</th></tr>
+      <tr><td><span class="tag">ia</span></td><td>A Anna atende este lead.</td><td>Combinado com a Control Gestão: 1 lead de teste, depois 10, depois todos.</td></tr>
+      <tr><td><span class="tag">atendimento-humano</span></td><td>A equipe está com o lead. A Anna não responde.</td><td>A Anna, na passagem. A equipe também, a qualquer hora.</td></tr>
+      <tr><td><span class="tag">ANNA passou para humano</span></td><td>Foi a Anna que passou o lead para a equipe.</td><td>A Anna.</td></tr>
+      <tr><td><span class="tag">ANNA agendou</span></td><td>Reunião marcada pela Anna.</td><td>A Anna.</td></tr>
+      <tr><td><span class="tag">ANNA renda abaixo 10k</span></td><td>Sem reunião marcada pela Anna. A equipe avalia.</td><td>A Anna.</td></tr>
+      <tr><td><span class="tag">cliente</span></td><td>Já é cliente. A Anna não fala com ele.</td><td>A equipe.</td></tr>
+    </table>
+
+    <div class="grade3" style="margin-top:5mm">
+      <div class="cartao suave"><div class="rotulo">Tirar a Anna</div><p>Coloque a tag atendimento-humano. Ela para de responder na hora.</p></div>
+      <div class="cartao suave"><div class="rotulo">Devolver para a Anna</div><p>Tire a atendimento-humano e coloque a ia. Ela começa um atendimento novo, do início.</p></div>
+      <div class="cartao suave"><div class="rotulo">Responder pelo Kommo</div><p>Quando alguém da equipe escreve para o lead, a Anna fica 6 horas sem responder aquele lead.</p></div>
+    </div>
+
+    <h2>Follow-up</h2>
+    <p>Só com os modelos aprovados pela Meta, das 7h às 20h. Qualquer resposta do lead ou mensagem da equipe cancela a sequência.</p>
+    <div class="grade2">
+      <div class="cartao"><div class="rotulo">Parou de responder na qualificação</div><p>Follow 1 em 2 horas, Follow 2 em mais 21 horas, Follow up 3 em mais 48 horas e Follow up 4 em mais 72 horas. Sem resposta 24 horas depois, o card vai para Venda perdida.</p></div>
+      <div class="cartao"><div class="rotulo">Não respondeu à oferta de horário</div><p>Lembretes em 2, 24 e 48 horas depois da oferta. Sem resposta 24 horas depois, o card vai para Venda perdida.</p></div>
+    </div>
+
+    <h2>Combinados</h2>
+    <ul class="lista laranja">
+      <li>Não disparem "/follow up" nem "FOLLOW AGENDAR REUNIÃO" em lead com a tag ia. A Anna já faz o follow-up desses leads.</li>
+      <li>Não editem os campos "IA - ..." do card. São da Anna.</li>
+      <li>Não apaguem colunas ou campos que a Anna usa, nem renomeiem as tags dela. Precisa mudar? Fale antes com a Control Gestão.</li>
+    </ul>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>10</span></div>
+</section>
+
+<!-- 11 · PERGUNTAS -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Perguntas frequentes</div>
+    <h1>Dúvidas <em>comuns.</em></h1>
+
+    <div class="passos" style="margin-top:6mm">
+      <div class="cartao"><h3>A Anna diz que é uma IA?</h3><p>Não. É decisão do escritório. Se o lead perguntar se é robô, ela não confirma nem nega: passa para a equipe, com tarefa para a Dra.</p></div>
+      <div class="cartao"><h3>E se o lead mandar áudio, foto ou PDF?</h3><p>Ela ouve o áudio e lê a imagem ou o PDF antes de responder, e usa o que leu na conversa. Ela não pede documento.</p></div>
+      <div class="cartao"><h3>E se o lead perguntar quanto custa?</h3><p>Ela diz que a primeira reunião on-line não é cobrada. Honorários e valor da ação ficam para a reunião com a Dra.</p></div>
+      <div class="cartao"><h3>Por que ela não marcou reunião com um lead?</h3><p>Renda bruta abaixo de R$ 10 mil é regra da Dra. Ela registra o caso, põe a tag "ANNA renda abaixo 10k" e cria uma tarefa. A equipe decide.</p></div>
+      <div class="cartao"><h3>Respondi um lead e a Anna parou. Está com problema?</h3><p>Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead para não atropelar a conversa.</p></div>
+      <div class="cartao"><h3>Mudei um texto em Ensinar. Já vale no WhatsApp?</h3><p>Só depois de publicar. A mudança fica no rascunho até o exame aprovar as 21 conversas de teste.</p></div>
+      <div class="cartao"><h3>A Central mostra tudo zerado. A Anna parou?</h3><p>Veja em Estatísticas › Sistema se a Anna e o Kommo estão respondendo e quando chegou o último aviso. Se estiverem respondendo, é só que nenhum lead com a tag ia escreveu no período.</p></div>
+    </div>
+
+    <div class="aviso ciano" style="margin-top:6mm">
+      <p><strong>Suporte.</strong> Regra do roteiro, agenda, follow-up, modelos da Meta ou qualquer coisa que não esteja em Ensinar: fale com a Control Gestão.</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Central da Anna</b> · Guia de uso</span><span>11</span></div>
+</section>
+
+</body>
+</html>
