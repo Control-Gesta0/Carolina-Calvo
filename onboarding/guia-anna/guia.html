@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Anna · Guia de uso e processo</title>
+<style>
+  :root {
+    --navy: #1f3d63;
+    --laranja: #ef5a24;
+    --ciano: #0e8fb0;
+    --ciano-claro: #e3f4f8;
+    --tinta: #0f172a;
+    --texto: #334155;
+    --suave: #64748b;
+    --linha: #e2e8f0;
+    --fundo: #f6f8fa;
+    --vermelho: #dc2626;
+    --verde: #15803d;
+    --wpp: #e7f6ee;
+    --wpp-borda: #c6e8d3;
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { font-family: 'Inter', sans-serif; color: var(--texto); font-size: 10pt; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .pagina { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
+  .pagina:last-child { page-break-after: auto; break-after: auto; }
+  .conteudo { position: absolute; top: 16mm; left: 17mm; right: 17mm; bottom: 20mm; overflow: hidden; }
+  .rodape { position: absolute; left: 17mm; right: 17mm; bottom: 9mm; display: flex; justify-content: space-between; align-items: center; font-family: 'DejaVu Sans Mono', monospace; font-size: 6.6pt; letter-spacing: .08em; color: var(--suave); border-top: 1px solid var(--linha); padding-top: 3mm; text-transform: uppercase; }
+  .rodape b { color: var(--navy); font-weight: 600; }
+
+  .rotulo { font-family: 'DejaVu Sans Mono', monospace; font-size: 7pt; letter-spacing: .16em; color: var(--ciano); text-transform: uppercase; margin-bottom: 2.5mm; }
+  h1 { font-family: 'Inter Display', 'Inter', sans-serif; font-weight: 600; font-size: 25pt; line-height: 1.12; color: var(--tinta); letter-spacing: -.01em; }
+  h1 em, h2 em { font-style: normal; color: var(--ciano); }
+  h2 { font-family: 'Inter Display', 'Inter', sans-serif; font-weight: 600; font-size: 14pt; color: var(--tinta); margin: 6mm 0 2.5mm; letter-spacing: -.005em; }
+  h3 { font-weight: 600; font-size: 10.5pt; color: var(--tinta); margin-bottom: 1mm; }
+  p { margin-bottom: 2.4mm; }
+  .intro { font-size: 11pt; color: var(--texto); margin-top: 3mm; max-width: 162mm; }
+  strong { color: var(--tinta); font-weight: 600; }
+  .tag { display: inline-block; font-family: 'DejaVu Sans Mono', monospace; font-size: 7.6pt; padding: .2mm 1.8mm; border: 1px solid #cbd5e1; border-radius: 1.4mm; background: #fff; color: var(--tinta); white-space: nowrap; }
+  .legenda { font-size: 8pt; color: var(--suave); margin-top: 1.8mm; }
+
+  .grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .grade3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3.5mm; }
+  .cartao { border: 1px solid var(--linha); border-radius: 2.2mm; padding: 3.6mm 4mm; background: #fff; }
+  .cartao.suave { background: var(--fundo); }
+  .cartao p:last-child, .cartao ul:last-child { margin-bottom: 0; }
+  .cartao .rotulo { margin-bottom: 1.4mm; }
+
+  ul.lista { list-style: none; margin-bottom: 2.4mm; }
+  ul.lista li { position: relative; padding-left: 4.2mm; margin-bottom: 1.3mm; }
+  ul.lista li::before { content: ''; position: absolute; left: .6mm; top: 2mm; width: 1.5mm; height: 1.5mm; border-radius: 50%; background: var(--ciano); }
+  ul.lista.laranja li::before { background: var(--laranja); }
+  ul.lista.cinza li::before { background: #94a3b8; }
+  ul.lista.vermelho li::before { background: var(--vermelho); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  th { text-align: left; font-family: 'DejaVu Sans Mono', monospace; font-weight: 400; font-size: 6.8pt; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); padding: 0 2.5mm 1.8mm 0; border-bottom: 1px solid var(--linha); }
+  td { padding: 2.1mm 2.5mm 2.1mm 0; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.chave { width: 36mm; font-weight: 600; color: var(--tinta); }
+  table.curta td.chave { width: 33mm; }
+  table.curta td { padding: 1.7mm 2mm 1.7mm 0; }
+  .urgente, td.chave.urgente { color: var(--vermelho); font-weight: 600; }
+
+  .aviso { border-left: 1mm solid var(--laranja); background: #fff6f2; padding: 3mm 4mm; border-radius: 0 2mm 2mm 0; font-size: 9.2pt; }
+  .aviso.ciano { border-left-color: var(--ciano); background: var(--ciano-claro); }
+  .aviso p:last-child { margin-bottom: 0; }
+
+  /* mensagens no WhatsApp */
+  .msg { background: var(--wpp); border: 1px solid var(--wpp-borda); border-radius: 2.4mm 2.4mm 2.4mm .6mm; padding: 2.6mm 3.4mm; font-size: 8.8pt; line-height: 1.45; color: #1e293b; white-space: pre-line; }
+  .msg b { color: #0f172a; }
+  .msg .var { background: #fff; border: 1px dashed #94a3b8; border-radius: 1mm; padding: 0 1mm; font-size: 8.2pt; color: var(--navy); white-space: nowrap; }
+  .lead { background: #fff; border: 1px solid var(--linha); border-radius: 2.4mm 2.4mm .6mm 2.4mm; padding: 2mm 3.2mm; font-size: 8.8pt; color: #1e293b; justify-self: end; max-width: 70%; }
+  .etapa-roteiro { display: grid; grid-template-columns: 42mm 1fr; gap: 5mm; padding: 3.4mm 0; border-bottom: 1px solid var(--linha); }
+  .etapa-roteiro:last-child { border-bottom: none; }
+  .etapa-roteiro .lado h3 { font-size: 10pt; }
+  .etapa-roteiro .lado p { font-size: 8.6pt; color: var(--suave); margin-bottom: 1.4mm; }
+  .etapa-roteiro .num { display: inline-flex; width: 6mm; height: 6mm; border-radius: 50%; background: var(--ciano-claro); color: var(--ciano); font-size: 8pt; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 1.6mm; }
+  .conversa { display: grid; gap: 2mm; align-content: start; }
+  .kommo { margin-top: 1.6mm; font-size: 8.3pt; color: var(--suave); }
+  .kommo b { font-family: 'DejaVu Sans Mono', monospace; font-weight: 400; font-size: 6.6pt; letter-spacing: .12em; color: var(--navy); margin-right: 1.5mm; }
+
+  /* mapa do processo */
+  .mapa { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 5mm; }
+  .no { border: 1px solid var(--linha); border-radius: 2.2mm; background: #fff; padding: 2.6mm 3.6mm; font-size: 8.8pt; }
+  .no h3 { font-size: 9.6pt; margin-bottom: .6mm; display: flex; align-items: center; gap: 2mm; }
+  .no p { margin: 0; color: var(--texto); }
+  .no.destaque { border-color: #9bd7e6; background: var(--ciano-claro); }
+  .no.verde { border-color: #b7e3c6; background: #eefaf2; }
+  .no.alerta { border-color: #f7c7b4; background: #fff6f2; }
+  .no.cinza { background: var(--fundo); }
+  .no .t { font-family: 'DejaVu Sans Mono', monospace; font-size: 6.6pt; letter-spacing: .1em; color: var(--suave); text-transform: uppercase; }
+  .seta { text-align: center; color: #94a3b8; font-size: 8pt; line-height: 1; padding: 1.1mm 0; }
+  .ramos { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .lateral { display: grid; grid-template-columns: 1fr 52mm; gap: 5mm; }
+  .pilha { display: flex; flex-direction: column; }
+
+  /* capa */
+  .capa { background: var(--navy); color: #fff; }
+  .capa .faixa { position: absolute; left: 0; right: 0; bottom: 0; height: 3mm; background: var(--laranja); }
+  .capa .topo { position: absolute; top: 20mm; left: 20mm; right: 20mm; display: flex; justify-content: space-between; align-items: center; }
+  .capa .logo { background: #fff; border-radius: 2.5mm; padding: 4mm 5mm; }
+  .capa .logo img { height: 11mm; display: block; }
+  .capa .topo span { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt; letter-spacing: .2em; color: #9fc3dc; text-transform: uppercase; }
+  .capa .meio { position: absolute; left: 20mm; right: 20mm; top: 88mm; }
+  .capa .meio .rotulo { color: #7fd3e8; font-size: 8pt; margin-bottom: 5mm; }
+  .capa h1 { color: #fff; font-size: 50pt; line-height: 1.02; letter-spacing: -.02em; }
+  .capa h1 em { color: #5fd0ea; }
+  .capa .sub { font-size: 14pt; color: #d5e3ee; margin-top: 8mm; max-width: 150mm; line-height: 1.45; }
+  .capa .indice { position: absolute; left: 20mm; right: 20mm; bottom: 26mm; border-top: 1px solid rgba(255,255,255,.18); padding-top: 6mm; display: grid; grid-template-columns: 1fr 1fr; gap: 1.6mm 10mm; }
+  .capa .indice .rotulo { grid-column: 1 / -1; color: #7fd3e8; font-size: 6.8pt; margin-bottom: 1mm; }
+  .capa .indice div { display: flex; gap: 3mm; font-size: 9.4pt; color: #e6eef5; }
+  .capa .indice div span { font-family: 'DejaVu Sans Mono', monospace; color: #7fd3e8; font-size: 8pt; width: 6mm; }
+</style>
+</head>
+<body>
+
+<!-- 1 · CAPA -->
+<section class="pagina capa">
+  <div class="topo">
+    <div class="logo"><img src="logo.png" alt="Control Gestão"></div>
+    <span>Guia de uso e processo</span>
+  </div>
+  <div class="meio">
+    <div class="rotulo">Carolina Calvo Advogados</div>
+    <h1>Como a <em>Anna</em><br>trabalha.</h1>
+    <p class="sub">A assistente do escritório no WhatsApp: como ela atende os leads de superendividamento, do primeiro contato até a reunião com a Dra. Carolina, e como a equipe trabalha junto com ela no Kommo.</p>
+  </div>
+  <div class="indice">
+    <div class="rotulo">Neste guia</div>
+    <div><span>02</span>O que a Anna faz</div>
+    <div><span>08</span>Quando ela passa para a equipe</div>
+    <div><span>03</span>O processo inteiro, em uma página</div>
+    <div><span>09</span>Follow-up</div>
+    <div><span>04</span>Quando ela atende</div>
+    <div><span>10</span>O que ela responde e o que nunca faz</div>
+    <div><span>05</span>A conversa, mensagem a mensagem</div>
+    <div><span>11</span>A equipe e a Anna no Kommo</div>
+    <div><span>07</span>Agenda, reunião e lembretes</div>
+    <div><span>12</span>Perguntas frequentes</div>
+  </div>
+  <div class="faixa"></div>
+</section>
+
+<!-- 2 · O QUE A ANNA FAZ -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Visão geral</div>
+    <h1>O que a <em>Anna faz.</em></h1>
+    <p class="intro">A Anna é a assistente da equipe da Dra. Carolina no WhatsApp. Ela atende os leads de superendividamento, faz as perguntas do roteiro da Dra., marca a reunião on-line quando o caso se encaixa e entrega para a equipe tudo o que precisa de uma pessoa. Cada passo fica registrado no card do Kommo.</p>
+
+    <div class="grade2" style="margin-top:5mm">
+      <div class="cartao">
+        <div class="rotulo">O que ela faz</div>
+        <ul class="lista">
+          <li>Responde a qualquer hora, em poucos segundos, de forma formal e educada.</li>
+          <li>Ouve áudio e lê foto e PDF antes de responder.</li>
+          <li>Faz as perguntas do roteiro: o objetivo do lead, a renda bruta, o líquido e o desconto em conta.</li>
+          <li>Move o card para a coluna da renda e preenche os campos do lead.</li>
+          <li>Com renda bruta de R$ 10 mil ou mais, oferece horário na agenda da Dra. e marca a reunião com Google Meet.</li>
+          <li>Manda o lembrete 24 horas antes da reunião.</li>
+          <li>Faz o follow-up de quem parou de responder.</li>
+          <li>Passa para a equipe, com tarefa para a Dra., quando o caso pede uma pessoa.</li>
+        </ul>
+      </div>
+      <div class="cartao suave">
+        <div class="rotulo">O que ela nunca faz</div>
+        <ul class="lista cinza">
+          <li>Dizer que é IA, robô ou assistente virtual.</li>
+          <li>Falar de honorários, valor da ação, parcela ou porcentagem.</li>
+          <li>Prometer resultado.</li>
+          <li>Pedir ao lead documento, foto ou print.</li>
+          <li>Marcar reunião para renda bruta abaixo de R$ 10 mil.</li>
+          <li>Responder um lead que já está com a equipe ou que é cliente.</li>
+        </ul>
+        <p style="font-size:8.6pt; color: var(--suave); margin-top:2mm">Essas regras estão no código da Anna. Valem mesmo que o lead insista.</p>
+      </div>
+    </div>
+
+    <h2>Quem decide o quê</h2>
+    <p>A Anna usa IA só para <strong>entender</strong> o que o lead escreveu: qual opção escolheu, quanto ganha, se fez uma pergunta, se pediu uma pessoa. A próxima mensagem, a coluna do card, o horário oferecido e a passagem para a equipe são decididos por regras fixas, combinadas com a Dra. Por isso ela segue o roteiro sempre do mesmo jeito.</p>
+
+    <div class="aviso ciano" style="margin-top:4mm">
+      <p><strong>Os textos são da Dra.</strong> As perguntas e mensagens do roteiro são as que a Dra. Carolina já usava, com pequenos ajustes combinados na implantação. A equipe pode mudar esses textos pela Central da Anna (página 11).</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>2</span></div>
+</section>
+
+<!-- 3 · MAPA DO PROCESSO -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">O processo inteiro</div>
+    <h1>Do WhatsApp até <em>a reunião.</em></h1>
+
+    <div class="lateral" style="margin-top:5mm">
+      <div class="pilha">
+        <div class="no cinza"><h3>Chega uma mensagem no WhatsApp</h3><p>A Anna confere se pode atender (página 4). Se não pode, fica quieta e a equipe segue normalmente.</p></div>
+        <div class="seta">▼</div>
+        <div class="no"><span class="t">Pergunta 1</span><h3>O que o lead quer saber</h3><p>Suspender os descontos, reestruturar as dívidas ou as duas coisas.</p></div>
+        <div class="seta">▼</div>
+        <div class="no"><span class="t">Pergunta 2</span><h3>Renda bruta, líquido e desconto em conta</h3><p>O card vai para a coluna da renda no SDR.</p></div>
+        <div class="seta">▼</div>
+        <div class="no"><span class="t">Mensagem 3</span><h3>O alívio sem o desconto</h3><p>Usa o valor que o banco desconta da conta.</p></div>
+        <div class="seta">▼</div>
+        <div class="ramos">
+          <div class="no alerta"><span class="t">Renda abaixo de R$ 10 mil</span><h3>Registra e para</h3><p>Sem reunião. Tag e tarefa para a Dra. A equipe avalia.</p></div>
+          <div class="no destaque"><span class="t">R$ 10 mil ou mais</span><h3>Mensagem 4</h3><p>Diz que vai passar o caso para a Dra. analisar.</p></div>
+        </div>
+        <div class="ramos"><div></div><div class="seta">▼ 30 minutos</div></div>
+        <div class="ramos">
+          <div></div>
+          <div class="no destaque"><span class="t">Mensagem 5</span><h3>Oferece um horário</h3><p>Um horário real e livre da agenda da Dra.</p></div>
+        </div>
+        <div class="ramos"><div></div><div class="seta">▼ aceitou</div></div>
+        <div class="no verde"><span class="t">Reunião marcada</span><h3>Confirmação com o link do Meet</h3><p>Evento na agenda da Dra., card em Closer › Reunião agendada, lembrete 24 horas antes.</p></div>
+      </div>
+
+      <div class="pilha" style="gap:3mm">
+        <div class="no alerta"><span class="t">Em qualquer ponto</span><h3>Passa para a equipe</h3><p>Pediu uma pessoa, perguntou se é robô, já tem advogado, já é cliente, outro assunto, quer remarcar ou a agenda não respondeu.</p></div>
+        <div class="no cinza"><span class="t">Dúvida no meio</span><h3>Responde e retoma</h3><p>Responde a pergunta do lead e repete a pergunta do roteiro em que ele estava.</p></div>
+        <div class="no cinza"><span class="t">Não pode no horário</span><h3>Manhã ou tarde?</h3><p>Pergunta a preferência e oferece outro horário.</p></div>
+        <div class="no cinza"><span class="t">Parou de responder</span><h3>Follow-up</h3><p>Mensagens aprovadas pela Meta, das 7h às 20h. Sem resposta até o fim, o card vai para Venda perdida.</p></div>
+        <div class="no cinza"><span class="t">Não quer continuar</span><h3>Agradece e para</h3><p>Card em SDR › Não quer continuar.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>3</span></div>
+</section>
+
+<!-- 4 · QUANDO ELA ATENDE -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Quando ela atende</div>
+    <h1>A Anna responde só <em>quando pode.</em></h1>
+    <p class="intro">Antes de cada resposta ela confere o card. Se faltar uma destas condições, ela não responde e o lead fica com a equipe, como sempre foi.</p>
+
+    <table style="margin-top:4mm">
+      <tr><th>Condição</th><th>Por quê</th></tr>
+      <tr><td class="chave">Tem a tag <span class="tag">ia</span></td><td>É a tag que libera a Anna para aquele lead. Sem ela, a Anna não fala.</td></tr>
+      <tr><td class="chave">Não tem <span class="tag">atendimento-humano</span></td><td>Essa tag diz que a equipe está com o lead.</td></tr>
+      <tr><td class="chave">Não tem <span class="tag">cliente</span></td><td>Cliente do escritório é atendido pela equipe.</td></tr>
+      <tr><td class="chave">Ninguém da equipe escreveu nas últimas 6 horas</td><td>Se alguém respondeu pelo Kommo, a Anna espera 6 horas para não atropelar a conversa.</td></tr>
+      <tr><td class="chave">O card não está em Gestão operacional nem no Financeiro</td><td>Esses funis são de clientes. A Anna atende só no SDR e no Closer.</td></tr>
+    </table>
+
+    <h2>Como o lead chega até ela</h2>
+    <div class="grade2">
+      <div class="cartao">
+        <div class="rotulo">O lead escreve primeiro</div>
+        <p>A Anna se apresenta e faz a 1ª pergunta. Mensagens seguidas viram uma resposta só: ela espera uns 10 segundos para o lead terminar de escrever.</p>
+      </div>
+      <div class="cartao">
+        <div class="rotulo">O lead veio do formulário</div>
+        <p>A Anna começa a conversa com o modelo "Anna - Primeiro contato", aprovado pela Meta. É a mesma 1ª pergunta, com o primeiro nome do lead.</p>
+      </div>
+    </div>
+
+    <h2>A liberação é em etapas</h2>
+    <p>A tag <span class="tag">ia</span> é colocada junto com a Control Gestão, em três fases:</p>
+    <div class="grade3">
+      <div class="cartao suave"><div class="rotulo">Fase 1</div><p><strong>Um lead de teste</strong>, com o celular de alguém da equipe.</p></div>
+      <div class="cartao suave"><div class="rotulo">Fase 2</div><p><strong>10 leads reais</strong>, acompanhados de perto pela equipe.</p></div>
+      <div class="cartao suave"><div class="rotulo">Fase 3</div><p><strong>Os leads novos de superendividamento.</strong> Os do formulário passam a chegar com a tag sozinhos.</p></div>
+    </div>
+
+    <div class="aviso" style="margin-top:5mm">
+      <p><strong>Para tirar a Anna de um lead</strong>, coloque a tag atendimento-humano: ela para na hora. <strong>Para devolver</strong>, tire a atendimento-humano e coloque a ia: ela começa um atendimento novo, do início do roteiro.</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>4</span></div>
+</section>
+
+<!-- 5 · ROTEIRO 1 -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">A conversa, mensagem a mensagem · 1 de 2</div>
+    <h1>As perguntas <em>da Dra.</em></h1>
+    <p class="intro">Os textos abaixo são os que a Anna manda hoje. Os campos tracejados ela preenche com os dados do lead.</p>
+
+    <div style="margin-top:3mm">
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">1</div><h3>1ª pergunta</h3><p>Quando o lead escreve primeiro. Quem veio do formulário recebe o mesmo texto pelo modelo da Meta.</p></div>
+        <div class="conversa">
+          <div class="msg"><span class="var">Olá, Maria.</span> Aqui é a Anna, da equipe da Dra. Carolina Calvo.
+
+Você quer saber se, no seu caso, é possível:
+
+1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?
+2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?
+3) as duas opções acima.</div>
+          <div class="lead">quero as duas</div>
+          <div class="kommo"><b>NO KOMMO</b>A opção vai para o campo IA - Objetivo.</div>
+        </div>
+      </div>
+
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">2</div><h3>2ª pergunta</h3><p>Se o lead mandar só parte dos valores, ela pede só o que falta.</p></div>
+        <div class="conversa">
+          <div class="msg">Ótimo! Preciso apenas de três informações:
+
+1) Qual é a sua renda bruta mensal?
+2) Quanto você recebe líquido, após todos os descontos do contracheque?
+3) Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?
+
+Com essas informações, consigo fazer uma análise inicial e direcionar a melhor estratégia.</div>
+          <div class="lead">ganho 12 mil bruto, líquido 3.800 e o banco tira 2 mil da conta</div>
+          <div class="kommo"><b>NO KOMMO</b>O card vai para a coluna da renda no SDR (até 5 mil, 5 a 10 mil, 10 a 15 mil ou acima de 15 mil). Os valores vão para IA - Renda bruta, IA - Renda líquida e IA - Desconto em conta.</div>
+        </div>
+      </div>
+
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">3</div><h3>3ª mensagem</h3><p>Usa o valor que o banco desconta da conta. Quem não tem desconto em conta recebe outra versão: "Acredito que reduzindo esses descontos e sobrando mais do seu salário todo mês seria uma grande ajuda...".</p></div>
+        <div class="conversa">
+          <div class="msg">Acredito que sem esses <span class="var">R$ 2.000</span> de descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?</div>
+          <div class="lead">concordo</div>
+          <div class="kommo"><b>EM SEGUIDA</b>Renda bruta abaixo de R$ 10 mil: a Anna registra o caso e para (página 8). R$ 10 mil ou mais: segue para a 4ª mensagem.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>5</span></div>
+</section>
+
+<!-- 6 · ROTEIRO 2 -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">A conversa, mensagem a mensagem · 2 de 2</div>
+    <h1>Do encaminhamento <em>à reunião.</em></h1>
+
+    <div style="margin-top:3mm">
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">4</div><h3>4ª mensagem</h3><p>Só para renda bruta de R$ 10 mil ou mais.</p></div>
+        <div class="conversa">
+          <div class="msg">A sua <b>situação é delicada</b>, vou encaminhar esta conversa para a Dra. Carolina analisar e em alguns minutos <b>volto a falar com você</b>.</div>
+          <div class="kommo"><b>NO KOMMO</b>Fica uma nota no card com o resumo do caso.</div>
+        </div>
+      </div>
+
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">5</div><h3>5ª mensagem</h3><p>30 minutos depois da 4ª, com um horário livre da agenda da Dra. (página 7).</p></div>
+        <div class="conversa">
+          <div class="msg">Já passei o seu caso para a Dra. Carolina Calvo.
+
+Pelo que você me contou, a sua situação é delicada. Por isso, o primeiro atendimento é ON LINE: nessa reunião ela vai explicar a possibilidade de obter judicialmente a SUSPENSÃO dos descontos bancários por até 6 MESES, além da <b>REVISÃO DE JUROS e reestruturação das suas dívidas</b>.
+
+Ela pode atender você <span class="var">AMANHÃ às 15:00</span>, ON LINE. Posso agendar?</div>
+        </div>
+      </div>
+
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">↺</div><h3>Não pode no horário</h3><p>Ela pergunta a preferência e oferece o próximo horário daquele período.</p></div>
+        <div class="conversa">
+          <div class="lead">nesse horário não consigo</div>
+          <div class="msg">Sem problema. Você prefere de manhã ou à tarde?</div>
+          <div class="lead">de manhã</div>
+          <div class="msg">Ela pode atender você <span class="var">na sexta-feira (17/10) às 11:30</span>, ON LINE. Posso agendar?</div>
+          <div class="kommo"><b>SE O HORÁRIO FOI OCUPADO</b>"Esse horário acabou de ser preenchido. Ela pode atender você ..., ON LINE. Posso agendar?"</div>
+        </div>
+      </div>
+
+      <div class="etapa-roteiro">
+        <div class="lado"><div class="num">✓</div><h3>Confirmação</h3><p>Ela confere de novo a agenda antes de marcar.</p></div>
+        <div class="conversa">
+          <div class="lead">pode sim</div>
+          <div class="msg"><b>Agendado!</b> <span class="var">Sexta-feira, 17/10, às 11:30</span>, ON LINE pelo Google Meet.
+
+Link de acesso: <span class="var">link do Meet</span>
+
+Para que a análise seja a mais completa possível, peço que tenha em mãos <b>o seu último contracheque e o último extrato bancário</b>, pois serão utilizados para o <b>cálculo de superendividamento</b>.
+
+Também é importante que você esteja <b>em um local tranquilo e com boa conexão de internet</b>, para que o atendimento transcorra da melhor forma.
+
+Caso tenha algum imprevisto e não possa comparecer, peço, por gentileza, que <b>nos avise com antecedência</b>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>6</span></div>
+</section>
+
+<!-- 7 · AGENDA E LEMBRETES -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Agenda, reunião e lembretes</div>
+    <h1>A agenda da Dra., <em>em sequência.</em></h1>
+    <p class="intro">A Anna oferece <strong>um horário por vez</strong> e preenche a agenda em sequência, para a Dra. fazer as reuniões seguidas.</p>
+
+    <div class="grade2" style="margin-top:4mm">
+      <div class="cartao">
+        <div class="rotulo">Os horários</div>
+        <ul class="lista">
+          <li>Reunião on-line de 30 minutos, pelo Google Meet.</li>
+          <li>De segunda a sexta.</li>
+          <li>Primeiro as tardes: 15:00, 15:30, 16:00, 16:30, 17:00 e 17:30.</li>
+          <li>Depois as manhãs, do mais tarde para o mais cedo: 11:30, 11:00, 10:30 e 10:00.</li>
+          <li>Pelo menos 1 hora de antecedência, até 14 dias à frente.</li>
+        </ul>
+      </div>
+      <div class="cartao">
+        <div class="rotulo">As regras</div>
+        <ul class="lista">
+          <li>Renda bruta de R$ 13,5 mil ou mais pode ter reunião no mesmo dia. Abaixo disso, a partir do dia útil seguinte.</li>
+          <li>Qualquer compromisso na agenda Google da Dra. bloqueia o horário.</li>
+          <li>Antes de marcar, a Anna confere de novo se o horário continua livre.</li>
+          <li>Se a agenda não responder ou não tiver horário livre, ela passa para a equipe, como urgente.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Quando a reunião é marcada</h2>
+    <ul class="lista">
+      <li>O evento entra na agenda Google da Dra., com o link do Meet.</li>
+      <li>O card vai para <strong>Closer › Reunião agendada</strong>, com a tag <span class="tag">ANNA agendou</span>.</li>
+      <li>Os campos Reunião, Agendamento, IA - Horário da reunião e IA - Link do Meet são preenchidos.</li>
+    </ul>
+
+    <h2>Os lembretes</h2>
+    <table>
+      <tr><th>Quando</th><th>Quem manda</th><th>Mensagem</th></tr>
+      <tr><td class="chave">24 horas antes</td><td>A Anna</td><td>"Olá, Maria. Passando para lembrar da sua reunião on-line com a Dra. Carolina Calvo amanhã, quinta-feira, 16/10, às 15:00. O link de acesso pelo Google Meet é este: ... Se precisar remarcar, é só responder esta mensagem."</td></tr>
+      <tr><td class="chave">2 horas, 1 hora e 15 minutos antes</td><td>A automação do escritório</td><td>Os lembretes que o escritório já usa, enquanto o card estiver em Closer › Reunião agendada.</td></tr>
+      <tr><td class="chave">1 hora e 15 minutos antes</td><td>A Anna, só se o card saiu de Reunião agendada</td><td>"A sua reunião on-line com a Dra. Carolina Calvo começa em 1 hora..." e "Faltam 15 minutos para a sua reunião...", com o link do Meet.</td></tr>
+    </table>
+
+    <div class="aviso" style="margin-top:4mm">
+      <p><strong>Pediu para remarcar?</strong> A Anna não remarca sozinha. Ela avisa o lead que alguém da equipe vai continuar o atendimento e passa para a equipe como urgente.</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>7</span></div>
+</section>
+
+<!-- 8 · QUANDO PASSA PARA A EQUIPE -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Quando ela para</div>
+    <h1>A Anna passa para a equipe <em>com tudo pronto.</em></h1>
+
+    <h2 style="margin-top:5mm">Os motivos</h2>
+    <table>
+      <tr><th>Motivo</th><th>O que aconteceu</th></tr>
+      <tr><td class="chave">Pediu uma pessoa</td><td>Pediu para falar com a Dra. ou com alguém da equipe.</td></tr>
+      <tr><td class="chave">Perguntou se é robô</td><td>Ela não confirma nem nega: passa para a equipe.</td></tr>
+      <tr><td class="chave">Já tem advogado</td><td>Recebe o texto da Dra. sobre a ética da OAB.</td></tr>
+      <tr><td class="chave">Já é cliente</td><td>Já é cliente do escritório.</td></tr>
+      <tr><td class="chave">Outro assunto</td><td>O assunto é de outra área, como tributário ou trabalhista.</td></tr>
+      <tr><td class="chave">Renda abaixo de 10 mil e pediu reunião</td><td>Ela não marca: a equipe decide.</td></tr>
+      <tr><td class="chave urgente">Remarcar</td><td><span class="urgente">Urgente.</span> Tem reunião marcada e pediu para remarcar.</td></tr>
+      <tr><td class="chave urgente">Sem agenda</td><td><span class="urgente">Urgente.</span> A agenda Google não respondeu ou não tem horário livre nos próximos dias.</td></tr>
+    </table>
+
+    <div class="grade2" style="margin-top:5mm">
+      <div>
+        <h3>O que o lead recebe</h3>
+        <div class="conversa" style="margin-top:2mm">
+          <div class="msg">Vou pedir para alguém da equipe da Dra. Carolina continuar o seu atendimento por aqui.</div>
+          <div class="kommo"><b>SEM AGENDA</b>"Vou pedir para a equipe da Dra. Carolina confirmar o melhor horário com você por aqui."</div>
+          <div class="kommo"><b>JÁ TEM ADVOGADO</b>"Compreendo sua situação, mas, caso você já tenha um advogado atuando no processo, a Dra. não poderá auxiliá-lo, pois isso poderia comprometer a ética profissional estabelecida pela OAB..."</div>
+        </div>
+      </div>
+      <div>
+        <h3>O que a equipe recebe no Kommo</h3>
+        <ul class="lista" style="margin-top:2mm">
+          <li>Tags <span class="tag">atendimento-humano</span> e <span class="tag">ANNA passou para humano</span>.</li>
+          <li>A tag <span class="tag">ia</span> sai: daqui em diante quem responde é a equipe.</li>
+          <li>Tarefa para a Dra. com prazo de 60 minutos, com o motivo e o que o lead já informou: objetivo, renda bruta, líquido e desconto em conta.</li>
+          <li>O follow-up daquele lead é cancelado.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Renda bruta abaixo de R$ 10 mil</h2>
+    <div class="grade2">
+      <div class="msg">Obrigada pelas informações. Vou deixar o seu caso registrado para a equipe da Dra. Carolina avaliar o melhor caminho, e alguém da equipe continua com você por aqui.</div>
+      <p style="font-size:9pt">A Anna não marca reunião. Põe a tag <span class="tag">ANNA renda abaixo 10k</span> e cria uma tarefa para a Dra. avaliar o caso. Se o lead pedir reunião depois, ela passa para a equipe.</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>8</span></div>
+</section>
+
+<!-- 9 · FOLLOW-UP -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Follow-up</div>
+    <h1>Quando o lead <em>para de responder.</em></h1>
+    <p class="intro">A Anna usa os modelos de follow-up que o escritório já tinha aprovados pela Meta, nos mesmos intervalos que a equipe usava. Ninguém precisa mais disparar "/follow up".</p>
+
+    <div class="grade2" style="margin-top:5mm">
+      <div class="cartao">
+        <div class="rotulo">Parou de responder na qualificação</div>
+        <table class="curta">
+          <tr><td class="chave">Follow 1</td><td>2 h depois da última mensagem da Anna</td></tr>
+          <tr><td class="chave">Follow 2</td><td>21 h depois do Follow 1</td></tr>
+          <tr><td class="chave">Follow up 3</td><td>48 h depois do Follow 2</td></tr>
+          <tr><td class="chave">Follow up 4</td><td>72 h depois do Follow up 3</td></tr>
+          <tr><td class="chave">Encerramento</td><td>24 h depois: Venda perdida</td></tr>
+        </table>
+      </div>
+      <div class="cartao">
+        <div class="rotulo">Não respondeu à oferta de horário</div>
+        <table class="curta">
+          <tr><td class="chave">FUP horário reunião</td><td>2 h depois da oferta</td></tr>
+          <tr><td class="chave">SE 5 24h</td><td>24 h depois da oferta</td></tr>
+          <tr><td class="chave">FUP encerramento 48h</td><td>48 h depois da oferta</td></tr>
+          <tr><td class="chave">Encerramento</td><td>24 h depois: Venda perdida</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="legenda">Venda perdida = o card vai para Gestão operacional › Venda perdida.</p>
+
+    <h2>As regras</h2>
+    <ul class="lista">
+      <li><strong>Das 7h às 20h, todos os dias.</strong> O que cairia fora desse horário sai às 7h do dia seguinte, e as próximas etapas contam a partir do envio real.</li>
+      <li><strong>Qualquer resposta do lead cancela o resto.</strong> A Anna volta a conversar do ponto em que parou.</li>
+      <li><strong>Também cancelam:</strong> mensagem da equipe, passagem para a equipe, reunião marcada, card em Gestão operacional ou Financeiro e a tag cliente.</li>
+      <li><strong>Uma sequência por vez.</strong> O lead nunca recebe duas sequências ao mesmo tempo.</li>
+      <li>Cada envio fica como nota no card, sem tag, para não acionar as automações antigas de FOLLOW 1 a 4.</li>
+      <li>Depois da reunião, a mensagem de 24 h depois de Closer › Cliente decisão continua sendo da automação do escritório ("Pergunta reunião").</li>
+    </ul>
+
+    <h2>Exemplos</h2>
+    <div class="grade2">
+      <div class="conversa">
+        <div class="kommo"><b>FOLLOW 1</b></div>
+        <div class="msg">Você sabia que, em muitos casos, é possível obter uma decisão judicial para <b>suspender os descontos de empréstimos por até 6 meses</b>?
+
+Me responda: os descontos acontecem apenas no <b>contracheque</b> ou também na <b>conta corrente</b>?
+
+Com essa informação, consigo verificar qual é o próximo passo do seu atendimento.</div>
+      </div>
+      <div class="conversa" style="align-content:start">
+        <div class="kommo"><b>FUP HORÁRIO REUNIÃO</b></div>
+        <div class="msg">você prefere <b>continuar como está</b> ou <b>entender o que pode ser ajustado pra parar esse prejuízo</b>?</div>
+        <p class="legenda">Os outros textos são os modelos aprovados do escritório, sem nenhuma mudança.</p>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>9</span></div>
+</section>
+
+<!-- 10 · O QUE ELA RESPONDE -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Dúvidas do lead</div>
+    <h1>O que ela responde <em>e o que nunca faz.</em></h1>
+    <p class="intro">Se o lead fizer uma pergunta no meio do roteiro, a Anna responde com o que sabe e depois retoma a pergunta em que ele estava. Por exemplo: "Qual das opções você quer saber: 1, 2 ou 3?".</p>
+
+    <h2>O que ela sabe responder</h2>
+    <table>
+      <tr><td class="chave">A reunião</td><td>A primeira reunião é on-line, pelo Google Meet, dura 30 minutos e não é cobrada.</td></tr>
+      <tr><td class="chave">Atendimento presencial</td><td>Só se o lead pedir: custa R$ 200,00 (Pix ou cartão, com os juros da operadora), pago com 24 horas de antecedência e abatido se ele fechar com o escritório. Se ele não pediu, ela não fala de presencial.</td></tr>
+      <tr><td class="chave">Endereço</td><td>Edifício Varig, Setor Comercial Norte, quadra 04, bloco B, sala 702, 7º andar, Pétala D, Asa Norte, Brasília (DF). Presencial só com hora marcada.</td></tr>
+      <tr><td class="chave">O que acontece agora</td><td>A equipe faz uma análise prévia. Estratégia, detalhes do caso e honorários são tratados só na reunião com a Dra.</td></tr>
+      <tr><td class="chave">Como o escritório trabalha</td><td>Prioriza soluções sem processo sempre que possível. Na ação, a Dra. pode pedir uma liminar para interromper os descontos na conta enquanto o processo corre: é uma possibilidade que ela avalia na reunião, nunca uma garantia. O objetivo é renegociar a dívida em condições melhores que as do banco.</td></tr>
+      <tr><td class="chave">Garantia de resultado</td><td>Numa frase só: não é possível garantir, e a Dra. avalia o caso na reunião.</td></tr>
+      <tr><td class="chave">Quanto custa</td><td>Diz que a primeira reunião on-line não é cobrada. Honorários e valor da ação ficam para a reunião com a Dra.</td></tr>
+    </table>
+    <p class="legenda">Essas informações são a base da Anna. A equipe pode atualizar ou acrescentar informações pela Central (página 11).</p>
+
+    <h2>Travas</h2>
+    <ul class="lista vermelho">
+      <li>Nunca diz que é IA, robô ou assistente virtual. Se perguntarem, passa para a equipe.</li>
+      <li>Nunca fala de honorários, valor da ação, parcela ou porcentagem.</li>
+      <li>Nunca promete resultado ("garantido", "com certeza vamos conseguir").</li>
+      <li>Não pede documento, foto ou print. Só na confirmação pede para ter o contracheque e o extrato em mãos na reunião.</li>
+      <li>Uma pergunta por mensagem, sem travessão e sem emoji.</li>
+      <li>Só oferece horário que está livre na agenda da Dra.</li>
+    </ul>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>10</span></div>
+</section>
+
+<!-- 11 · EQUIPE NO KOMMO + CENTRAL -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">A equipe e a Anna</div>
+    <h1>O dia a dia <em>no Kommo.</em></h1>
+
+    <h2 style="margin-top:5mm">As tags</h2>
+    <table>
+      <tr><th>Tag</th><th>Significa</th><th>Quem coloca</th></tr>
+      <tr><td><span class="tag">ia</span></td><td>A Anna atende este lead.</td><td>Combinado com a Control Gestão (página 4).</td></tr>
+      <tr><td><span class="tag">atendimento-humano</span></td><td>A equipe está com o lead. A Anna não responde.</td><td>A Anna, na passagem. A equipe também, a qualquer hora.</td></tr>
+      <tr><td><span class="tag">ANNA passou para humano</span></td><td>Foi a Anna que passou o lead para a equipe.</td><td>A Anna.</td></tr>
+      <tr><td><span class="tag">ANNA agendou</span></td><td>Reunião marcada pela Anna.</td><td>A Anna.</td></tr>
+      <tr><td><span class="tag">ANNA renda abaixo 10k</span></td><td>Sem reunião marcada pela Anna. A equipe avalia.</td><td>A Anna.</td></tr>
+      <tr><td><span class="tag">cliente</span></td><td>Já é cliente. A Anna não fala com ele.</td><td>A equipe.</td></tr>
+    </table>
+
+    <h2>Combinados</h2>
+    <ul class="lista laranja">
+      <li>Atendam primeiro as tarefas da Dra. criadas pela Anna. Elas trazem o motivo e os dados do lead.</li>
+      <li>Não disparem "/follow up" nem "FOLLOW AGENDAR REUNIÃO" em lead com a tag ia. A Anna já faz o follow-up.</li>
+      <li>Não editem os campos "IA - ..." do card. São da Anna.</li>
+      <li>Não apaguem colunas ou campos que a Anna usa, nem renomeiem as tags dela. Precisa mudar? Fale antes com a Control Gestão.</li>
+    </ul>
+
+    <h2>Para acompanhar e ajustar: a Central da Anna</h2>
+    <p>No endereço <strong>central-carolina-calvo.vercel.app</strong> (a senha a Control Gestão envia à parte), a equipe:</p>
+    <div class="grade3">
+      <div class="cartao suave"><div class="rotulo">Acompanha</div><p>Quem a Anna atendeu, quem foi para a equipe e por quê, as reuniões marcadas e o funil.</p></div>
+      <div class="cartao suave"><div class="rotulo">Testa</div><p>Conversa com a Anna como se fosse um lead, sem nada ir para o Kommo nem para a agenda.</p></div>
+      <div class="cartao suave"><div class="rotulo">Ensina</div><p>Pede em português a mudança de um texto ou uma informação nova. Um exame confere antes de valer no WhatsApp.</p></div>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>11</span></div>
+</section>
+
+<!-- 12 · PERGUNTAS -->
+<section class="pagina">
+  <div class="conteudo">
+    <div class="rotulo">Perguntas frequentes</div>
+    <h1>Dúvidas <em>comuns.</em></h1>
+
+    <div class="grade2" style="margin-top:6mm">
+      <div class="cartao"><h3>A Anna diz que é uma IA?</h3><p>Não. É decisão do escritório. Se o lead perguntar se é robô, ela não confirma nem nega: passa para a equipe, com tarefa para a Dra.</p></div>
+      <div class="cartao"><h3>Ela responde de madrugada?</h3><p>Sim, a conversa ela responde a qualquer hora. Só o follow-up respeita o horário das 7h às 20h.</p></div>
+      <div class="cartao"><h3>E se o lead mandar áudio, foto ou PDF?</h3><p>Ela ouve o áudio e lê a imagem ou o PDF antes de responder. Ela não pede documento.</p></div>
+      <div class="cartao"><h3>E se o lead perguntar quanto custa?</h3><p>Ela diz que a primeira reunião on-line não é cobrada. Honorários ficam para a reunião com a Dra.</p></div>
+      <div class="cartao"><h3>Por que ela não marcou reunião com um lead?</h3><p>Renda bruta abaixo de R$ 10 mil é regra da Dra. Ela registra o caso, põe a tag "ANNA renda abaixo 10k" e cria uma tarefa. A equipe decide.</p></div>
+      <div class="cartao"><h3>Respondi um lead e a Anna parou. Está com problema?</h3><p>Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead.</p></div>
+      <div class="cartao"><h3>O lead quer remarcar. O que fazer?</h3><p>A Anna já passou para a equipe como urgente. Remarque com o lead e ajuste a agenda da Dra. e o card.</p></div>
+      <div class="cartao"><h3>Quero que a Anna volte a atender um lead.</h3><p>Tire a tag atendimento-humano e coloque a ia. Ela recomeça do início do roteiro.</p></div>
+      <div class="cartao"><h3>A Dra. bloqueou um horário. A Anna respeita?</h3><p>Sim. Qualquer compromisso na agenda Google da Dra. bloqueia o horário, e ela confere de novo antes de marcar.</p></div>
+      <div class="cartao"><h3>Quero mudar um texto da Anna.</h3><p>Peça na Central, em Ensinar. Regra do roteiro, horários, follow-up e modelos da Meta são pedidos para a Control Gestão.</p></div>
+    </div>
+
+    <div class="aviso ciano" style="margin-top:6mm">
+      <p><strong>Suporte.</strong> Qualquer dúvida sobre a Anna ou algo que pareça errado: fale com a Control Gestão.</p>
+    </div>
+  </div>
+  <div class="rodape"><span><b>Anna</b> · Guia de uso e processo</span><span>12</span></div>
+</section>
+
+</body>
+</html>

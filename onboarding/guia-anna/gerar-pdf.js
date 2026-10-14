@@ -1,4 +1,4 @@
-// Gera o PDF do guia: NODE_PATH=/opt/node22/lib/node_modules node gerar-pdf.js guia.html "../Guia de uso - Central da Anna.pdf"
+// Gera o PDF do guia: NODE_PATH=/opt/node22/lib/node_modules node gerar-pdf.js guia.html "../Guia de uso - Anna.pdf"
 const { chromium } = require('playwright')
 const path = require('path')
 ;(async () => {
