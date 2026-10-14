@@ -36,6 +36,7 @@ Módulo construído em 14/10/2026. O código está em `agente/lib/asaas.ts`, `ag
   - 3.779 cobranças (1.191 em aberto e 109 vencidas);
   - 349 clientes;
   - 1.133 das 1.191 cobranças em aberto vencem no dia 07.
+- **Webhook do Asaas** criado (`Anna · confirmação de pagamento`, eventos PAYMENT_RECEIVED e PAYMENT_CONFIRMED, para `/api/asaas`). Se a fila parar, o Asaas avisa o e-mail da conta do escritório: financeiroadvcarolinacalvo@gmail.com. Com a cobrança desligada, o webhook só registra o aviso.
 - **Relógios** das 9h e das 17h criados. Como a cobrança está desligada, cada rodada só registra o que sairia: `GET /api/cobranca?log=1`.
 - **Simulação com dados reais:**
   - 14/10: 6 confirmações de pagamento, 2 sem card;
@@ -47,7 +48,7 @@ Módulo construído em 14/10/2026. O código está em `agente/lib/asaas.ts`, `ag
   - **os 349 clientes estão com as notificações do próprio Asaas ligadas.** Ligar a régua assim manda cobrança em dobro;
   - **112 clientes não têm telefone no Asaas.** Sem telefone não há como achar o card, e esses clientes não recebem nada. Por dia de cobrança, uns 10 aparecem como "sem card";
   - alguns clientes só têm card fora do Financeiro e da Gestão operacional, e a régua não cobra no SDR nem no Closer. O caminho é mover o card ou criar o card de cliente;
-  - já existe um webhook do **Linklei** no Asaas. O da Anna seria um segundo webhook, sem mexer no dele.
+  - já existe um webhook do **Linklei** no Asaas. O da Anna é um segundo webhook e o do Linklei continua igual.
 
 ## Para ligar (nesta ordem)
 
@@ -56,7 +57,7 @@ Módulo construído em 14/10/2026. O código está em `agente/lib/asaas.ts`, `ag
    - os "sem card", que pedem para corrigir o telefone no Asaas ou no Kommo;
    - se algum cliente está no card errado.
 3. **Os 8 Salesbots:** pelo Cowork, com `onboarding/prompt-cowork-bots-cobranca.md`. Os IDs entram em `agente/lib/crm-map.ts`.
-4. **Webhook do Asaas:** `npx tsx scripts/criar-webhook-asaas.ts --criar`, com `ASAAS_WEBHOOK_TOKEN`. Isso mexe na conta do escritório: só com o OK dele.
+4. **Webhook do Asaas:** feito em 14/10 (`scripts/criar-webhook-asaas.ts --criar`). Testado: sem o token, 401; com o token, 200.
 5. **Relógio:** feito em 14/10 (`anna-carolina-calvo-cobranca-manha` e `-tarde`).
 6. **Teste ponta a ponta:**
    - cobrança de R$ 5,00 no Asaas para o celular de alguém da equipe, vencendo hoje;
