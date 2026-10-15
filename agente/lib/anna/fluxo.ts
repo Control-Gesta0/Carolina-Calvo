@@ -163,9 +163,9 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       }
       const livre = await responderLivre()
       if (livre) return livre
-      const texto = 'Pode me responder com o número da opção: 1, 2 ou 3?'
-      await falar(deps, texto, 'q1', ctx.agora)
-      return { acao: 'q1 sem opção: pediu o número', enviado: texto, leitura }
+      const pedido = PENDENTE.q1(ctx.state)
+      await falar(deps, pedido, 'q1', ctx.agora)
+      return { acao: 'q1 sem opção: perguntou de novo', enviado: pedido, leitura }
     }
 
     case 'q2': {

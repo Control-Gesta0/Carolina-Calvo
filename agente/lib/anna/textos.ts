@@ -14,13 +14,10 @@ import { AsyncLocalStorage } from 'node:async_hooks'
  * {quando} "HOJE às 15:00" · {link} o link do Meet.
  */
 export const TEXTOS_PADRAO = {
-  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro) */
+  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). As 3 opções da Dra. em frase corrida, sem menu numerado (pedido de 15/10) */
   pergunta1:
     '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo.\n\n' +
-    'Você quer saber se, no seu caso, é possível:\n\n' +
-    '1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?\n' +
-    '2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?\n' +
-    '3) as duas opções acima.',
+    'Para eu entender o seu caso: você quer saber se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas em condições melhores e com juros revisados, ou as duas coisas?',
 
   /** [DRA] 2ª pergunta */
   pergunta2:
@@ -78,7 +75,7 @@ export const TEXTOS_PADRAO = {
   possui_advogado: 'Compreendo sua situação, mas, caso você já tenha um advogado atuando no processo, a Dra. não poderá auxiliá-lo, pois isso poderia comprometer a ética profissional estabelecida pela OAB. Recomendo que entre em contato diretamente com o seu advogado para tratar da questão.',
 
   /** [CG] perguntas de retomada: emendadas depois de uma resposta livre da Anna */
-  pendente_q1: 'Qual das opções você quer saber: 1, 2 ou 3?',
+  pendente_q1: 'Você quer saber sobre a suspensão dos descontos, a reestruturação das dívidas ou as duas coisas?',
   pendente_q2: 'Pode me passar a sua renda bruta, o valor líquido e quanto o banco desconta da sua conta corrente?',
   pendente_q3: 'Concorda que, sem esses descontos, seria um alívio financeiro?',
   pendente_preferencia: 'Você prefere de manhã ou à tarde?',

@@ -56,7 +56,7 @@ export interface Etapa { titulo: string; texto: string; kommo?: string; base: st
 export const INICIO: Etapa[] = [
   {
     titulo: 'O lead escreve primeiro',
-    texto: 'A Anna se apresenta e faz a 1ª pergunta: o que ele quer saber. 1) suspender os descontos por até 6 meses, 2) reestruturar as dívidas com juros revisados ou 3) as duas.',
+    texto: 'A Anna se apresenta e faz a 1ª pergunta: se ele quer saber se é possível suspender os descontos por até 6 meses, reestruturar as dívidas com juros revisados ou as duas coisas.',
     base: ['pergunta1', 'pendente_q1'],
   },
   {
