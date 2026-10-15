@@ -17,12 +17,12 @@ export const TEXTOS_PADRAO = {
   /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). As 3 opções da Dra. em frase corrida, sem menu numerado (pedido de 15/10) */
   pergunta1:
     '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo.\n\n' +
-    'Para eu entender o seu caso: você quer saber se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas em condições melhores e com juros revisados, ou as duas coisas?',
+    'Para eu entender o seu caso: você quer saber se é possível *suspender por até 6 meses os descontos bancários e o pagamento das dívidas*, *reestruturar as dívidas em condições melhores e com juros revisados*, ou *as duas coisas*?',
 
   /** [DRA] 2ª pergunta (as três perguntas da Dra. numa frase só, sem lista) */
   pergunta2:
-    'Para eu fazer uma análise inicial do seu caso e direcionar a melhor estratégia, preciso de três valores: a sua renda bruta mensal, ' +
-    'quanto você recebe líquido depois de todos os descontos do contracheque e quanto o banco desconta direto da sua conta corrente todo mês. ' +
+    'Para eu fazer uma análise inicial do seu caso e direcionar a melhor estratégia, preciso de três valores: *a sua renda bruta mensal*, ' +
+    '*quanto você recebe líquido* depois de todos os descontos do contracheque e *quanto o banco desconta direto da sua conta corrente* todo mês. ' +
     'Pode me passar esses valores?',
 
   /** [DRA] 3ª mensagem, com o valor do desconto quando o lead informou (adaptação pedida na reunião) */
@@ -38,20 +38,20 @@ export const TEXTOS_PADRAO = {
   mensagem5:
     'Já passei o seu caso para a Dra. Carolina Calvo.\n\n' +
     'Pelo que você me contou, a sua situação é delicada. Por isso, o primeiro atendimento é ON LINE: nessa reunião ela vai explicar a possibilidade de obter judicialmente a SUSPENSÃO dos descontos bancários por até 6 MESES, além da *REVISÃO DE JUROS e reestruturação das suas dívidas*.\n\n' +
-    'Ela pode atender você {quando}, ON LINE. Posso agendar?',
+    'Ela pode atender você *{quando}*, ON LINE. Posso agendar?',
 
   /** [CG] nova oferta depois que o lead escolheu manhã ou tarde */
-  nova_oferta: 'Ela pode atender você {quando}, ON LINE. Posso agendar?',
+  nova_oferta: 'Ela pode atender você *{quando}*, ON LINE. Posso agendar?',
 
   /** [CG] o horário aceito foi ocupado entre a oferta e o "sim" */
-  horario_ocupado: 'Esse horário acabou de ser preenchido. Ela pode atender você {quando}, ON LINE. Posso agendar?',
+  horario_ocupado: 'Esse horário acabou de ser preenchido. Ela pode atender você *{quando}*, ON LINE. Posso agendar?',
 
   /** [CG] o lead não pode no horário oferecido (regra da Dra.: perguntar manhã ou tarde) */
   manha_ou_tarde: 'Sem problema. Você prefere de manhã ou à tarde?',
 
   /** [DRA] confirmação, a partir do modelo "Agendado" (o link agora vai junto) */
   agendado:
-    '*Agendado!* {quando}, ON LINE pelo Google Meet.\n\n' +
+    '*Agendado!* *{quando}*, ON LINE pelo Google Meet.\n\n' +
     'Link de acesso: {link}\n\n' +
     'Para que a análise seja a mais completa possível, peço que tenha em mãos *o seu último contracheque e o último extrato bancário*, pois serão utilizados para o *cálculo de superendividamento*.\n\n' +
     'Também é importante que você esteja *em um local tranquilo e com boa conexão de internet*, para que o atendimento transcorra da melhor forma.\n\n' +

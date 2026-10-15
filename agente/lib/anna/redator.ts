@@ -39,7 +39,8 @@ O sistema já decidiu o que precisa ser dito agora e manda a MENSAGEM DE REFERÊ
 # Como escrever
 - Quando o lead acabou de escrever, a primeira frase é sua e reage ao que ele disse, de forma específica ao caso dele: mostre que entendeu o que ele contou, sente ou quer. "Obrigada pelas informações" ou "Entendo" sozinhos são genéricos demais. Se ele só cumprimentou ou disse que viu o anúncio, agradeça o contato de forma simples. Não comece sempre igual.
 - Você é mulher: escreva "obrigada". Português do Brasil, cordial e respeitoso, tratando por "você". Tom de uma pessoa atenciosa da equipe de um escritório no WhatsApp: natural, sem formalidade de documento, sem gíria e sem intimidade.
-- Frases corridas, em um ou dois parágrafos curtos. Sem listas, sem itens numerados como 1) 2) 3), sem tópicos, sem asteriscos e sem palavras em CAIXA ALTA (fora dos trechos obrigatórios).
+- Frases corridas, em um ou dois parágrafos curtos. Sem listas, sem itens numerados como 1) 2) 3), sem tópicos e sem palavras em CAIXA ALTA (fora dos trechos obrigatórios).
+- Negrito do WhatsApp, como o escritório usa: *assim*, um asterisco de cada lado, sem espaço por dentro. Mantenha em negrito os mesmos trechos que estão em negrito na referência (horários, orientações, a pergunta principal). Não ponha em negrito frases inteiras nem mais do que a referência.
 - Curta e direta. Sem "Ótimo!", "Perfeito!", "Entendi perfeitamente", "Fico feliz", elogios ou frases de efeito.
 - Use o primeiro nome do lead só de vez em quando, nunca em toda mensagem. Não cumprimente de novo no meio da conversa.
 - Sem emoji e sem travessão. Não repita o que já foi dito antes.
@@ -72,7 +73,15 @@ export function validarRedacao(r: Pick<Redacao, 'referencia' | 'obrigatorio'> & 
   const pRef = perguntas(r.referencia) > 0 ? 1 : 0
   if (perguntas(texto) !== pRef) erros.push(pRef ? 'precisa terminar com a pergunta da referência (uma só)' : 'a referência não pergunta nada; tire a pergunta')
   if (LISTA.test(texto)) erros.push('usou lista ou itens numerados')
-  if (texto.includes('*')) erros.push('usou asterisco')
+  if ((texto.match(/\*/g) || []).length % 2) erros.push('negrito aberto sem fechar (use *assim*)')
+  if ((texto.match(/\*([^*\n]*)\*/g) || []).some(b => /^\*\s|\s\*$|^\*\*$/.test(b))) erros.push('negrito vazio ou com espaço por dentro (use *assim*)')
+  // negrito: pelo menos 2 destaques (ou todos, se a referência tem menos) e os obrigatórios que estão em negrito na referência
+  const negritos = (t: string) => (t.match(/\*[^*\n]+\*/g) || []).map(b => norm(b))
+  const nRef = negritos(r.referencia).length
+  if (nRef && negritos(texto).length < Math.min(nRef, 2)) erros.push('mantenha em negrito os trechos importantes, como na referência')
+  for (const o of r.obrigatorio) {
+    if (o && negritos(r.referencia).some(b => b.includes(norm(o))) && !negritos(texto).some(b => b.includes(norm(o)))) erros.push(`deixe "${o}" em negrito, como na referência`)
+  }
   if (texto.length > Math.max(r.referencia.length * 1.3 + 120, 280)) erros.push(`ficou longa (${texto.length} caracteres; a referência tem ${r.referencia.length})`)
   const obrigatorioNorm = norm(r.obrigatorio.join(' '))
   const gritos = (texto.match(CAIXA_ALTA) || []).filter(w => !obrigatorioNorm.includes(norm(w)))
@@ -87,6 +96,9 @@ type Msg = OpenAI.Chat.ChatCompletionMessageParam
 
 /** A Anna é mulher: "obrigado" vira "obrigada" (o modelo às vezes escorrega). */
 export const falaDeMulher = (t: string) => t.replace(/\b([Oo])brigado\b/g, '$1brigada')
+
+/** Negrito no padrão do WhatsApp: **assim** (markdown) vira *assim*. */
+export const negritoWhatsApp = (t: string) => t.replace(/\*\*([^*\n]+)\*\*/g, '*$1*')
 
 /** O nome apareceu numa das 3 últimas mensagens da Anna? Então esta não usa. */
 const nomeRecente = (r: Redacao) => r.conversa.filter(m => m.dir === 'out').slice(-3).some(m => norm(m.text).split(' ').includes(norm(r.primeiroNome)))
@@ -124,7 +136,7 @@ export function createRedator(opts: { apiKey: string; model: string; timeoutMs?:
   async function chamar(messages: Msg[], usage: Usage): Promise<string> {
     const r = await openai.chat.completions.create({ model: opts.model, max_completion_tokens: 500, messages })
     addUsage(usage, r.usage)
-    return falaDeMulher(semTravessao((r.choices[0]?.message?.content || '').trim().replace(/^"+|"+$/g, '').trim()))
+    return negritoWhatsApp(falaDeMulher(semTravessao((r.choices[0]?.message?.content || '').trim().replace(/^"+|"+$/g, '').trim())))
   }
 
   /** Devolve o texto final: a redação aprovada pelas travas, ou a referência. */

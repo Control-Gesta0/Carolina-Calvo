@@ -61,7 +61,7 @@ export function cenarios(textos?: Textos): Cenario[] {
     },
     {
       id: 'q2-valor-acao', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'quanto vocês cobram pra entrar com a ação?']], espera: { intencao: 'pergunta' }, comResposta: true,
-      criterios: [...RESPOSTA_BOA, 'Diz que valores e estratégia são tratados somente na reunião com a Dra. Carolina, sem citar nenhum valor'],
+      criterios: [...RESPOSTA_BOA, 'Diz que valores e estratégia são tratados somente na reunião com a Dra. Carolina, sem citar valor em dinheiro, parcela ou porcentagem dos honorários ou da ação (dizer que a primeira reunião não é cobrada, ou quanto ela dura, é permitido)'],
     },
     { id: 'q3-concorda', etapa: 'q3', state: { ...comQ2, rendaBruta: 12000, rendaLiquida: 3800, descontoConta: 2000 }, conversa: [['out', Q3], ['in', 'com certeza, seria um alívio enorme']], espera: { intencaoEm: ['responde_etapa', 'outro'] } },
     {

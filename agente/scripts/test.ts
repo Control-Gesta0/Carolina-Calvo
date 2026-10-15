@@ -122,6 +122,13 @@ async function main() {
   eq('redação em caixa alta não passa', validarRedacao({ referencia: refQ, obrigatorio: ['AMANHÃ às 15:00'] }, 'A SUSPENSÃO é possível. AMANHÃ às 15:00, on-line. Posso agendar?').some(e => e.includes('caixa alta')), true)
   eq('redação que só copia a abertura depois do lead falar não passa', validarRedacao({ id: 'nova_oferta', referencia: refQ, obrigatorio: ['AMANHÃ às 15:00'], conversa: lead }, 'Ela pode atender você AMANHÃ às 15:00, on-line. Posso agendar?').some(e => e.includes('abertura')), true)
   eq('a Anna fala no feminino', falaDeMulher('Obrigado pelas informações, obrigado mesmo.'), 'Obrigada pelas informações, obrigada mesmo.')
+  const { negritoWhatsApp } = await import('../lib/anna/redator')
+  const refNegrito = 'A sua *situação é delicada*, vou encaminhar para a Dra. Carolina.'
+  eq('negrito do WhatsApp passa', validarRedacao({ referencia: refNegrito, obrigatorio: [] }, 'Entendo. Como a sua *situação é delicada*, vou encaminhar para a Dra. Carolina.'), [])
+  eq('negrito aberto sem fechar não passa', validarRedacao({ referencia: refNegrito, obrigatorio: [] }, 'A sua *situação é delicada, vou encaminhar.').some(e => e.includes('negrito')), true)
+  eq('referência com negrito exige negrito', validarRedacao({ referencia: refNegrito, obrigatorio: [] }, 'A sua situação é delicada, vou encaminhar para a Dra. Carolina.').some(e => e.includes('negrito')), true)
+  eq('horário em negrito na referência continua em negrito', validarRedacao({ referencia: 'Ela pode atender você *AMANHÃ às 15:00*, ON LINE. Posso agendar?', obrigatorio: ['AMANHÃ às 15:00'] }, 'Consigo amanhã às 15:00, on-line. Posso agendar?').some(e => e.includes('negrito')), true)
+  eq('negrito markdown vira WhatsApp', negritoWhatsApp('Reunião **amanhã às 15:00**.'), 'Reunião *amanhã às 15:00*.')
   const { extensaoAudio } = await import('../lib/media')
   eq('formato do áudio: pelo tipo, pelo nome ou ogg', [
     extensaoAudio('https://drive-g.kommo.com/download/abc/123', 'audio/ogg'),
@@ -248,7 +255,7 @@ async function main() {
     eq('4ª mensagem (texto da Dra.)', w.enviados[4], TEXTOS.mensagem4)
     eq('pausa de 30 min agendada', w.msg5, [agora.getTime() + 30 * 60_000])
     const r5 = await fluxo.quintaMensagem(ctx(w, new Date(agora.getTime() + 30 * 60_000), ''), deps, 'tok')
-    eq('5ª mensagem oferece HOJE 15:00 (renda acima de 13,5 mil)', w.enviados[5].endsWith('Ela pode atender você HOJE às 15:00, ON LINE. Posso agendar?'), true)
+    eq('5ª mensagem oferece HOJE 15:00, em negrito', w.enviados[5].endsWith('Ela pode atender você *HOJE às 15:00*, ON LINE. Posso agendar?'), true)
     eq('5ª mensagem não afirma análise da Dra.', /analisou/.test(w.enviados[5]), false)
     eq('régua de agendamento começa na oferta', w.reguas[w.reguas.length - 1], 'agendamento')
     void r5
@@ -257,7 +264,7 @@ async function main() {
     eq('evento criado no horário oferecido', w.eventos, ['2026-10-12T15:00'])
     eq('lead vai para Closer › Reunião agendada', w.movido[w.movido.length - 1], STATUS.reuniaoAgendada)
     eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 12, 18) / 1000, Date.UTC(2026, 9, 12, 18) / 1000])
-    eq('confirmação com link do Meet', w.enviados[6].includes('https://meet.google.com/abc') && w.enviados[6].startsWith('*Agendado!* Segunda-feira, 12/10, às 15:00'), true)
+    eq('confirmação com link do Meet', w.enviados[6].includes('https://meet.google.com/abc') && w.enviados[6].startsWith('*Agendado!* *Segunda-feira, 12/10, às 15:00*'), true)
     eq('lembretes agendados', w.lembretes, 1)
     eq('etapa agendado', w.state.etapa, 'agendado')
   }
