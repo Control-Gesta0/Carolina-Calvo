@@ -49,6 +49,8 @@ export const CONFIG = {
   autoGateFormLeads: process.env.AUTO_GATE_FORM_LEADS === 'true',
   /** régua pós-proposta (24h depois de Cliente decisão). Ligar só depois de desligar a automação antiga do Kommo */
   posPropostaAtivo: process.env.POS_PROPOSTA_ATIVO === 'true',
+  /** etiqueta de mês nas entradas por formulário (lib/etiqueta-mes). Liga só com a aprovação da Dra. */
+  etiquetaMesAtiva: process.env.ETIQUETA_MES_ATIVA === 'true',
 
   /** Cobrança pelo Asaas (lib/cobranca). Nasce DESLIGADA: sem COBRANCA_ATIVA=true só simula e registra o que sairia. */
   asaas: {

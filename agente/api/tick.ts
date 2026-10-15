@@ -12,6 +12,7 @@ import { CONFIG } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
 import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
+import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
@@ -24,7 +25,8 @@ import { getState } from '../lib/state'
 /**
  * O RELÓGIO. QStash chama de 5 em 5 minutos (Authorization: Bearer CRON_SECRET)
  * e cada chamada executa os jobs vencidos: 5ª mensagem (pausa de 30 min),
- * etapas das réguas de follow-up, encerramento e lembretes de reunião.
+ * etapas das réguas de follow-up, encerramento e lembretes de reunião. Com
+ * ETIQUETA_MES_ATIVA, também põe a etiqueta de mês nos cards novos de formulário.
  * Granularidade de 5 min é o piso da promessa (comum/PEGADINHAS: o tique da janela).
  */
 
@@ -40,6 +42,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const msg = (e instanceof Error ? e.message : String(e)).slice(0, 300)
       feitos.push(`${job.tipo} ${job.leadId}: ERRO ${msg}`)
       await logExec({ tipo: 'erro', leadId: job.leadId, detalhe: `job ${job.tipo}: ${msg}` })
+    }
+  }
+  if (CONFIG.etiquetaMesAtiva) {
+    try {
+      feitos.push(...(await varrerEntradas()).map(l => `etiqueta de mês ${l}`))
+    } catch (e) {
+      feitos.push(`etiqueta de mês: ERRO ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}`)
     }
   }
   // cobrança grande (dia 06 e 07): a rodada que não terminou continua por aqui, de 5 em 5 min

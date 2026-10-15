@@ -418,6 +418,48 @@ async function main() {
     ])?.id, 5)
   }
 
+  {
+    // Ajuste 4: etiqueta de mês nas entradas por formulário (regra da Dra., 15/10/2026)
+    const M = await import('../lib/etiqueta-mes')
+    const ts = (iso: string) => Date.parse(iso) / 1000
+    const card = (id: number, quando: string, fonte: string | null, tags: string[] = [], campos: number[] = []) => ({
+      id, pipeline_id: PIPELINES.sdr, status_id: 1, created_at: ts(quando),
+      custom_fields_values: campos.map(field_id => ({ field_id })),
+      _embedded: { tags: tags.map((name, i) => ({ id: i + 1, name })), source: fonte ? { id: 1, name: fonte } : null },
+    })
+    const FORM = 'Geral - Formulário Remarketing - 01/09/2026'
+    eq('etiqueta de mês: lê os formatos que já existem na conta',
+      ['OUT 26', 'Outubro 24', 'MAIO25', 'Set/26', 'ABRIL 26', 'março 2026', 'Nov 24', 'REMARKETING SE', 'MARKETING 25', 'ACIMA DE 30', 'fb1720507809227614'].map(M.mesDaEtiqueta),
+      ['2026-10', '2024-10', '2025-05', '2026-09', '2026-04', '2026-03', '2024-11', null, null, null, null])
+    eq('etiqueta de mês: formato da Dra., no horário de Brasília',
+      [new Date('2026-10-31T23:30:00-03:00'), new Date('2027-04-02T10:00:00-03:00'), new Date('2027-05-02T10:00:00-03:00'), new Date('2027-01-01T00:10:00-03:00')].map(M.etiquetaDoMes),
+      ['OUT 26', 'ABRIL 27', 'MAIO 27', 'JAN 27'])
+    eq('entrada por formulário: pela origem do card ou pelas respostas do formulário',
+      [card(1, '2026-10-15T10:00:00-03:00', FORM), card(2, '2026-10-15T10:00:00-03:00', 'Carolina Calvo Advocacia'), card(3, '2026-10-15T10:00:00-03:00', '556131424636'), card(4, '2026-10-15T10:00:00-03:00', null, [], [CRM_MAP.campos.formSalario])].map(M.ehEntradaDeFormulario),
+      [true, false, false, true])
+    eq('campanha em jan, fev e set: o card novo acumula JAN 26 + FEV 26 + SET 26', M.etiquetasDoCard(
+      card(30, '2026-09-10T10:00:00-03:00', FORM, ['REMARKETING SE']),
+      [card(10, '2026-01-10T10:00:00-03:00', FORM, ['JAN 26']), card(20, '2026-02-10T10:00:00-03:00', FORM, ['FEV 26', 'REMARKETING SE'])]),
+      ['SET 26', 'JAN 26', 'FEV 26'])
+    eq('volta espontânea pelo WhatsApp: sem etiqueta nova, só reúne as anteriores', M.etiquetasDoCard(
+      card(31, '2026-10-10T10:00:00-03:00', '556131424636'),
+      [card(11, '2026-01-10T10:00:00-03:00', FORM, ['JAN 26', 'Cliente'])]),
+      ['JAN 26'])
+    eq('lead novo pelo WhatsApp, sem card anterior: nenhuma etiqueta de mês', M.etiquetasDoCard(card(32, '2026-10-10T10:00:00-03:00', 'Carolina Calvo Advocacia'), []), [])
+    eq('dois formulários no mesmo mês: uma etiqueta só', M.etiquetasDoCard(
+      card(33, '2026-10-20T10:00:00-03:00', FORM),
+      [card(12, '2026-10-02T10:00:00-03:00', FORM, ['OUT 26'])]),
+      ['OUT 26'])
+    eq('etiqueta do mês já posta à mão (outra grafia): não duplica', M.etiquetasDoCard(
+      card(34, '2026-09-20T10:00:00-03:00', FORM, ['Set 26']),
+      [card(13, '2026-09-02T10:00:00-03:00', FORM, ['SETEMBRO 26'])]),
+      [])
+    eq('card criado depois deste não entra na conta', M.etiquetasDoCard(
+      card(35, '2026-09-20T10:00:00-03:00', FORM),
+      [card(14, '2026-10-02T10:00:00-03:00', FORM, ['OUT 26'])]),
+      ['SET 26'])
+  }
+
   console.log(`\n${falhas ? `❌ ${falhas} de ${total} falharam` : `✅ ${total}/${total} passaram`}`)
   process.exit(falhas ? 1 : 0)
 }

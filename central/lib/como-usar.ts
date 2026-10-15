@@ -208,7 +208,8 @@ export const TAGS = [
   { tag: 'atendimento-humano', significa: 'A equipe está com o lead. A Anna não responde.', quem: 'A Anna, na passagem. Vocês também podem colocar a qualquer hora.' },
   { tag: 'ANNA passou para humano', significa: 'Foi a Anna que passou o lead para a equipe.', quem: 'A Anna.' },
   { tag: 'ANNA agendou', significa: 'Reunião marcada pela Anna.', quem: 'A Anna.' },
-  { tag: 'ANNA renda até 15k', significa: 'Renda bruta até R$ 15 mil: a Anna não oferece reunião, a equipe avalia.', quem: 'A Anna.' },
+  { tag: 'ANNA renda até 15k', significa: 'Renda bruta até R$ 15 mil: a Anna não oferece reunião e não cria tarefa. Filtre pela tag.', quem: 'A Anna.' },
+  { tag: 'OUT 26, NOV 26…', significa: 'Mês em que o lead entrou por formulário de campanha. Conversa espontânea pelo WhatsApp não ganha. O card novo reúne as dos cards anteriores do mesmo telefone, sem repetir mês.', quem: 'A Anna, até 5 minutos depois de o card entrar (quando liberada pela Dra.).' },
   { tag: 'cliente', significa: 'Já é cliente do escritório. A Anna não fala com ele.', quem: 'A equipe.' },
 ]
 
