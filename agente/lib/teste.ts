@@ -1,4 +1,5 @@
 import { createInterprete } from './anna/interprete'
+import { createRedator } from './anna/redator'
 import { quintaMensagem, turno, type Ctx, type Deps } from './anna/fluxo'
 import { proximoSlot, type Slot } from './anna/agenda'
 import { comTextos } from './anna/textos'
@@ -149,6 +150,7 @@ async function rodarTurno(s: Sessao, textos: Textos, prompt: string) {
   const w = s.mundo
   const reservados = new Set<string>()
   const interprete = createInterprete({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel, prompt: () => prompt })
+  const redator = process.env.REDACAO === 'off' ? null : createRedator({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel })
 
   const deps: Deps = {
     async interpretar(e) {
@@ -158,6 +160,15 @@ async function rodarTurno(s: Sessao, textos: Textos, prompt: string) {
       tools.push(`intenção: ${r.leitura.intencao}`)
       return r.leitura
     },
+    ...(redator ? {
+      async redigir(r) {
+        const out = await redator.redigir(r)
+        usage.calls += out.usage.calls; usage.input += out.usage.input; usage.cached += out.usage.cached; usage.output += out.usage.output
+        guard.push(...out.guard)
+        if (!out.redigido) tools.push(`redação: saiu o texto pronto (${r.id})`)
+        return out.texto
+      },
+    } : {}),
     async enviar(t) { enviados.push(t) },
     async patch(p) { w.state = { ...w.state, ...p }; return w.state },
     async salvarCampos(v) {

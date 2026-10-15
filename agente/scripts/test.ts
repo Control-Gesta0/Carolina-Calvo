@@ -111,6 +111,17 @@ async function main() {
   eq('renderiza variável do card', renderizar('Olá, {{lead.cf.805158}}. Link: {{lead.cf.805162}}', { 805158: 'Maria', 805162: 'https://meet.google.com/x' }), 'Olá, Maria. Link: https://meet.google.com/x')
   eq('primeiro nome', primeiroNome('MARIA DOLORES DA SILVA'), 'Maria')
   eq('nome que não é nome', primeiroNome('Facebook №4431198800481061'), '')
+  const { validarRedacao, falaDeMulher } = await import('../lib/anna/redator')
+  const refQ = 'Ela pode atender você AMANHÃ às 15:00, ON LINE. Posso agendar?'
+  const lead = [{ id: '1', dir: 'in' as const, text: 'nesse horário eu trabalho', ts: 1 }]
+  eq('redação boa passa', validarRedacao({ referencia: refQ, obrigatorio: ['AMANHÃ às 15:00'] }, 'Consigo para amanhã às 15:00, on-line. Posso agendar?'), [])
+  eq('redação sem o horário obrigatório não passa', validarRedacao({ referencia: refQ, obrigatorio: ['AMANHÃ às 15:00'] }, 'Consigo outro dia, on-line. Posso agendar?').length > 0, true)
+  eq('redação com lista numerada não passa', validarRedacao({ referencia: 'Pode me passar os valores?', obrigatorio: [] }, '1) renda bruta\n2) líquido\nPode me passar?').some(e => e.includes('lista')), true)
+  eq('redação com duas perguntas não passa', validarRedacao({ referencia: 'Pode me passar?', obrigatorio: [] }, 'Tudo bem? Pode me passar?').length > 0, true)
+  eq('redação que pergunta sem a referência perguntar não passa', validarRedacao({ referencia: 'Vou pedir para a equipe continuar.', obrigatorio: [] }, 'Vou pedir para a equipe continuar, tudo bem?').length > 0, true)
+  eq('redação em caixa alta não passa', validarRedacao({ referencia: refQ, obrigatorio: ['AMANHÃ às 15:00'] }, 'A SUSPENSÃO é possível. AMANHÃ às 15:00, on-line. Posso agendar?').some(e => e.includes('caixa alta')), true)
+  eq('redação que só copia a abertura depois do lead falar não passa', validarRedacao({ id: 'nova_oferta', referencia: refQ, obrigatorio: ['AMANHÃ às 15:00'], conversa: lead }, 'Ela pode atender você AMANHÃ às 15:00, on-line. Posso agendar?').some(e => e.includes('abertura')), true)
+  eq('a Anna fala no feminino', falaDeMulher('Obrigado pelas informações, obrigado mesmo.'), 'Obrigada pelas informações, obrigada mesmo.')
   const { extensaoAudio } = await import('../lib/media')
   eq('formato do áudio: pelo tipo, pelo nome ou ogg', [
     extensaoAudio('https://drive-g.kommo.com/download/abc/123', 'audio/ogg'),
@@ -158,6 +169,30 @@ async function main() {
   type Ctx = import('../lib/anna/fluxo').Ctx
   function ctx(w: { state: LS }, agora: Date, texto: string): Ctx {
     return { agora, nomeContato: 'Maria Silva', primeiroNome: 'Maria', state: w.state, textoTurno: texto, conversa: [] }
+  }
+
+  {
+    const { periodoSoSeDito } = await import('../lib/anna/interprete')
+    eq('recusa sem dizer o período: o período deduzido não vale', [
+      periodoSoSeDito(L({ intencao: 'recusa_horario', periodo: 'tarde' }), 'oferta', 'nesse horário eu estou trabalhando').periodo,
+      periodoSoSeDito(L({ intencao: 'recusa_horario', periodo: 'manha' }), 'oferta', 'hoje não dá, só consigo de manhã').periodo,
+      periodoSoSeDito(L({ intencao: 'escolhe_periodo', periodo: 'tarde' }), 'preferencia', 'depois das 16h').periodo,
+    ], [null, 'manha', 'tarde'])
+  }
+
+  {
+    // a redação recebe o texto da Dra. como referência, com os trechos obrigatórios; confirmação e OAB ficam fixos
+    const { w, deps } = mundo(seg9)
+    const pedidos: Array<{ id: string; obrigatorio: string[] }> = []
+    deps.redigir = async r => { pedidos.push({ id: r.id, obrigatorio: r.obrigatorio }); return `[redigido] ${r.referencia}` }
+    w.state = { etapa: 'q3', rendaBruta: 12000, rendaLiquida: 3800, descontoConta: 2000 }
+    w.leituras.push(L({ intencao: 'responde_etapa' }))
+    const r4 = await fluxo.turno(ctx(w, seg9, 'concordo'), deps)
+    eq('redação: a 4ª mensagem sai redigida, com a Dra. obrigatória', [r4.enviado?.startsWith('[redigido]'), pedidos[0]], [true, { id: 'mensagem4', obrigatorio: ['Dra. Carolina'] }])
+    w.state = { etapa: 'q2' }
+    w.leituras.push(L({ intencao: 'tem_advogado' }))
+    const rAdv = await fluxo.turno(ctx(w, seg9, 'já tenho advogado'), deps)
+    eq('redação: o texto da OAB sai como a Dra. escreveu', [rAdv.enviado, pedidos.length], [TEXTOS.possuiAdvogado, 1])
   }
 
   {

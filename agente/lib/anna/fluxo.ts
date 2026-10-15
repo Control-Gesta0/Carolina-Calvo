@@ -4,13 +4,16 @@ import type { ChatMsg } from '../history'
 import type { Etapa, LeadState, Oferta } from '../state'
 import { AGENDA, diaIso, primeiraMaiuscula, proximoDiaUtil, quandoExtenso, quandoOferta, type Periodo, type Slot } from './agenda'
 import { compor, ehPerguntaRobo, PENDENTE, type Entrada, type Leitura } from './interprete'
+import type { Redacao } from './redator'
 import { brl, TEXTOS } from './textos'
 
 /**
  * O roteiro da Anna como máquina de estados. Tudo que é decisão (próxima
  * mensagem, coluna do funil, oferta de horário, passagem para humano) é CÓDIGO;
- * o modelo só lê o turno do lead (interprete.ts). As dependências entram por
- * `Deps`, então o fluxo inteiro roda em teste sem Kommo, Redis nem Google.
+ * o modelo só lê o turno do lead (interprete.ts) e, na saída, reescreve a
+ * mensagem decidida como conversa (redator.ts), com o texto da Dra. como
+ * referência e fallback. As dependências entram por `Deps`, então o fluxo
+ * inteiro roda em teste sem Kommo, Redis nem Google.
  */
 
 export const RENDA_MINIMA_REUNIAO = 10000
@@ -50,6 +53,8 @@ export interface Deps {
     confirmar(slot: Slot, titulo: string, descricao: string): Promise<{ eventId: string; link: string } | null>
   }
   agendarLembretes(inicio: Date, eventId: string): Promise<void>
+  /** reescreve a mensagem do roteiro como conversa (redator.ts); sem ela, sai o texto pronto */
+  redigir?(r: Redacao): Promise<string>
 }
 
 export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string }
@@ -71,45 +76,80 @@ function resumoLead(s: LeadState): string {
   ].join(' · ')
 }
 
+/** O que cada mensagem do roteiro precisa fazer: vai para a redação junto com o texto da Dra. */
+export const OBJETIVO: Record<string, string> = {
+  pergunta1: 'se apresentar e perguntar o que a pessoa quer saber: se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas com juros revisados, ou as duas coisas',
+  pergunta2: 'pedir os três valores da análise inicial: a renda bruta mensal, quanto recebe líquido depois dos descontos do contracheque e quanto o banco desconta direto da conta corrente por mês',
+  q2_falta: 'agradecer o que a pessoa já informou e pedir só o que falta',
+  mensagem3: 'mostrar que, sem esse desconto na conta corrente e recebendo o salário líquido inteiro, seria um alívio financeiro, e perguntar se a pessoa concorda',
+  mensagem3_sem_desconto: 'mostrar que, reduzindo os descontos e sobrando mais do salário, seria um alívio financeiro, e perguntar se a pessoa concorda',
+  mensagem4: 'dizer que a situação é delicada, que vai encaminhar a conversa para a Dra. Carolina analisar e que volta a falar em alguns minutos',
+  mensagem5: 'contar que já passou o caso para a Dra. Carolina; explicar que o primeiro atendimento é on-line e que nele a Dra. explica a possibilidade de pedir na Justiça a suspensão dos descontos por até 6 meses, além da revisão de juros e da reestruturação das dívidas; oferecer o horário e perguntar se pode agendar',
+  nova_oferta: 'oferecer o horário, on-line, e perguntar se pode agendar',
+  horario_ocupado: 'avisar que o horário anterior acabou de ser preenchido, oferecer o novo horário, on-line, e perguntar se pode agendar',
+  manha_ou_tarde: 'dizer que não tem problema e perguntar se a pessoa prefere de manhã ou à tarde',
+  oferta_pendente: 'retomar a oferta de horário e perguntar se pode agendar',
+  sem_reuniao: 'agradecer as informações e dizer que o caso fica registrado para a equipe da Dra. Carolina avaliar o melhor caminho e que alguém da equipe continua o atendimento por aqui',
+  passa_humano: 'dizer que vai pedir para alguém da equipe da Dra. Carolina continuar o atendimento por aqui',
+  sem_agenda: 'dizer que vai pedir para a equipe da Dra. Carolina confirmar o melhor horário por aqui',
+  desistiu: 'respeitar a decisão e dizer que a pessoa pode chamar por aqui se mudar de ideia',
+  pendente_q1: 'retomar a pergunta sobre o que a pessoa quer saber: a suspensão dos descontos, a reestruturação das dívidas ou as duas coisas',
+  livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
+}
+/** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
+const FIXOS = new Set(['agendado', 'possui_advogado'])
+
+interface Fala { id: string; obrigatorio?: string[] }
+
+/** Envia a mensagem (redigida como conversa, quando há redator) e devolve o texto que saiu. */
+async function dizer(ctx: Ctx, deps: Deps, texto: string, f: Fala): Promise<string> {
+  const final = FIXOS.has(f.id) || !deps.redigir ? texto : await deps.redigir({
+    id: f.id, referencia: texto, objetivo: OBJETIVO[f.id] || OBJETIVO.livre, obrigatorio: (f.obrigatorio || []).filter(Boolean),
+    conversa: ctx.conversa, primeiroNome: ctx.primeiroNome,
+  })
+  await deps.enviar(final)
+  return final
+}
+
 /** Envia e, se a mensagem deixa uma pergunta em aberto, (re)começa a régua certa. */
-async function falar(deps: Deps, texto: string, etapa: Etapa, agora: Date): Promise<void> {
-  await deps.enviar(texto)
+async function falar(ctx: Ctx, deps: Deps, texto: string, etapa: Etapa, f: Fala): Promise<string> {
+  const final = await dizer(ctx, deps, texto, f)
   const regua = reguaDaEtapa(etapa)
-  if (regua) await deps.iniciarRegua(regua, agora.getTime())
+  if (regua) await deps.iniciarRegua(regua, ctx.agora.getTime())
+  return final
 }
 
 /** Primeira mensagem quando o lead escreveu antes de a Anna se apresentar. */
 export async function abrir(ctx: Ctx, deps: Deps): Promise<Resultado> {
-  const texto = TEXTOS.pergunta1(ctx.primeiroNome)
   await deps.patch({ etapa: 'q1', inicioEm: ctx.agora.getTime() })
-  await falar(deps, texto, 'q1', ctx.agora)
-  return { acao: 'abriu: pergunta 1', enviado: texto }
+  const enviado = await falar(ctx, deps, TEXTOS.pergunta1(ctx.primeiroNome), 'q1', { id: 'pergunta1', obrigatorio: ['Anna', 'Dra. Carolina Calvo', '6 meses'] })
+  return { acao: 'abriu: pergunta 1', enviado }
 }
 
-async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitura?: Leitura): Promise<Resultado> {
+async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitura?: Leitura, id = 'passa_humano'): Promise<Resultado> {
   const resumo = `${leitura?.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`
-  await deps.enviar(texto)
+  const enviado = await dizer(ctx, deps, texto, { id })
   await deps.passarParaHumano(motivo, resumo)
   await deps.patch({ etapa: 'humano', finalizado: { motivo, em: ctx.agora.toISOString() } })
-  return { acao: `passou para humano: ${motivo}`, enviado: texto, leitura, resumo }
+  return { acao: `passou para humano: ${motivo}`, enviado, leitura, resumo }
 }
 
-async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string }, textoDe: (q: string) => string): Promise<Resultado> {
-  if (!deps.agenda.disponivel()) return humano(ctx, deps, 'agenda indisponível', TEXTOS.semAgenda)
+async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string }, textoDe: (q: string) => string, id: string): Promise<Resultado> {
+  if (!deps.agenda.disponivel()) return humano(ctx, deps, 'agenda indisponível', TEXTOS.semAgenda, undefined, 'sem_agenda')
   const mesmoDia = (ctx.state.rendaBruta ?? 0) >= AGENDA.rendaMesmoDia && !busca.aPartirDoDia
   const slot = await deps.agenda.buscar({ ...busca, mesmoDia })
-  if (!slot) return humano(ctx, deps, 'sem horário livre nos próximos dias', TEXTOS.semAgenda)
+  if (!slot) return humano(ctx, deps, 'sem horário livre nos próximos dias', TEXTOS.semAgenda, undefined, 'sem_agenda')
   await deps.agenda.reservar(slot)
-  const texto = textoDe(quandoOferta(slot.inicio, ctx.agora))
+  const quando = quandoOferta(slot.inicio, ctx.agora)
   await deps.patch({ etapa: 'oferta', oferta: { chave: slot.chave, inicio: slot.inicio.toISOString(), fim: slot.fim.toISOString(), em: ctx.agora.getTime() } })
-  await falar(deps, texto, 'oferta', ctx.agora)
-  return { acao: `ofereceu ${slot.chave}`, enviado: texto }
+  const enviado = await falar(ctx, deps, textoDe(quando), 'oferta', { id, obrigatorio: id === 'mensagem5' ? [quando, '6 meses'] : [quando] })
+  return { acao: `ofereceu ${slot.chave}`, enviado }
 }
 
 /** Job da pausa de 30 min: a 5ª mensagem com o primeiro horário da sequência. */
 export async function quintaMensagem(ctx: Ctx, deps: Deps, token: string): Promise<Resultado> {
   if (ctx.state.etapa !== 'analise' || ctx.state.msg5Token !== token) return { acao: 'msg5 cancelada (etapa mudou)' }
-  return oferecer(ctx, deps, {}, TEXTOS.mensagem5)
+  return oferecer(ctx, deps, {}, TEXTOS.mensagem5, 'mensagem5')
 }
 
 /** Um turno do lead. */
@@ -130,17 +170,17 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   switch (leitura.intencao) {
     case 'pergunta_se_robo': return humano(ctx, deps, 'perguntou se é robô', TEXTOS.passaHumano, leitura)
     case 'pede_humano': return humano(ctx, deps, 'pediu atendimento humano', TEXTOS.passaHumano, leitura)
-    case 'tem_advogado': return humano(ctx, deps, 'já tem advogado no caso', TEXTOS.possuiAdvogado, leitura)
+    case 'tem_advogado': return humano(ctx, deps, 'já tem advogado no caso', TEXTOS.possuiAdvogado, leitura, 'possui_advogado')
     case 'ja_e_cliente': return humano(ctx, deps, 'já é cliente', TEXTOS.passaHumano, leitura)
     case 'outro_assunto': return humano(ctx, deps, 'assunto de outra área', TEXTOS.passaHumano, leitura)
     case 'remarcar': return humano(ctx, deps, 'pediu para remarcar', TEXTOS.passaHumano, leitura)
     case 'desiste': {
       await deps.cancelarRegua()
-      await deps.enviar(TEXTOS.desistiu)
+      const enviado = await dizer(ctx, deps, TEXTOS.desistiu, { id: 'desistiu' })
       await deps.mover(STATUS.naoQuerContinuar, PIPELINES.sdr)
       await deps.nota(`Anna: o lead disse que não quer continuar. ${leitura.resumo}`)
       await deps.patch({ etapa: 'humano', finalizado: { motivo: 'desistiu', em: ctx.agora.toISOString() } })
-      return { acao: 'lead desistiu: movido para Não quer continuar', enviado: TEXTOS.desistiu, leitura }
+      return { acao: 'lead desistiu: movido para Não quer continuar', enviado, leitura }
     }
   }
 
@@ -148,8 +188,8 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   const responderLivre = async (): Promise<Resultado | null> => {
     if (!leitura.resposta) return null
     const texto = compor(leitura.resposta, PENDENTE[etapa](s, quandoOfertado))
-    await falar(deps, texto, etapa, ctx.agora)
-    return { acao: `respondeu fora do roteiro (${leitura.intencao})`, enviado: texto, leitura }
+    const enviado = await falar(ctx, deps, texto, etapa, { id: 'livre', obrigatorio: etapa === 'oferta' ? [quandoOfertado || ''] : [] })
+    return { acao: `respondeu fora do roteiro (${leitura.intencao})`, enviado, leitura }
   }
 
   switch (etapa) {
@@ -157,15 +197,14 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (leitura.opcao) {
         await deps.patch({ objetivo: leitura.opcao })
         await deps.salvarCampos({ [CRM_MAP.campos.objetivo]: String(leitura.opcao) })
-        await falar(deps, TEXTOS.pergunta2, 'q2', ctx.agora)
+        const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
         await deps.patch({ etapa: 'q2' })
-        return { acao: `opção ${leitura.opcao}: pergunta 2`, enviado: TEXTOS.pergunta2, leitura }
+        return { acao: `opção ${leitura.opcao}: pergunta 2`, enviado, leitura }
       }
       const livre = await responderLivre()
       if (livre) return livre
-      const pedido = PENDENTE.q1(ctx.state)
-      await falar(deps, pedido, 'q1', ctx.agora)
-      return { acao: 'q1 sem opção: perguntou de novo', enviado: pedido, leitura }
+      const enviado = await falar(ctx, deps, PENDENTE.q1(ctx.state), 'q1', { id: 'pendente_q1' })
+      return { acao: 'q1 sem opção: perguntou de novo', enviado, leitura }
     }
 
     case 'q2': {
@@ -179,26 +218,28 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
       if (Object.keys(patch).length) await deps.patch(patch)
 
-      const faltam = [
-        novo.rendaBruta == null ? 'a sua renda bruta mensal' : '',
-        novo.rendaLiquida == null ? 'quanto você recebe líquido' : '',
-        novo.descontoConta == null ? 'quanto o banco desconta da sua conta corrente por mês' : '',
-      ].filter(Boolean)
+      const faltando = [
+        novo.rendaBruta == null ? ['a sua renda bruta mensal', 'bruta'] : null,
+        novo.rendaLiquida == null ? ['quanto você recebe líquido', 'líquido'] : null,
+        novo.descontoConta == null ? ['quanto o banco desconta da sua conta corrente por mês', 'conta corrente'] : null,
+      ].filter((x): x is string[] => !!x)
+      const faltam = faltando.map(f => f[0])
       if (!faltam.length) {
-        const texto = TEXTOS.mensagem3(novo.descontoConta ?? null)
+        const desconto = novo.descontoConta ?? null
         await deps.patch({ etapa: 'q3' })
-        await falar(deps, texto, 'q3', ctx.agora)
-        return { acao: 'q2 completa: mensagem 3', enviado: texto, leitura }
+        const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3', obrigatorio: [brl(desconto)] } : { id: 'mensagem3_sem_desconto' })
+        return { acao: 'q2 completa: mensagem 3', enviado, leitura }
       }
       if (!Object.keys(patch).length) {
         const livre = await responderLivre()
         if (livre) return livre
       }
+      const lista = faltam.length === 1 ? faltam[0] : `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}`
       const texto = Object.keys(patch).length
-        ? `Obrigada. Falta só ${faltam.length === 1 ? faltam[0] : `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}`}. Pode me informar?`
-        : `Para eu fazer a análise inicial, preciso desses valores: ${faltam.join(', ')}. Pode me informar?`
-      await falar(deps, texto, 'q2', ctx.agora)
-      return { acao: `q2 incompleta (faltam ${faltam.length})`, enviado: texto, leitura }
+        ? `Obrigada. Falta só ${lista}. Pode me informar?`
+        : `Para eu fazer a análise inicial, preciso saber ${lista}. Pode me informar?`
+      const enviado = await falar(ctx, deps, texto, 'q2', { id: 'q2_falta', obrigatorio: faltando.map(f => f[1]) })
+      return { acao: `q2 incompleta (faltam ${faltam.length})`, enviado, leitura }
     }
 
     case 'q3': {
@@ -208,18 +249,18 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       }
       await deps.cancelarRegua()
       if ((s.rendaBruta ?? 0) < RENDA_MINIMA_REUNIAO) {
-        await deps.enviar(TEXTOS.semReuniao)
+        const enviado = await dizer(ctx, deps, TEXTOS.semReuniao, { id: 'sem_reuniao' })
         await deps.addTags([CRM_MAP.tags.semReuniao])
         await deps.tarefa(`Anna: renda bruta abaixo de R$ 10 mil, sem reunião marcada pela IA. Avaliar o caso. ${resumoLead(s)}`)
         await deps.patch({ etapa: 'sem_reuniao' })
-        return { acao: 'renda abaixo de 10 mil: registrado para a equipe', enviado: TEXTOS.semReuniao, leitura }
+        return { acao: 'renda abaixo de 10 mil: registrado para a equipe', enviado, leitura }
       }
       const token = deps.novoToken()
-      await deps.enviar(TEXTOS.mensagem4)
+      const enviado = await dizer(ctx, deps, TEXTOS.mensagem4, { id: 'mensagem4', obrigatorio: ['Dra. Carolina'] })
       await deps.nota(`Anna encaminhou o caso para a Dra. Carolina. ${resumoLead(s)}`)
       await deps.patch({ etapa: 'analise', msg5Token: token })
       await deps.agendarMsg5(token, ctx.agora.getTime() + PAUSA_ANALISE_MS)
-      return { acao: 'mensagem 4: pausa de 30 min', enviado: TEXTOS.mensagem4, leitura }
+      return { acao: 'mensagem 4: pausa de 30 min', enviado, leitura }
     }
 
     case 'analise': {
@@ -236,10 +277,10 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (etapa === 'oferta' && leitura.intencao === 'aceita_horario' && s.oferta) {
         const slot = slotDaOferta(s.oferta)
         // oferta velha (o horário já passou ou está em cima): oferece o próximo
-        if (slot.inicio.getTime() < ctx.agora.getTime() + 30 * 60_000) return oferecer(ctx, deps, {}, TEXTOS.novaOferta)
+        if (slot.inicio.getTime() < ctx.agora.getTime() + 30 * 60_000) return oferecer(ctx, deps, {}, TEXTOS.novaOferta, 'nova_oferta')
         const nome = ctx.primeiroNome || ctx.nomeContato || 'lead'
         const ev = await deps.agenda.confirmar(slot, `Reunião on-line · ${nome} · superendividamento`, `Marcada pela Anna (WhatsApp).\n${resumoLead(s)}`)
-        if (!ev) return oferecer(ctx, deps, {}, TEXTOS.horarioOcupado)
+        if (!ev) return oferecer(ctx, deps, {}, TEXTOS.horarioOcupado, 'horario_ocupado')
         const quando = primeiraMaiuscula(quandoExtenso(slot.inicio))
         await deps.cancelarRegua()
         await deps.salvarCampos({
@@ -259,18 +300,19 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (leitura.periodo || leitura.data_preferida) {
         const refDia = s.oferta ? diaIso(new Date(s.oferta.inicio)) : diaIso(ctx.agora)
         const aPartirDoDia = leitura.data_preferida && leitura.data_preferida > diaIso(ctx.agora) ? leitura.data_preferida : proximoDiaUtil(refDia)
-        return oferecer(ctx, deps, { periodo: leitura.periodo || undefined, aPartirDoDia }, TEXTOS.novaOferta)
+        return oferecer(ctx, deps, { periodo: leitura.periodo || undefined, aPartirDoDia }, TEXTOS.novaOferta, 'nova_oferta')
       }
       if (leitura.intencao === 'recusa_horario' || (etapa === 'oferta' && leitura.intencao === 'escolhe_periodo')) {
         await deps.patch({ etapa: 'preferencia', recusas: (s.recusas || 0) + 1 })
-        await falar(deps, TEXTOS.manhaOuTarde, 'preferencia', ctx.agora)
-        return { acao: 'não pode no horário: perguntou manhã ou tarde', enviado: TEXTOS.manhaOuTarde, leitura }
+        const enviado = await falar(ctx, deps, TEXTOS.manhaOuTarde, 'preferencia', { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
+        return { acao: 'não pode no horário: perguntou manhã ou tarde', enviado, leitura }
       }
       const livre = await responderLivre()
       if (livre) return livre
-      const texto = etapa === 'oferta' ? PENDENTE.oferta(s, quandoOfertado) : TEXTOS.manhaOuTarde
-      await falar(deps, texto, etapa, ctx.agora)
-      return { acao: `${etapa}: repetiu a pergunta`, enviado: texto, leitura }
+      const enviado = etapa === 'oferta'
+        ? await falar(ctx, deps, PENDENTE.oferta(s, quandoOfertado), etapa, { id: 'oferta_pendente', obrigatorio: [quandoOfertado || ''] })
+        : await falar(ctx, deps, TEXTOS.manhaOuTarde, etapa, { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
+      return { acao: `${etapa}: repetiu a pergunta`, enviado, leitura }
     }
 
     case 'agendado':

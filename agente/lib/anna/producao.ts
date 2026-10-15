@@ -13,6 +13,7 @@ import { AGENDA, proximoSlot, type Slot } from './agenda'
 import type { Ctx, Deps } from './fluxo'
 import { baseVigente } from '../base'
 import { createInterprete } from './interprete'
+import { createRedator } from './redator'
 import crypto from 'crypto'
 
 /**
@@ -23,6 +24,8 @@ import crypto from 'crypto'
 
 // o prompt publicado na base (fatos e informações que a equipe pediu pela Central), lido a cada turno com 10 s de cache
 const interprete = createInterprete({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel, prompt: async () => (await baseVigente()).prompt })
+// a mensagem decidida pelo roteiro sai como conversa; REDACAO=off volta para os textos prontos
+const redator = process.env.REDACAO === 'off' ? null : createRedator({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel })
 
 /** "MARIA DOLORES DA SILVA" → "Maria". Nome que não parece nome vira vazio. */
 export function primeiroNome(nome: string): string {
@@ -70,6 +73,14 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       tel.guard.push(...r.guard)
       return r.leitura
     },
+    ...(redator ? {
+      async redigir(r) {
+        const out = await redator.redigir(r)
+        for (const key of ['input', 'cached', 'output', 'calls'] as const) tel.usage[key] += out.usage[key]
+        tel.guard.push(...out.guard)
+        return out.texto
+      },
+    } : {}),
     async enviar(texto) {
       await sendReply(leadId, texto)
       await appendMessage(leadId, { id: crypto.randomUUID(), dir: 'out', text: texto, ts: Date.now() })

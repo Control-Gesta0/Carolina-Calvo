@@ -62,6 +62,12 @@ const SEM_PENDENTE: Partial<Record<Etapa, string>> = {
   humano: 'nenhuma',
 }
 
+/** Recusou o horário oferecido sem dizer o período: o modelo às vezes deduz o período do horário (1 em 10). Não vale. */
+export function periodoSoSeDito(l: Leitura, etapa: Etapa, textoLead: string): Leitura {
+  if (etapa === 'oferta' && l.intencao === 'recusa_horario' && l.periodo && !/manh[aã]|tarde|almo[cç]o|cedo|noite/i.test(textoLead)) return { ...l, periodo: null }
+  return l
+}
+
 /** Mensagem final de uma resposta livre: a resposta do modelo + a pergunta pendente (do código). */
 export const compor = (resposta: string, pendente: string) => (pendente ? `${resposta.trim()}\n\n${pendente}` : resposta.trim())
 
@@ -156,7 +162,8 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
       { role: 'system', content: contexto(e) },
       ...conversaParaMensagens(e.conversa),
     ]
-    const leitura = await chamar(messages, usage)
+    const iOut = e.conversa.map(m => m.dir).lastIndexOf('out')
+    const leitura = periodoSoSeDito(await chamar(messages, usage), e.etapa, e.conversa.slice(iOut + 1).filter(m => m.dir === 'in').map(m => m.text).join('\n'))
     const guard: string[] = []
     if (leitura.resposta) {
       let texto = semTravessao(leitura.resposta.trim())

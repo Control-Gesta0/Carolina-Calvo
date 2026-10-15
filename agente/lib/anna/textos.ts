@@ -19,13 +19,11 @@ export const TEXTOS_PADRAO = {
     '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo.\n\n' +
     'Para eu entender o seu caso: você quer saber se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas em condições melhores e com juros revisados, ou as duas coisas?',
 
-  /** [DRA] 2ª pergunta */
+  /** [DRA] 2ª pergunta (as três perguntas da Dra. numa frase só, sem lista) */
   pergunta2:
-    'Ótimo! Preciso apenas de três informações:\n\n' +
-    '1) Qual é a sua renda bruta mensal?\n' +
-    '2) Quanto você recebe líquido, após todos os descontos do contracheque?\n' +
-    '3) Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?\n\n' +
-    'Com essas informações, consigo fazer uma análise inicial e direcionar a melhor estratégia.',
+    'Para eu fazer uma análise inicial do seu caso e direcionar a melhor estratégia, preciso de três valores: a sua renda bruta mensal, ' +
+    'quanto você recebe líquido depois de todos os descontos do contracheque e quanto o banco desconta direto da sua conta corrente todo mês. ' +
+    'Pode me passar esses valores?',
 
   /** [DRA] 3ª mensagem, com o valor do desconto quando o lead informou (adaptação pedida na reunião) */
   mensagem3: 'Acredito que sem esses {desconto} de descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
