@@ -10,7 +10,7 @@ import { useExecutions, useLive } from '@/lib/hooks'
 const SUGESTOES = [
   'Quantas reuniões a Anna marcou?',
   'Quantos passaram para a equipe?',
-  'Quantos ganham abaixo de 10 mil?',
+  'Quantos ganham até 15 mil?',
   'Quem está com a equipe agora?',
   'Tem pedido de remarcar?',
   'Quanto estamos gastando?',

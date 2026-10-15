@@ -102,11 +102,11 @@ async function lerFunil(): Promise<Pick<LiveData, 'funil' | 'leads'>> {
   return recalcular()
 }
 
-/** Leads abertos das etapas (até 10 mil) + fechados nos últimos 30 dias nos dois funis. */
+/** Leads abertos das etapas (até 10 mil leads) + fechados nos últimos 30 dias nos dois funis. */
 async function lerLeads(etapas: KommoEtapa[]): Promise<KommoLeadResumo[]> {
   const filtroAbertos = etapas.map((e, i) => `filter[statuses][${i}][pipeline_id]=${FUNIS.find(f => f.nome === e.funil)!.id}&filter[statuses][${i}][status_id]=${e.id}`).join('&')
   const desde = Math.floor(Date.now() / 1000) - 30 * 86400
-  // fechados: SDR, Closer e Gestão operacional (a régua da Anna encerra em Gestão operacional › Venda perdida)
+  // fechados: SDR, Closer e Gestão operacional (onde a equipe encerra as vendas perdidas)
   const fechados = [...FUNIS.map(f => f.id), PIPELINES.gestao]
   const filtroFechados = fechados.flatMap((id, i) => [STATUS.ganho, STATUS.perdido].map((s, j) => `filter[statuses][${i * 2 + j}][pipeline_id]=${id}&filter[statuses][${i * 2 + j}][status_id]=${s}`)).join('&')
   const out: KommoLeadResumo[] = []

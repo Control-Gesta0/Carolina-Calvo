@@ -160,18 +160,18 @@ export function answerCentral(raw: string, live: LiveData | null, data: Executio
     return {
       answer: `A Anna marcou ${data.marcos.hoje.agendados} reunião(ões) hoje, ${sete.agendados} nos últimos 7 dias e ${trinta.agendados} em 30 dias.`,
       evidence: [
-        `${trinta.acima10k} lead(s) com renda de R$ 10 mil ou mais em 30 dias`,
+        `${trinta.acima15k} lead(s) com renda acima de R$ 15 mil em 30 dias`,
         ...(ult.length ? ult.map(a => `${a.nome}, marcada em ${dataHora(a.ts)}`) : ['Nenhuma reunião marcada pela Anna no diário']),
       ],
       href: '/operacao?aba=reunioes', label: 'Ver reuniões',
     }
   }
-  if (/abaixo|10 ?mil|10k|renda|salario|ganha/.test(q)) {
+  if (/abaixo|até|ate|1[05] ?mil|1[05]k|renda|salario|ganha/.test(q)) {
     return {
-      answer: `Em 30 dias, ${trinta.rendaInformada} lead(s) informaram a renda bruta: ${trinta.acima10k} com R$ 10 mil ou mais e ${trinta.abaixo10k} abaixo de R$ 10 mil.`,
+      answer: `Em 30 dias, ${trinta.rendaInformada} lead(s) informaram a renda bruta: ${trinta.acima15k} acima de R$ 15 mil e ${trinta.ate15k} até R$ 15 mil.`,
       evidence: [
-        'Abaixo de R$ 10 mil a Anna não marca reunião: põe a tag "ANNA renda abaixo 10k" e cria uma tarefa para a Dra.',
-        `Nos últimos 7 dias: ${sete.acima10k} com R$ 10 mil ou mais, ${sete.abaixo10k} abaixo`,
+        'Até R$ 15 mil a Anna não oferece reunião: põe a tag "ANNA renda até 15k" e cria uma tarefa para a Dra.',
+        `Nos últimos 7 dias: ${sete.acima15k} acima de R$ 15 mil, ${sete.ate15k} até R$ 15 mil`,
       ],
       href: '/resultados#conversao', label: 'Abrir a qualificação',
     }
@@ -212,6 +212,6 @@ export function answerCentral(raw: string, live: LiveData | null, data: Executio
   }
   return {
     answer: `Nas últimas 24h: ${live.conversas24h} lead(s) atendidos, ${data.saude24h.erros} erro(s)${live.respostaMedianaSegundos ? ` e tempo mediano de ${Math.round(live.respostaMedianaSegundos)}s por resposta` : ''}.`,
-    evidence: ['Resposta calculada com os seus dados, sem consumir tokens', 'Pergunte sobre reuniões, passagens, renda abaixo de 10 mil, quem está com a equipe, follow-up, custo ou erros.'],
+    evidence: ['Resposta calculada com os seus dados, sem consumir tokens', 'Pergunte sobre reuniões, passagens, renda até 15 mil, quem está com a equipe, follow-up, custo ou erros.'],
   }
 }

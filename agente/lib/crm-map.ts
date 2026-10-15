@@ -60,7 +60,7 @@ export const CRM_MAP = {
 
   tags: {
     cliente: 'cliente',
-    semReuniao: 'ANNA renda abaixo 10k',
+    semReuniao: 'ANNA renda até 15k',
     passouHumano: 'ANNA passou para humano',
     agendou: 'ANNA agendou',
     /** cobrança: entra no D+1 e sai quando o cliente não tem mais parcela vencida */

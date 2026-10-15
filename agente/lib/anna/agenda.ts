@@ -19,10 +19,9 @@ export const AGENDA = {
   antecedenciaMin: 60,
   horizonteDias: 14,
   /**
-   * Prioridade (reunião de 08/10): acima de R$ 15 mil é prioridade e R$ 10 a 15 mil
-   * preenche a agenda, com preferência acima de R$ 13,5 mil. Tradução adotada
-   * (a confirmar): a partir de R$ 13,5 mil pode ser no mesmo dia; abaixo disso,
-   * a partir do dia útil seguinte, deixando os horários do dia para quem é prioridade.
+   * Reunião no mesmo dia a partir desta renda. Desde 15/10/2026 a Anna só oferece
+   * reunião acima de R$ 15 mil (fluxo.ts), então na prática todo lead com oferta
+   * pode ter reunião no mesmo dia. Fica aqui caso a Dra. volte a ofertar abaixo disso.
    */
   rendaMesmoDia: 13500,
 }

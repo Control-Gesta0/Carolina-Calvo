@@ -5,8 +5,8 @@
 
 /** O que a execução produziu: reunião marcada ou passagem para a equipe. */
 export type Marco = 'agendou' | 'passou'
-/** Faixa da renda bruta informada (abaixo de 10 mil a Anna não marca reunião). */
-export type Perfil = 'acima_10k' | 'abaixo_10k'
+/** Faixa da renda bruta informada (só acima de 15 mil a Anna oferece reunião). */
+export type Perfil = 'acima_15k' | 'ate_15k'
 
 export type TipoExecucao = 'resposta' | 'inicio' | 'agendou' | 'humano' | 'followup' | 'job' | 'pulou' | 'erro' | 'reset'
 
@@ -41,10 +41,10 @@ export interface Marcos {
   atendidos: number
   /** leads que informaram a renda bruta */
   rendaInformada: number
-  /** renda bruta de R$ 10 mil ou mais (seguem para a oferta de reunião) */
-  acima10k: number
-  /** renda bruta abaixo de R$ 10 mil (sem reunião, ficam para a equipe) */
-  abaixo10k: number
+  /** renda bruta acima de R$ 15 mil (seguem para a oferta de reunião) */
+  acima15k: number
+  /** renda bruta até R$ 15 mil (sem oferta de reunião, ficam para a equipe) */
+  ate15k: number
   /** reuniões marcadas pela Anna */
   agendados: number
   /** passados para a equipe */

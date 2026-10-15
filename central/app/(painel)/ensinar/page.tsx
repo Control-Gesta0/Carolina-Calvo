@@ -441,7 +441,7 @@ function Conversa({ dados, post, bloqueado }: { dados: (BaseEstado & { demo?: bo
             <button type="button" onClick={() => enviar()} disabled={(!texto.trim() && !arquivos.length) || enviando || bloqueado} aria-label="Enviar pedido"
               className="px-4 rounded-[10px] border border-cyan/30 bg-cyan/[0.12] text-cyan disabled:opacity-30">{enviando ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}</button>
           </div>
-          <p className="text-[10.5px] text-body-faint mt-2 leading-relaxed">Pode anexar PDF, Word, texto, CSV ou imagem (até 3 arquivos, 3 MB, ou arraste para cá) ou colar um link de site, Google Docs ou Planilhas. Honorários, valor da ação, promessa de resultado e pedido de documento não entram; regra do roteiro (R$ 10 mil, horários da agenda, follow-ups, colunas e tags) vira pedido para a Control Gestão{dados?.pedidosControlGestao ? ` (${dados.pedidosControlGestao} registrado${dados.pedidosControlGestao === 1 ? '' : 's'})` : ''}.</p>
+          <p className="text-[10.5px] text-body-faint mt-2 leading-relaxed">Pode anexar PDF, Word, texto, CSV ou imagem (até 3 arquivos, 3 MB, ou arraste para cá) ou colar um link de site, Google Docs ou Planilhas. Honorários, valor da ação, promessa de resultado e pedido de documento não entram; regra do roteiro (R$ 15 mil, horários da agenda, follow-ups, colunas e tags) vira pedido para a Control Gestão{dados?.pedidosControlGestao ? ` (${dados.pedidosControlGestao} registrado${dados.pedidosControlGestao === 1 ? '' : 's'})` : ''}.</p>
         </div>
       </div>
     </section>

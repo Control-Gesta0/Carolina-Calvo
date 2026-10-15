@@ -10,7 +10,8 @@ import { k, redis } from './redis'
 export interface ChatMsg { id: string; dir: 'in' | 'out'; text: string; ts: number }
 
 const MAX_MSGS = 60
-const TTL_S = 90 * 86400
+/** 365 dias, como o estado: a conversa fica para retomar quem volta meses depois */
+const TTL_S = 365 * 86400
 
 export async function appendMessage(leadId: number, msg: ChatMsg): Promise<void> {
   const key = k('conv', leadId)

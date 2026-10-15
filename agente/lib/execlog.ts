@@ -48,7 +48,7 @@ export interface ExecEntry {
   /** na passagem para a equipe: o motivo (perguntou_robo, pediu_humano, remarcar…, ver central-data.ts) */
   porta?: string
   /** faixa da renda bruta informada, quando já se sabe */
-  perfil?: 'acima_10k' | 'abaixo_10k'
+  perfil?: 'acima_15k' | 'ate_15k'
   /** o que o lead escreveu neste turno (PII mascarada): replay na Central */
   turnoLead?: string
   /** o que a Anna enviou (PII mascarada) */

@@ -24,7 +24,6 @@
   "reguas": {
     "qualificacao": {
       "inicio": "2h depois da ultima mensagem da Anna sem resposta, quando essa mensagem nao foi oferta de horario",
-      "vale_para_renda_abaixo_de_10_mil": true,
       "etapas": [
         {
           "nome": "FOLLOW 1",
@@ -55,18 +54,16 @@
           "horas": 72
         }
       ],
-      "ao_terminar": {
-        "depois_de_horas": 24,
-        "acao": "mover para Gestao operacional > Venda perdida",
-        "pipeline_id": 9809959,
-        "status_id": 143
-      }
+      "vale_para_renda_ate_15_mil": true,
+      "ao_terminar_obs": "Decisao da Dra. (15/10/2026): depois do ultimo follow-up a sequencia so encerra. O card fica no SDR, na coluna da renda; se o lead voltar a escrever, a Anna retoma."
     },
     "agendamento": {
       "inicio": "2h depois de uma oferta de horario sem confirmacao",
       "etapas": [
         {
           "nome": "FOLLOW 1",
+          "texto_livre": "Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?",
+          "_obs": "Texto do Salesbot FOLLOW AGENDAR REUNIAO (53764), exatamente como a equipe usa (pedido da Dra., 15/10/2026). Sai como texto livre, sem redacao da IA. Fora da janela de 24h da Meta, sai o modelo abaixo.",
           "modelo": "FUP horário reunião",
           "template_id": 46734,
           "depois_de": "oferta de horario",
@@ -87,13 +84,7 @@
           "horas": 48
         }
       ],
-      "ao_terminar": {
-        "depois_de_horas": 24,
-        "acao": "mover para Gestao operacional > Venda perdida",
-        "pipeline_id": 9809959,
-        "status_id": 143,
-        "_obs": "mesmo destino da qualificacao; confirmar"
-      }
+      "ao_terminar_obs": "Decisao da Dra. (15/10/2026): igual a qualificacao, encerra sem mover o card para Venda perdida."
     },
     "pos_proposta": {
       "inicio": "lead entra em Closer > Cliente decisao",
@@ -112,6 +103,7 @@
   "desligar_antes_da_virada": [
     "Salesbot que coloca as tags FOLLOW 1 a 4 (nos leads da Anna)",
     "Automacao de 24h em Closer > Cliente decisao (tag Follow-up Cliente Decisao Enviado)",
-    "Regra que move para SDR > 5 A 10 MIL quando o lead manda mensagem"
+    "Regra que move para SDR > 5 A 10 MIL quando o lead manda mensagem",
+    "Salesbot FOLLOW AGENDAR REUNIAO (53764) nos leads da Anna: a Anna ja manda o mesmo texto 2h depois da oferta"
   ]
 }

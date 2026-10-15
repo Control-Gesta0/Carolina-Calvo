@@ -26,7 +26,7 @@ export const MOTIVO_ROTULO: Record<string, string> = {
   outro_assunto: 'Assunto de outra área',
   remarcar: 'Pediu para remarcar',
   sem_agenda: 'Sem horário na agenda',
-  abaixo_pediu_reuniao: 'Renda abaixo de 10 mil pediu reunião',
+  abaixo_pediu_reuniao: 'Renda até 15 mil pediu reunião',
   outro: 'Outro motivo',
 }
 
@@ -35,8 +35,8 @@ export const MOTIVO_URGENTE = new Set(['remarcar', 'sem_agenda'])
 
 /** Faixa da renda bruta informada pelo lead. */
 export const PERFIL_ROTULO: Record<string, string> = {
-  acima_10k: 'RENDA DE 10 MIL OU MAIS',
-  abaixo_10k: 'RENDA ABAIXO DE 10 MIL',
+  acima_15k: 'RENDA ACIMA DE 15 MIL',
+  ate_15k: 'RENDA ATÉ 15 MIL',
 }
 
 /** Etapa do roteiro da Anna (state.etapa no agente). */
@@ -48,6 +48,6 @@ export const ETAPA_ROTULO: Record<string, string> = {
   oferta: 'Oferta de horário',
   preferencia: 'Manhã ou tarde',
   agendado: 'Reunião marcada',
-  sem_reuniao: 'Renda abaixo de 10 mil',
+  sem_reuniao: 'Renda até 15 mil',
   humano: 'Com a equipe',
 }

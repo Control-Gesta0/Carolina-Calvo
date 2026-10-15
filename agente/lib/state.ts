@@ -5,7 +5,7 @@ import { k, redis } from './redis'
  * da Dra. é fixo); o modelo só interpreta o que o lead escreveu.
  *
  *   q1 → q2 → q3 → analise (pausa 30 min) → oferta ⇄ preferencia → agendado
- *                └→ sem_reuniao (renda < R$ 10 mil)
+ *                └→ sem_reuniao (renda até R$ 15 mil)
  *   qualquer etapa → humano (passou para a equipe)
  */
 
@@ -30,7 +30,8 @@ export interface LeadState {
   finalizado?: { motivo: string; em: string; resumo?: string }
 }
 
-const TTL = 90 * 86400
+/** 365 dias: a Anna retoma de onde parou quando o lead volta meses depois (regra da Dra., 15/10/2026) */
+const TTL = 365 * 86400
 
 export async function getState(leadId: number): Promise<LeadState> {
   return (await redis.get<LeadState>(k('state', leadId))) || {}

@@ -9,8 +9,8 @@ import type { ExecEntry } from './execlog'
 
 /** O que a execução produziu: reunião marcada ou passagem para a equipe. */
 export type Marco = 'agendou' | 'passou'
-/** Faixa da renda bruta que o lead informou (a regra da Dra.: abaixo de 10 mil a Anna não marca reunião). */
-export type Perfil = 'acima_10k' | 'abaixo_10k'
+/** Faixa da renda bruta que o lead informou (a regra da Dra.: só acima de 15 mil a Anna oferece reunião). */
+export type Perfil = 'acima_15k' | 'ate_15k'
 
 export const MOTIVOS: Record<string, { rotulo: string; urgente?: boolean }> = {
   perguntou_robo: { rotulo: 'Perguntou se é robô' },
@@ -22,7 +22,7 @@ export const MOTIVOS: Record<string, { rotulo: string; urgente?: boolean }> = {
   remarcar: { rotulo: 'Pediu para remarcar', urgente: true },
   // a Anna não achou horário (Google fora ou agenda cheia): o lead está esperando um horário
   sem_agenda: { rotulo: 'Sem horário na agenda', urgente: true },
-  abaixo_pediu_reuniao: { rotulo: 'Renda abaixo de 10 mil pediu reunião' },
+  abaixo_pediu_reuniao: { rotulo: 'Renda até 15 mil pediu reunião' },
   outro: { rotulo: 'Outro motivo' },
 }
 export const rotuloMotivo = (m?: string) => MOTIVOS[m || 'outro']?.rotulo || m || 'Outro motivo'
@@ -38,11 +38,12 @@ const MOTIVO_POR_FRASE: Record<string, string> = {
   'agenda indisponível': 'sem_agenda',
   'sem horário livre nos próximos dias': 'sem_agenda',
   'renda abaixo de 10 mil pediu reunião': 'abaixo_pediu_reuniao',
+  'renda até 15 mil pediu reunião': 'abaixo_pediu_reuniao',
 }
 export const motivoDaFrase = (frase: string) => MOTIVO_POR_FRASE[frase.trim()] || 'outro'
 
 export const perfilDaRenda = (rendaBruta?: number | null): Perfil | undefined =>
-  typeof rendaBruta === 'number' && rendaBruta > 0 ? (rendaBruta >= 10_000 ? 'acima_10k' : 'abaixo_10k') : undefined
+  typeof rendaBruta === 'number' && rendaBruta > 0 ? (rendaBruta > 15_000 ? 'acima_15k' : 'ate_15k') : undefined
 
 export interface Execution {
   ts: string
@@ -76,10 +77,10 @@ export interface Marcos {
   atendidos: number
   /** contatos que informaram a renda bruta */
   rendaInformada: number
-  /** renda bruta de R$ 10 mil ou mais: seguem para a oferta de reunião */
-  acima10k: number
-  /** renda bruta abaixo de R$ 10 mil: sem reunião, ficam para a equipe avaliar */
-  abaixo10k: number
+  /** renda bruta acima de R$ 15 mil: seguem para a oferta de reunião */
+  acima15k: number
+  /** renda bruta até R$ 15 mil: sem oferta de reunião, ficam para a equipe avaliar */
+  ate15k: number
   /** reuniões marcadas pela Anna */
   agendados: number
   /** passados para a equipe */
@@ -196,8 +197,8 @@ export function contarMarcos(execs: Execution[]): Marcos {
   return {
     atendidos: contatos(e => FALOU.includes(e.tipo)),
     rendaInformada: perfis.length,
-    acima10k: perfis.filter(p => p === 'acima_10k').length,
-    abaixo10k: perfis.filter(p => p === 'abaixo_10k').length,
+    acima15k: perfis.filter(p => p === 'acima_15k').length,
+    ate15k: perfis.filter(p => p === 'ate_15k').length,
     agendados: contatos(e => e.marco === 'agendou'),
     passagens: contatos(e => e.marco === 'passou'),
     followups: contatos(e => e.tipo === 'followup'),

@@ -13,11 +13,12 @@ import { CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
 import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { executarFu, type Regua } from '../lib/followup'
-import { humanSpokeRecently } from '../lib/history'
+import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
 import { addLeadNote, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
+import { sendReply } from '../lib/transport'
 import { getState } from '../lib/state'
 
 /**
@@ -127,6 +128,21 @@ async function executar(job: Job): Promise<string> {
       const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
       await enviarModelo(leadId, modelo, { primeiroNome: nome || undefined })
       await addLeadNote(leadId, `Anna: follow-up enviado (${CRM_MAP.modelos[modelo].nome}).`)
+    },
+    async enviarTexto(texto, modeloForaDaJanela) {
+      // texto livre só dentro da janela de 24h da Meta (contada da última mensagem do lead); fora dela, o modelo aprovado
+      const ultimaDoLead = (await getHistory(leadId)).filter(m => m.dir === 'in').pop()?.ts ?? 0
+      if (Date.now() - ultimaDoLead > 23 * 3600_000) {
+        const lead = await getLead(leadId)
+        const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
+        await enviarModelo(leadId, modeloForaDaJanela, { primeiroNome: nome || undefined })
+        await addLeadNote(leadId, `Anna: follow-up enviado (${CRM_MAP.modelos[modeloForaDaJanela].nome}, fora da janela de 24h).`)
+        return 'modelo'
+      }
+      await sendReply(leadId, texto)
+      await appendMessage(leadId, { id: crypto.randomUUID(), dir: 'out', text: texto, ts: Date.now() })
+      await addLeadNote(leadId, 'Anna: follow-up enviado (texto da equipe sobre a confirmação do horário).')
+      return 'texto'
     },
     async encerrar(pipelineId, statusId) {
       const lead = await getLead(leadId)

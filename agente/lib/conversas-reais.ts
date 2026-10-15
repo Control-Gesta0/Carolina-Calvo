@@ -17,7 +17,7 @@ export interface ConversaResumo {
   previa: string
   /** motivo da passagem, se passou para a equipe */
   passou?: string
-  perfil?: 'acima_10k' | 'abaixo_10k'
+  perfil?: 'acima_15k' | 'ate_15k'
 }
 
 export interface TurnoReal {

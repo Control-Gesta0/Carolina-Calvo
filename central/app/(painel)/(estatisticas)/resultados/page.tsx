@@ -56,7 +56,7 @@ export default function Resultados() {
           <section>
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
               <Metric icon={MessageSquareText} label="Leads atendidos" value={m ? String(m.atendidos) : '—'} hint={m ? `${m.rendaInformada} informaram a renda bruta` : undefined} color="#06b6d4" />
-              <Metric icon={CalendarCheck} label="Reuniões marcadas" value={m ? String(m.agendados) : '—'} hint={m ? `${pct(m.agendados, m.acima10k)} dos leads com R$ 10 mil ou mais` : undefined} color="#22c55e" featured={(m?.agendados || 0) > 0} />
+              <Metric icon={CalendarCheck} label="Reuniões marcadas" value={m ? String(m.agendados) : '—'} hint={m ? `${pct(m.agendados, m.acima15k)} dos leads acima de R$ 15 mil` : undefined} color="#22c55e" featured={(m?.agendados || 0) > 0} />
               <Metric icon={Headset} label="Passados para a equipe" value={m ? String(m.passagens) : '—'} hint={m ? `${pct(m.passagens, m.atendidos)} dos atendidos` : undefined} color="#a78bfa" />
               <Metric icon={Wallet} label="Custo do modelo" value={f?.execucoesComCusto ? brl(custo) : '—'} hint={f?.execucoesComCusto ? `${brl(f.medioPorExecucao, 3)} por execução` : 'sem execução medida'} color="#3b82f6" />
             </div>
@@ -113,7 +113,7 @@ function Conversao({ m, motivos }: { m: Marcos; motivos: MotivoN[] }) {
   const passos = [
     { label: 'Atendidos pela Anna', n: m.atendidos, color: '#06b6d4' },
     { label: 'Informaram a renda bruta', n: m.rendaInformada, color: '#3b82f6' },
-    { label: 'Renda de R$ 10 mil ou mais (seguem para a reunião)', n: m.acima10k, color: '#2563eb' },
+    { label: 'Renda acima de R$ 15 mil (seguem para a reunião)', n: m.acima15k, color: '#2563eb' },
     { label: 'Reunião marcada pela Anna', n: m.agendados, color: '#22c55e' },
   ]
   const max = Math.max(m.atendidos, 1)
@@ -145,7 +145,7 @@ function Conversao({ m, motivos }: { m: Marcos; motivos: MotivoN[] }) {
         </div>
       </div>
       <p className="text-[11px] text-body-faint leading-relaxed pt-3 border-t border-line-soft">
-        {m.abaixo10k} lead(s) informaram renda abaixo de R$ 10 mil: para eles a Anna não marca reunião, e a equipe avalia o caso. {m.followups} lead(s) receberam follow-up ou lembrete. Em vermelho, os motivos urgentes: pediu para remarcar e sem horário na agenda.
+        {m.ate15k} lead(s) informaram renda até R$ 15 mil: para eles a Anna não oferece reunião, e a equipe avalia o caso. {m.followups} lead(s) receberam follow-up ou lembrete. Em vermelho, os motivos urgentes: pediu para remarcar e sem horário na agenda.
       </p>
     </div>
   )

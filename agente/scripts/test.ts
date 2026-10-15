@@ -181,11 +181,43 @@ async function main() {
   }
 
   {
+    // regra da Dra. (15/10): só acima de R$ 15 mil a Anna oferece reunião
+    const corte = async (renda: number) => {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'q3', rendaBruta: renda, rendaLiquida: 5000, descontoConta: 1000 }
+      w.leituras.push(L({ intencao: 'responde_etapa' }))
+      await fluxo.turno(ctx(w, seg9, 'concordo'), deps)
+      return [w.state.etapa, w.tags.join(',')]
+    }
+    eq('R$ 15.000 não recebe oferta; R$ 15.001 recebe', [await corte(15000), await corte(15001), await corte(12000)],
+      [['sem_reuniao', 'ANNA renda até 15k'], ['analise', ''], ['sem_reuniao', 'ANNA renda até 15k']])
+  }
+
+  {
+    // o lead voltou depois do horário oferecido: a Anna não repete a data velha, oferece um horário novo
+    const { w, deps } = mundo(seg9)
+    const velha = new Date(seg9.getTime() - 2 * 86400_000)
+    w.state = { etapa: 'oferta', rendaBruta: 18000, oferta: { chave: 'velha', inicio: velha.toISOString(), fim: new Date(velha.getTime() + 1800_000).toISOString(), em: velha.getTime() - 3600_000 } }
+    w.leituras.push(L({ intencao: 'outro' }))
+    const r = await fluxo.turno(ctx(w, seg9, 'oi, ainda tenho interesse'), deps)
+    eq('oferta vencida: oferece um horário novo', [r.acao.startsWith('ofereceu'), w.state.oferta?.chave !== 'velha'], [true, true])
+  }
+
+  {
+    // réguas (regra da Dra., 15/10): nenhuma move o card no fim; o 1º lembrete do agendamento é o texto exato da equipe
+    const { CONFIG_REGUAS } = await import('../lib/followup')
+    const R2 = CONFIG_REGUAS.reguas
+    eq('réguas terminam sem mover o card', [R2.qualificacao.ao_terminar, R2.agendamento.ao_terminar], [undefined, undefined])
+    eq('2h depois da oferta: o texto da equipe, sem mudar uma palavra', R2.agendamento.etapas[0].texto_livre,
+      'Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?')
+  }
+
+  {
     // a redação recebe o texto da Dra. como referência, com os trechos obrigatórios; confirmação e OAB ficam fixos
     const { w, deps } = mundo(seg9)
     const pedidos: Array<{ id: string; obrigatorio: string[] }> = []
     deps.redigir = async r => { pedidos.push({ id: r.id, obrigatorio: r.obrigatorio }); return `[redigido] ${r.referencia}` }
-    w.state = { etapa: 'q3', rendaBruta: 12000, rendaLiquida: 3800, descontoConta: 2000 }
+    w.state = { etapa: 'q3', rendaBruta: 18000, rendaLiquida: 6000, descontoConta: 2000 }
     w.leituras.push(L({ intencao: 'responde_etapa' }))
     const r4 = await fluxo.turno(ctx(w, seg9, 'concordo'), deps)
     eq('redação: a 4ª mensagem sai redigida, com a Dra. obrigatória', [r4.enviado?.startsWith('[redigido]'), pedidos[0]], [true, { id: 'mensagem4', obrigatorio: ['Dra. Carolina'] }])
@@ -322,22 +354,22 @@ async function main() {
     const agora = Date.parse('2026-10-14T15:00:00Z')
     const at = (min: number) => new Date(agora - min * 60_000).toISOString()
     const entradas = [
-      { at: at(5), tipo: 'agendou', leadId: 1, nome: 'Ana', perfil: 'acima_10k', respostaIA: '*Agendado!* Quarta-feira, 14/10, às 15:00', usage: { input: 1000, cached: 0, output: 100, calls: 1 }, custoUsd: 0.001 },
-      { at: at(40), tipo: 'job', leadId: 1, nome: 'Ana', perfil: 'acima_10k' },
-      { at: at(70), tipo: 'resposta', leadId: 1, nome: 'Ana', perfil: 'acima_10k' },
-      { at: at(10), tipo: 'humano', leadId: 2, nome: 'Bia', porta: 'perguntou_robo', perfil: 'abaixo_10k' },
-      { at: at(20), tipo: 'resposta', leadId: 3, nome: 'Caio', perfil: 'abaixo_10k' },
+      { at: at(5), tipo: 'agendou', leadId: 1, nome: 'Ana', perfil: 'acima_15k', respostaIA: '*Agendado!* Quarta-feira, 14/10, às 15:00', usage: { input: 1000, cached: 0, output: 100, calls: 1 }, custoUsd: 0.001 },
+      { at: at(40), tipo: 'job', leadId: 1, nome: 'Ana', perfil: 'acima_15k' },
+      { at: at(70), tipo: 'resposta', leadId: 1, nome: 'Ana', perfil: 'acima_15k' },
+      { at: at(10), tipo: 'humano', leadId: 2, nome: 'Bia', porta: 'perguntou_robo', perfil: 'ate_15k' },
+      { at: at(20), tipo: 'resposta', leadId: 3, nome: 'Caio', perfil: 'ate_15k' },
       { at: at(30), tipo: 'followup', leadId: 4, nome: 'Duda' },
       { at: at(50), tipo: 'pulou', leadId: 5, detalhe: 'a equipe falou pelo Kommo' },
       { at: at(60), tipo: 'reset', leadId: 6 },
     ] as unknown as import('../lib/execlog').ExecEntry[]
     const d = C.buildExecutionData(entradas, 5.4, 'gpt-5.4-mini', agora, 'https://x.kommo.com')
-    eq('marcos de hoje', d.marcos.hoje, { atendidos: 3, rendaInformada: 3, acima10k: 1, abaixo10k: 2, agendados: 1, passagens: 1, followups: 1 })
+    eq('marcos de hoje', d.marcos.hoje, { atendidos: 3, rendaInformada: 3, acima15k: 1, ate15k: 2, agendados: 1, passagens: 1, followups: 1 })
     eq('motivo da passagem', d.motivos.hoje, [{ motivo: 'perguntou_robo', rotulo: 'Perguntou se é robô', n: 1 }])
     eq('agendamento com link do lead', [d.agendamentos.length, d.agendamentos[0].link], [1, 'https://x.kommo.com/leads/detail/1'])
     eq('custo em reais', d.financeiro.hoje, 0.0054)
     eq('toda frase de passagem do fluxo tem motivo', ['perguntou se é robô', 'pediu atendimento humano', 'já tem advogado no caso', 'já é cliente', 'assunto de outra área', 'pediu para remarcar', 'agenda indisponível', 'sem horário livre nos próximos dias', 'renda abaixo de 10 mil pediu reunião'].map(C.motivoDaFrase).filter(m => m === 'outro'), [])
-    eq('faixa de renda', [C.perfilDaRenda(10000), C.perfilDaRenda(9999), C.perfilDaRenda(null)], ['acima_10k', 'abaixo_10k', undefined])
+    eq('faixa de renda (acima de 15 mil oferece reunião)', [C.perfilDaRenda(15001), C.perfilDaRenda(15000), C.perfilDaRenda(null)], ['acima_15k', 'ate_15k', undefined])
     const conv = C.buildConversas(d.execucoes, agora)
     eq('estado das conversas (reset de teste conta como com a Anna)', conv.grupos, { iaAtendendo: 4, comHumano: 2, foraDaIA: 0 })
     const R = await import('../lib/conversas-reais')

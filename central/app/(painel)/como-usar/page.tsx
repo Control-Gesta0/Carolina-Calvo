@@ -13,7 +13,7 @@ import { dataHora, MOTIVO_ROTULO, MOTIVO_URGENTE } from '@/lib/format'
 import { useBase } from '@/lib/hooks'
 import type { BaseEstado, BaseItem } from '@/lib/types'
 import {
-  ABAIXO_10K, ACIMA_10K, ACOES, AGENDADO, CAMPOS_IA, CENARIOS_EXAME, COMBINADOS, DESISTIU, ENTRADA, ENTRADA_NOTA, FAQ, FOLLOWUP,
+  ATE_15K, ACIMA_15K, ACOES, AGENDADO, CAMPOS_IA, CENARIOS_EXAME, COMBINADOS, DESISTIU, ENTRADA, ENTRADA_NOTA, FAQ, FOLLOWUP,
   INICIO, PASSAGEM, PASSOS, QUALQUER_MOMENTO, QUALQUER_MOMENTO_BASE, QUEM_MUDA, ROTEIRO, TAGS, TRAVAS,
 } from '@/lib/como-usar'
 
@@ -115,22 +115,22 @@ function Fluxo({ base }: { base: BaseEstado | null }) {
       ))}
       <div className="grid lg:grid-cols-2 gap-3 items-start">
         <div className="panel overflow-hidden min-w-0">
-          <Cabeca icon={Ban} titulo={ABAIXO_10K.titulo} cor="#f59e0b" />
+          <Cabeca icon={Ban} titulo={ATE_15K.titulo} cor="#f59e0b" />
           <div className="p-5">
-            <p className="text-[12.5px] text-body-mid leading-relaxed">{ABAIXO_10K.texto}</p>
-            <NoKommo itens={ABAIXO_10K.kommo} />
-            <TextosDaBase ids={ABAIXO_10K.base} itens={itens} />
+            <p className="text-[12.5px] text-body-mid leading-relaxed">{ATE_15K.texto}</p>
+            <NoKommo itens={ATE_15K.kommo} />
+            <TextosDaBase ids={ATE_15K.base} itens={itens} />
           </div>
         </div>
         <div className="panel overflow-hidden min-w-0">
-          <Cabeca icon={CalendarCheck} titulo={ACIMA_10K.titulo} cor="#06b6d4" />
+          <Cabeca icon={CalendarCheck} titulo={ACIMA_15K.titulo} cor="#06b6d4" />
           <div className="p-5">
             <ol className="space-y-2">
-              {ACIMA_10K.passos.map(q => (
+              {ACIMA_15K.passos.map(q => (
                 <li key={q} className="text-[12.5px] text-ink leading-relaxed flex gap-2"><ArrowRight size={12} className="text-cyan shrink-0 mt-[4px]" />{q}</li>
               ))}
             </ol>
-            <TextosDaBase ids={ACIMA_10K.base} itens={itens} />
+            <TextosDaBase ids={ACIMA_15K.base} itens={itens} />
           </div>
         </div>
       </div>

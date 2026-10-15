@@ -47,7 +47,7 @@ async function main() {
   const opcao = (n: 1 | 2 | 3, lead: string): Passo => ({ tipo: 'resposta', etapa: 'q2', turnoLead: lead, respostaIA: TEXTOS.pergunta2, tools: [`opção ${n}: pergunta 2`, 'intenção: responde_etapa'], depois: 3, llm: true })
   const renda = (lead: string, bruta: number, desconto: number): Passo => ({
     tipo: 'resposta', etapa: 'q3', turnoLead: lead, respostaIA: TEXTOS.mensagem3(desconto), tools: ['q2 completa: mensagem 3', 'intenção: responde_etapa'],
-    perfil: bruta >= 10_000 ? 'acima_10k' : 'abaixo_10k', depois: 6, llm: true,
+    perfil: bruta >= 10_000 ? 'acima_15k' : 'ate_15k', depois: 6, llm: true,
   })
 
   const ROTEIROS: Roteiro[] = [
@@ -58,9 +58,9 @@ async function main() {
         q1(nome),
         opcao(3, 'quero as duas'),
         renda('ganho 12 mil bruto, líquido 3.800 e o banco tira 2 mil da conta', 12_000, 2000),
-        { tipo: 'resposta', etapa: 'analise', perfil: 'acima_10k', turnoLead: 'concordo, seria um alívio enorme', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 4, llm: true },
-        { tipo: 'job', etapa: 'oferta', perfil: 'acima_10k', respostaIA: TEXTOS.mensagem5(q.oferta), tools: [`ofereceu ${q.chave}`], depois: 30 },
-        { tipo: 'agendou', etapa: 'agendado', perfil: 'acima_10k', turnoLead: 'pode sim, agenda pra mim', respostaIA: TEXTOS.agendado(primeiraMaiuscula(q.extenso), meet(n)), tools: [`agendou ${q.chave}`, 'intenção: aceita_horario'], depois: 9, llm: true },
+        { tipo: 'resposta', etapa: 'analise', perfil: 'acima_15k', turnoLead: 'concordo, seria um alívio enorme', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 4, llm: true },
+        { tipo: 'job', etapa: 'oferta', perfil: 'acima_15k', respostaIA: TEXTOS.mensagem5(q.oferta), tools: [`ofereceu ${q.chave}`], depois: 30 },
+        { tipo: 'agendou', etapa: 'agendado', perfil: 'acima_15k', turnoLead: 'pode sim, agenda pra mim', respostaIA: TEXTOS.agendado(primeiraMaiuscula(q.extenso), meet(n)), tools: [`agendou ${q.chave}`, 'intenção: aceita_horario'], depois: 9, llm: true },
       ]
     },
     // renda abaixo de 10 mil: registrado para a equipe, sem reunião
@@ -68,7 +68,7 @@ async function main() {
       q1(nome),
       opcao(1, '1'),
       renda('meu bruto é 7.500, cai 2.100 líquido e o banco desconta 1.200 da conta', 7500, 1200),
-      { tipo: 'resposta', etapa: 'sem_reuniao', perfil: 'abaixo_10k', turnoLead: 'sim, concordo', respostaIA: TEXTOS.semReuniao, tools: ['renda abaixo de 10 mil: registrado para a equipe', 'intenção: responde_etapa'], depois: 5, llm: true },
+      { tipo: 'resposta', etapa: 'sem_reuniao', perfil: 'ate_15k', turnoLead: 'sim, concordo', respostaIA: TEXTOS.semReuniao, tools: ['renda abaixo de 10 mil: registrado para a equipe', 'intenção: responde_etapa'], depois: 5, llm: true },
     ],
     // perguntou se é robô
     ({ nome }) => [
@@ -83,11 +83,11 @@ async function main() {
         q1(nome),
         opcao(2, 'a 2, reestruturar'),
         renda('bruto 15.800, líquido 4.200 e na conta o banco tira 2.500', 15_800, 2500),
-        { tipo: 'resposta', etapa: 'analise', perfil: 'acima_10k', turnoLead: 'concordo', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 3, llm: true },
-        { tipo: 'job', etapa: 'oferta', perfil: 'acima_10k', respostaIA: TEXTOS.mensagem5(q1o.oferta), tools: [`ofereceu ${q1o.chave}`], depois: 30 },
-        { tipo: 'resposta', etapa: 'preferencia', perfil: 'acima_10k', turnoLead: 'nesse horário estou no plantão', respostaIA: TEXTOS.manhaOuTarde, tools: ['não pode no horário: perguntou manhã ou tarde', 'intenção: recusa_horario'], depois: 12, llm: true },
-        { tipo: 'resposta', etapa: 'oferta', perfil: 'acima_10k', turnoLead: 'de manhã é melhor', respostaIA: TEXTOS.novaOferta(q2o.oferta), tools: [`ofereceu ${q2o.chave}`, 'intenção: escolhe_periodo'], depois: 4, llm: true },
-        { tipo: 'agendou', etapa: 'agendado', perfil: 'acima_10k', turnoLead: 'fechado', respostaIA: TEXTOS.agendado(primeiraMaiuscula(q2o.extenso), meet(n)), tools: [`agendou ${q2o.chave}`, 'intenção: aceita_horario'], depois: 6, llm: true },
+        { tipo: 'resposta', etapa: 'analise', perfil: 'acima_15k', turnoLead: 'concordo', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 3, llm: true },
+        { tipo: 'job', etapa: 'oferta', perfil: 'acima_15k', respostaIA: TEXTOS.mensagem5(q1o.oferta), tools: [`ofereceu ${q1o.chave}`], depois: 30 },
+        { tipo: 'resposta', etapa: 'preferencia', perfil: 'acima_15k', turnoLead: 'nesse horário estou no plantão', respostaIA: TEXTOS.manhaOuTarde, tools: ['não pode no horário: perguntou manhã ou tarde', 'intenção: recusa_horario'], depois: 12, llm: true },
+        { tipo: 'resposta', etapa: 'oferta', perfil: 'acima_15k', turnoLead: 'de manhã é melhor', respostaIA: TEXTOS.novaOferta(q2o.oferta), tools: [`ofereceu ${q2o.chave}`, 'intenção: escolhe_periodo'], depois: 4, llm: true },
+        { tipo: 'agendou', etapa: 'agendado', perfil: 'acima_15k', turnoLead: 'fechado', respostaIA: TEXTOS.agendado(primeiraMaiuscula(q2o.extenso), meet(n)), tools: [`agendou ${q2o.chave}`, 'intenção: aceita_horario'], depois: 6, llm: true },
       ]
     },
     // já tem advogado
@@ -103,10 +103,10 @@ async function main() {
         q1(nome),
         opcao(3, '3'),
         renda('12.500 bruto, 5 mil líquido, 1.800 descontados na conta', 12_500, 1800),
-        { tipo: 'resposta', etapa: 'analise', perfil: 'acima_10k', turnoLead: 'concordo', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 2, llm: true },
-        { tipo: 'job', etapa: 'oferta', perfil: 'acima_10k', respostaIA: TEXTOS.mensagem5(q.oferta), tools: [`ofereceu ${q.chave}`], depois: 30 },
-        { tipo: 'agendou', etapa: 'agendado', perfil: 'acima_10k', turnoLead: 'pode', respostaIA: TEXTOS.agendado(primeiraMaiuscula(q.extenso), meet(n)), tools: [`agendou ${q.chave}`, 'intenção: aceita_horario'], depois: 7, llm: true },
-        { tipo: 'humano', etapa: 'humano', porta: 'remarcar', perfil: 'acima_10k', turnoLead: 'surgiu um imprevisto, preciso remarcar a reunião', respostaIA: TEXTOS.passaHumano, tools: ['passou para humano: pediu para remarcar', 'intenção: remarcar'], depois: 180, llm: true },
+        { tipo: 'resposta', etapa: 'analise', perfil: 'acima_15k', turnoLead: 'concordo', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 2, llm: true },
+        { tipo: 'job', etapa: 'oferta', perfil: 'acima_15k', respostaIA: TEXTOS.mensagem5(q.oferta), tools: [`ofereceu ${q.chave}`], depois: 30 },
+        { tipo: 'agendou', etapa: 'agendado', perfil: 'acima_15k', turnoLead: 'pode', respostaIA: TEXTOS.agendado(primeiraMaiuscula(q.extenso), meet(n)), tools: [`agendou ${q.chave}`, 'intenção: aceita_horario'], depois: 7, llm: true },
+        { tipo: 'humano', etapa: 'humano', porta: 'remarcar', perfil: 'acima_15k', turnoLead: 'surgiu um imprevisto, preciso remarcar a reunião', respostaIA: TEXTOS.passaHumano, tools: ['passou para humano: pediu para remarcar', 'intenção: remarcar'], depois: 180, llm: true },
       ]
     },
     // dúvida no meio do roteiro: responde e volta para a pergunta
@@ -114,7 +114,7 @@ async function main() {
       q1(nome),
       { tipo: 'resposta', etapa: 'q1', turnoLead: 'antes, quanto custa a consulta com a doutora?', respostaIA: `A primeira reunião é on-line, pelo Google Meet, e não é cobrada.\n\n${TEXTOS_PADRAO.pendente_q1}`, tools: ['respondeu fora do roteiro (pergunta)', 'intenção: pergunta'], depois: 2, llm: true },
       opcao(3, 'as duas'),
-      { tipo: 'resposta', etapa: 'q2', turnoLead: 'meu salário bruto é 9.500', respostaIA: 'Obrigada. Falta só quanto você recebe líquido e quanto o banco desconta da sua conta corrente por mês. Pode me informar?', tools: ['q2 incompleta (faltam 2)', 'intenção: responde_etapa'], perfil: 'abaixo_10k', depois: 10, llm: true },
+      { tipo: 'resposta', etapa: 'q2', turnoLead: 'meu salário bruto é 9.500', respostaIA: 'Obrigada. Falta só quanto você recebe líquido e quanto o banco desconta da sua conta corrente por mês. Pode me informar?', tools: ['q2 incompleta (faltam 2)', 'intenção: responde_etapa'], perfil: 'ate_15k', depois: 10, llm: true },
     ],
     // desistiu
     ({ nome }) => [
@@ -132,8 +132,8 @@ async function main() {
       q1(nome),
       opcao(3, 'as duas opções'),
       renda('bruto 18 mil, líquido 6 mil, o banco desconta 3 mil da conta', 18_000, 3000),
-      { tipo: 'resposta', etapa: 'analise', perfil: 'acima_10k', turnoLead: 'com certeza', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 3, llm: true },
-      { tipo: 'humano', etapa: 'humano', porta: 'sem_agenda', perfil: 'acima_10k', respostaIA: TEXTOS.semAgenda, tools: ['passou para humano: sem horário livre nos próximos dias'], depois: 30 },
+      { tipo: 'resposta', etapa: 'analise', perfil: 'acima_15k', turnoLead: 'com certeza', respostaIA: TEXTOS.mensagem4, tools: ['mensagem 4: pausa de 30 min', 'intenção: responde_etapa'], depois: 3, llm: true },
+      { tipo: 'humano', etapa: 'humano', porta: 'sem_agenda', perfil: 'acima_15k', respostaIA: TEXTOS.semAgenda, tools: ['passou para humano: sem horário livre nos próximos dias'], depois: 30 },
     ],
     // assunto de outra área
     ({ nome }) => [

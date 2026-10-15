@@ -12,7 +12,8 @@ import { k, redis } from './redis'
 
 export type Regua = 'qualificacao' | 'agendamento' | 'pos_proposta'
 
-interface EtapaCfg { nome: string; modelo: string; template_id: number; depois_de: string; horas: number }
+/** texto_livre: sai exatamente assim (sem redação), dentro da janela de 24h da Meta; fora dela, sai o modelo */
+interface EtapaCfg { nome: string; modelo: string; template_id: number; depois_de: string; horas: number; texto_livre?: string }
 interface ReguaCfg { etapas: EtapaCfg[]; ao_terminar?: { depois_de_horas: number; pipeline_id: number; status_id: number } }
 
 export const CONFIG_REGUAS = REGUAS as unknown as {
@@ -63,11 +64,19 @@ export async function cancelarRegua(leadId: number): Promise<boolean> {
 
 /**
  * Executa um job de régua. Devolve o que fez (vai para o diário).
- * `enviar` manda o modelo aprovado; `encerrar` move o lead para perdido.
+ * `enviar` manda o modelo aprovado; `enviarTexto` manda o texto livre da etapa
+ * (ou o modelo, fora da janela de 24h); `encerrar` move o lead (só se a régua
+ * tiver ao_terminar: desde 15/10 nenhuma tem, o card fica na coluna da renda).
  */
 export async function executarFu(
   job: { tipo: 'fu' | 'encerra'; leadId: number; token: string; dados?: Record<string, unknown> },
-  acoes: { podeSeguir(regua: Regua): Promise<string | null>; enviar(modelo: ChaveModelo): Promise<void>; encerrar(pipelineId: number, statusId: number): Promise<void> },
+  acoes: {
+    podeSeguir(regua: Regua): Promise<string | null>
+    enviar(modelo: ChaveModelo): Promise<void>
+    /** devolve como saiu: 'texto' ou 'modelo' (fora da janela de 24h) */
+    enviarTexto(texto: string, modeloForaDaJanela: ChaveModelo): Promise<'texto' | 'modelo'>
+    encerrar(pipelineId: number, statusId: number): Promise<void>
+  },
 ): Promise<string> {
   const fu = await getFu(job.leadId)
   if (!fu || fu.token !== job.token) return 'cancelada (o lead respondeu ou a régua foi trocada)'
@@ -85,7 +94,7 @@ export async function executarFu(
   const etapa = cfg.etapas[idx]
   if (!etapa) return `etapa ${idx} não existe`
   const modelo = modeloDaEtapa(fu.regua, idx)
-  await acoes.enviar(modelo)
+  const comoSaiu = etapa.texto_livre ? await acoes.enviarTexto(etapa.texto_livre, modelo) : (await acoes.enviar(modelo), 'modelo')
   const agora = Date.now()
   const prox = idx + 1
   if (cfg.etapas[prox]) {
@@ -99,5 +108,5 @@ export async function executarFu(
   } else {
     await cancelarRegua(job.leadId)
   }
-  return `régua ${fu.regua}: enviado ${etapa.nome} (${CRM_MAP.modelos[modelo].nome})`
+  return `régua ${fu.regua}: enviado ${etapa.nome} (${comoSaiu === 'texto' ? 'texto da equipe' : CRM_MAP.modelos[modelo].nome})`
 }

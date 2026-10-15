@@ -38,7 +38,7 @@ const REGUA: Record<string, string> = {
   cancelada: 'follow-up cancelado',
 }
 
-/** Etapas em que a Anna já cancelou a régua (reunião marcada, renda abaixo de 10 mil, passagem ou desistência). */
+/** Etapas em que a Anna já cancelou a régua (reunião marcada, renda até 15 mil, passagem ou desistência). */
 const FIM_DO_ROTEIRO = new Set(['agendado', 'sem_reuniao', 'humano'])
 
 /** O laboratório registra cada vez que a régua (re)começa: mostra a sequência sem repetição e se ela já foi cancelada. */

@@ -16,7 +16,8 @@ import { brl, TEXTOS } from './textos'
  * inteiro roda em teste sem Kommo, Redis nem Google.
  */
 
-export const RENDA_MINIMA_REUNIAO = 10000
+/** Só acima disto a Anna oferece reunião (regra da Dra., 15/10/2026: renda bruta acima de R$ 15 mil). */
+export const RENDA_OFERTA_REUNIAO = 15000
 
 export interface Ctx {
   agora: Date
@@ -162,7 +163,9 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   // "É robô?" pego em código: a Anna nunca nega nem confirma, passa para a equipe
   if (ehPerguntaRobo(ctx.textoTurno)) return humano(ctx, deps, 'perguntou se é robô', TEXTOS.passaHumano)
 
-  const quandoOfertado = s.oferta ? quandoOferta(new Date(s.oferta.inicio), ctx.agora) : undefined
+  // oferta vencida (o lead voltou depois do horário): não repete a data velha, busca um horário novo
+  const ofertaVencida = !!s.oferta && new Date(s.oferta.inicio).getTime() < ctx.agora.getTime() + 30 * 60_000
+  const quandoOfertado = s.oferta && !ofertaVencida ? quandoOferta(new Date(s.oferta.inicio), ctx.agora) : undefined
   const leitura = await deps.interpretar({
     etapa, pendente: PENDENTE[etapa](s, quandoOfertado), state: s, conversa: ctx.conversa, agora: ctx.agora, nomeContato: ctx.nomeContato,
   })
@@ -248,12 +251,12 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         if (livre) return livre
       }
       await deps.cancelarRegua()
-      if ((s.rendaBruta ?? 0) < RENDA_MINIMA_REUNIAO) {
+      if (!((s.rendaBruta ?? 0) > RENDA_OFERTA_REUNIAO)) {
         const enviado = await dizer(ctx, deps, TEXTOS.semReuniao, { id: 'sem_reuniao' })
         await deps.addTags([CRM_MAP.tags.semReuniao])
-        await deps.tarefa(`Anna: renda bruta abaixo de R$ 10 mil, sem reunião marcada pela IA. Avaliar o caso. ${resumoLead(s)}`)
+        await deps.tarefa(`Anna: renda bruta até R$ 15 mil, sem oferta de reunião pela IA. Avaliar o caso. ${resumoLead(s)}`)
         await deps.patch({ etapa: 'sem_reuniao' })
-        return { acao: 'renda abaixo de 10 mil: registrado para a equipe', enviado, leitura }
+        return { acao: 'renda até 15 mil: registrado para a equipe', enviado, leitura }
       }
       const token = deps.novoToken()
       const enviado = await dizer(ctx, deps, TEXTOS.mensagem4, { id: 'mensagem4', obrigatorio: ['Dra. Carolina'] })
@@ -307,6 +310,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         const enviado = await falar(ctx, deps, TEXTOS.manhaOuTarde, 'preferencia', { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
         return { acao: 'não pode no horário: perguntou manhã ou tarde', enviado, leitura }
       }
+      if (etapa === 'oferta' && ofertaVencida && !leitura.resposta) return oferecer(ctx, deps, {}, TEXTOS.novaOferta, 'nova_oferta')
       const livre = await responderLivre()
       if (livre) return livre
       const enviado = etapa === 'oferta'
@@ -317,7 +321,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
 
     case 'agendado':
     case 'sem_reuniao': {
-      if (etapa === 'sem_reuniao' && leitura.intencao === 'pede_reuniao') return humano(ctx, deps, 'renda abaixo de 10 mil pediu reunião', TEXTOS.passaHumano, leitura)
+      if (etapa === 'sem_reuniao' && leitura.intencao === 'pede_reuniao') return humano(ctx, deps, 'renda até 15 mil pediu reunião', TEXTOS.passaHumano, leitura)
       if (leitura.resposta) {
         await deps.enviar(leitura.resposta)
         return { acao: `${etapa}: respondeu`, enviado: leitura.resposta, leitura }

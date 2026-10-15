@@ -106,7 +106,7 @@ export default function CorrigirPainel({ origem, nome, cliente, resposta, pedido
                 className="w-full inline-flex items-center justify-center gap-2 rounded-[8px] border border-cyan/30 bg-cyan/[0.12] text-cyan py-3 text-[13px] font-medium disabled:opacity-40">
                 {enviando ? <><Loader2 size={14} className="animate-spin" /> A IA está analisando… (uns 10 segundos)</> : <>Pedir para a IA corrigir <ArrowRight size={14} /></>}
               </button>
-              <p className="text-[10.5px] text-body-faint leading-relaxed">Basta preencher um dos dois. Texto ou informação errada, a IA muda na base. Regra do roteiro (R$ 10 mil, horários da agenda, follow-ups, quando passar para a equipe) vira pedido para a Control Gestão.</p>
+              <p className="text-[10.5px] text-body-faint leading-relaxed">Basta preencher um dos dois. Texto ou informação errada, a IA muda na base. Regra do roteiro (R$ 15 mil, horários da agenda, follow-ups, quando passar para a equipe) vira pedido para a Control Gestão.</p>
             </div>
           ) : (
             <div className="space-y-4">

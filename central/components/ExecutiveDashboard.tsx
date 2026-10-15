@@ -66,7 +66,7 @@ export default function ExecutiveDashboard() {
         <div className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-body-muted mb-3">Hoje</div>
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <Metric icon={MessageSquareText} label="Leads atendidos" value={hoje ? String(hoje.atendidos) : '—'}
-            hint={hoje ? `${hoje.rendaInformada} informaram a renda, ${hoje.acima10k} com R$ 10 mil ou mais` : undefined} color="#06b6d4" />
+            hint={hoje ? `${hoje.rendaInformada} informaram a renda, ${hoje.acima15k} acima de R$ 15 mil` : undefined} color="#06b6d4" />
           <Metric icon={CalendarCheck} label="Reuniões marcadas" value={hoje ? String(hoje.agendados) : '—'}
             hint={sete ? `${sete.agendados} nos últimos 7 dias` : undefined} color="#22c55e" featured={(hoje?.agendados || 0) > 0} />
           <Metric icon={Headset} label="Passados para a equipe" value={hoje ? String(hoje.passagens) : '—'}

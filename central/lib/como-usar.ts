@@ -81,24 +81,25 @@ export const ROTEIRO: Etapa[] = [
   },
 ]
 
-export const ABAIXO_10K = {
-  titulo: 'Renda bruta abaixo de R$ 10 mil',
-  texto: 'A Anna não marca reunião. Avisa que o caso fica registrado para a equipe e para de conduzir.',
+export const ATE_15K = {
+  titulo: 'Renda bruta de até R$ 15 mil',
+  texto: 'A Anna não oferece reunião (regra da Dra.). Avisa que o caso fica registrado para a equipe e para de conduzir.',
   kommo: [
-    'Tag "ANNA renda abaixo 10k".',
+    'O card fica no SDR, na coluna da renda.',
+    'Tag "ANNA renda até 15k".',
     'Tarefa para a Dra. com objetivo, renda e desconto em conta.',
     'Se o lead pedir reunião depois, ela passa para a equipe.',
   ],
   base: ['sem_reuniao'],
 }
 
-export const ACIMA_10K = {
-  titulo: 'Renda bruta de R$ 10 mil ou mais',
+export const ACIMA_15K = {
+  titulo: 'Renda bruta acima de R$ 15 mil',
   passos: [
     '4ª mensagem: vai encaminhar a conversa para a Dra. Carolina analisar. Fica uma nota no card.',
     '30 minutos depois, a 5ª mensagem oferece um horário real da agenda Google da Dra.',
     'Reunião on-line de 30 minutos pelo Google Meet, de segunda a sexta. Primeiro as tardes, das 15:00 às 17:30. Depois as manhãs, começando às 11:30 e indo até as 10:00.',
-    'Renda de R$ 13,5 mil ou mais pode ter reunião no mesmo dia.',
+    'Pode ser no mesmo dia, com pelo menos 1 hora de antecedência.',
     'Não pode no horário: ela pergunta se prefere manhã ou tarde e oferece outro.',
   ],
   base: ['mensagem4', 'mensagem5', 'manha_ou_tarde', 'nova_oferta', 'horario_ocupado', 'pendente_preferencia'],
@@ -126,7 +127,7 @@ export const QUALQUER_MOMENTO: Array<{ motivo: string; texto: string }> = [
   { motivo: 'outro_assunto', texto: 'O assunto é de outra área, como tributário ou trabalhista.' },
   { motivo: 'remarcar', texto: 'Tem reunião marcada e pediu para remarcar. Urgente.' },
   { motivo: 'sem_agenda', texto: 'A agenda Google não respondeu ou não tem horário livre nos próximos dias. Urgente.' },
-  { motivo: 'abaixo_pediu_reuniao', texto: 'Renda abaixo de R$ 10 mil e pediu reunião mesmo assim.' },
+  { motivo: 'abaixo_pediu_reuniao', texto: 'Renda até R$ 15 mil e pediu reunião mesmo assim.' },
 ]
 export const QUALQUER_MOMENTO_BASE = ['passa_humano', 'possui_advogado', 'sem_agenda']
 
@@ -145,7 +146,7 @@ export const DESISTIU = {
 
 /** Réguas de follow-up (agente/config/follow-ups.json). */
 export const FOLLOWUP = {
-  regras: 'Só com os modelos aprovados pela Meta, das 7h às 20h. Fora dessa janela, a mensagem sai às 7h do dia seguinte. Qualquer resposta do lead ou mensagem da equipe cancela a régua.',
+  regras: 'Das 7h às 20h, com os modelos aprovados pela Meta e, 2 horas depois da oferta, o texto que a equipe já usava. Fora dessa janela, a mensagem sai às 7h do dia seguinte. Qualquer resposta do lead ou mensagem da equipe cancela a régua. No fim, o card não vai para Venda perdida: fica no SDR, na coluna da renda, e se o lead voltar a escrever a Anna retoma de onde parou.',
   reguas: [
     {
       titulo: 'Parou de responder na qualificação',
@@ -154,16 +155,16 @@ export const FOLLOWUP = {
         'Follow 2: 21 horas depois do Follow 1',
         'Follow up 3: 48 horas depois do Follow 2',
         'Follow up 4: 72 horas depois do Follow up 3',
-        '24 horas sem resposta: card para Gestão operacional › Venda perdida',
+        'Sem resposta: a sequência termina e o card fica na coluna da renda',
       ],
     },
     {
       titulo: 'Não respondeu à oferta de horário',
       etapas: [
-        'FUP horário reunião: 2 horas depois da oferta',
+        '"Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?": 2 horas depois da oferta',
         'SE 5 24h: 24 horas depois da oferta',
         'FUP encerramento 48h: 48 horas depois da oferta',
-        '24 horas sem resposta: card para Gestão operacional › Venda perdida',
+        'Sem resposta: a sequência termina e o card fica na coluna da renda',
       ],
     },
   ],
@@ -186,13 +187,13 @@ export const QUEM_MUDA = {
   voce: [
     'Os textos do roteiro: 1ª e 2ª perguntas, 3ª, 4ª e 5ª mensagens',
     'As ofertas de horário e a confirmação da reunião',
-    'Os textos de quando a Anna para: passagem, renda abaixo de 10 mil, sem horário, advogado',
+    'Os textos de quando a Anna para: passagem, renda até 15 mil, sem horário, advogado',
     'As retomadas depois de uma dúvida do lead',
     'Os fatos que ela responde: reunião, endereço, atendimento presencial',
     'Informações novas sobre o escritório',
   ],
   control: [
-    'A regra dos R$ 10 mil e a dos R$ 13,5 mil (reunião no mesmo dia)',
+    'A regra dos R$ 15 mil (só acima disso ela oferece reunião)',
     'Dias e horários da agenda da Dra.',
     'Os follow-ups: quando e quantos',
     'Os modelos aprovados pela Meta',
@@ -207,7 +208,7 @@ export const TAGS = [
   { tag: 'atendimento-humano', significa: 'A equipe está com o lead. A Anna não responde.', quem: 'A Anna, na passagem. Vocês também podem colocar a qualquer hora.' },
   { tag: 'ANNA passou para humano', significa: 'Foi a Anna que passou o lead para a equipe.', quem: 'A Anna.' },
   { tag: 'ANNA agendou', significa: 'Reunião marcada pela Anna.', quem: 'A Anna.' },
-  { tag: 'ANNA renda abaixo 10k', significa: 'Renda bruta abaixo de R$ 10 mil: sem reunião marcada pela Anna, a equipe avalia.', quem: 'A Anna.' },
+  { tag: 'ANNA renda até 15k', significa: 'Renda bruta até R$ 15 mil: a Anna não oferece reunião, a equipe avalia.', quem: 'A Anna.' },
   { tag: 'cliente', significa: 'Já é cliente do escritório. A Anna não fala com ele.', quem: 'A equipe.' },
 ]
 
@@ -235,7 +236,7 @@ export const FAQ = [
   { p: 'A Anna diz que é uma IA?', r: 'Não. É decisão do escritório. Se o lead perguntar se é robô, ela não confirma nem nega: passa para a equipe, com tarefa para a Dra.' },
   { p: 'E se o lead mandar áudio, foto ou PDF?', r: 'Ela ouve o áudio e lê a imagem ou o PDF antes de responder, e usa o que leu na conversa. Ela não pede documento.' },
   { p: 'E se o lead perguntar quanto custa?', r: 'Ela diz que a primeira reunião on-line não é cobrada. Honorários e valor da ação ficam para a reunião com a Dra.: ela nunca fala de valor.' },
-  { p: 'Por que ela não marcou reunião com um lead?', r: 'Renda bruta abaixo de R$ 10 mil é regra da Dra. Ela registra o caso, põe a tag "ANNA renda abaixo 10k" e cria uma tarefa. A equipe decide.' },
+  { p: 'Por que ela não marcou reunião com um lead?', r: 'Só acima de R$ 15 mil de renda bruta ela oferece reunião: é regra da Dra. Abaixo disso, ela registra o caso, põe a tag "ANNA renda até 15k" e cria uma tarefa. O card fica na coluna da renda e a equipe decide.' },
   { p: 'Respondi um lead e a Anna parou. Está com problema?', r: 'Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead para não atropelar vocês.' },
   { p: 'Mudei um texto em Ensinar. Já vale no WhatsApp?', r: `Só depois de publicar. A mudança fica no rascunho até o exame aprovar as ${CENARIOS_EXAME} conversas de teste.` },
 ]

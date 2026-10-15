@@ -57,7 +57,7 @@ export const TEXTOS_PADRAO = {
     'Também é importante que você esteja *em um local tranquilo e com boa conexão de internet*, para que o atendimento transcorra da melhor forma.\n\n' +
     'Caso tenha algum imprevisto e não possa comparecer, peço, por gentileza, que *nos avise com antecedência*.',
 
-  /** [CG] renda abaixo de R$ 10 mil: a Anna não marca reunião, a equipe avalia */
+  /** [CG] renda bruta até R$ 15 mil: a Anna não oferece reunião, a equipe avalia */
   sem_reuniao: 'Obrigada pelas informações. Vou deixar o seu caso registrado para a equipe da Dra. Carolina avaliar o melhor caminho, e alguém da equipe continua com você por aqui.',
 
   /** [CG] passagem para humano (pediu pessoa, perguntou se é robô, remarcação, assunto de outra área) */
