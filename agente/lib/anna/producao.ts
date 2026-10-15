@@ -94,7 +94,11 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       if (CONFIG.gateTag && tags().includes(CONFIG.gateTag)) await removeLeadTags(leadId, [CONFIG.gateTag])
       await addLeadTask(leadId, `Anna passou o atendimento: ${motivo}. ${resumo}`, CRM_MAP.tarefa)
     },
-    async agendarMsg5(token, quando) { await agendarJob({ tipo: 'msg5', leadId, quando, token }) },
+    async agendarMsg5(token, quando) {
+      // lead de teste (TEST_LEAD_IDS): a pausa de 30 min vira 1 min, para os testes no WhatsApp não esperarem
+      const q = CONFIG.testLeadIds.includes(leadId) ? Math.min(quando, Date.now() + 60_000) : quando
+      await agendarJob({ tipo: 'msg5', leadId, quando: q, token })
+    },
     novoToken,
     iniciarRegua: (regua, base) => iniciarRegua(leadId, regua, base),
     async cancelarRegua() { await cancelarRegua(leadId) },
