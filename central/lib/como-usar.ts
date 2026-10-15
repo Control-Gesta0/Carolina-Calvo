@@ -48,7 +48,7 @@ export const ENTRADA = [
   'ninguém da equipe escreveu para ele pelo Kommo nas últimas 6 horas',
   'o card não está em Gestão operacional nem no Financeiro',
 ]
-export const ENTRADA_NOTA = 'Mensagens seguidas viram uma resposta só: ela espera uns 10 segundos. Áudio, foto e PDF ela ouve ou lê antes de responder. Ela fala de forma formal e educada e nunca diz que é IA.'
+export const ENTRADA_NOTA = 'Mensagens seguidas viram uma resposta só: ela espera uns 10 segundos. Áudio, foto e PDF ela ouve ou lê antes de responder. Cada mensagem parte do texto da Dra., e ela escreve com as próprias palavras, reagindo ao que o lead disse. Ela é cordial e nunca diz que é IA.'
 
 export interface Etapa { titulo: string; texto: string; kommo?: string; base: string[] }
 
@@ -177,7 +177,7 @@ export const TRAVAS = [
   'Nunca promete resultado ("garantido", "com certeza vamos conseguir").',
   'Não pede para o lead mandar documento, foto ou print. Na confirmação, pede para ter o contracheque e o extrato em mãos na reunião.',
   'Uma pergunta por mensagem, sem travessão e sem emoji.',
-  'Quem decide a próxima mensagem, a coluna do card, o horário e a passagem é o código. O modelo só lê o que o lead escreveu.',
+  'Quem decide o que dizer, a coluna do card, o horário e a passagem é o código. O modelo lê o que o lead escreveu e escreve a mensagem a partir do texto da Dra.; horários, valores e informações são conferidos antes de sair, e se a redação não passar sai o texto da Dra.',
   'Só oferece horário livre na agenda Google da Dra. e confere de novo antes de marcar.',
 ]
 
