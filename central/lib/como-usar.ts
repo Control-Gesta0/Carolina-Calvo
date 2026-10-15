@@ -83,11 +83,11 @@ export const ROTEIRO: Etapa[] = [
 
 export const ATE_15K = {
   titulo: 'Renda bruta de até R$ 15 mil',
-  texto: 'A Anna não oferece reunião (regra da Dra.). Avisa que o caso fica registrado para a equipe e para de conduzir.',
+  texto: 'A Anna não oferece reunião (regra da Dra.). Avisa que o caso fica registrado para a equipe e para de conduzir. Não cria tarefa: a equipe filtra pela tag quando quiser trabalhar esses leads.',
   kommo: [
     'O card fica no SDR, na coluna da renda.',
     'Tag "ANNA renda até 15k".',
-    'Tarefa para a Dra. com objetivo, renda e desconto em conta.',
+    'Sem tarefa, sem mudar de etapa e sem Venda perdida.',
     'Se o lead pedir reunião depois, ela passa para a equipe.',
   ],
   base: ['sem_reuniao'],
@@ -236,7 +236,7 @@ export const FAQ = [
   { p: 'A Anna diz que é uma IA?', r: 'Não. É decisão do escritório. Se o lead perguntar se é robô, ela não confirma nem nega: passa para a equipe, com tarefa para a Dra.' },
   { p: 'E se o lead mandar áudio, foto ou PDF?', r: 'Ela ouve o áudio e lê a imagem ou o PDF antes de responder, e usa o que leu na conversa. Ela não pede documento.' },
   { p: 'E se o lead perguntar quanto custa?', r: 'Ela diz que a primeira reunião on-line não é cobrada. Honorários e valor da ação ficam para a reunião com a Dra.: ela nunca fala de valor.' },
-  { p: 'Por que ela não marcou reunião com um lead?', r: 'Só acima de R$ 15 mil de renda bruta ela oferece reunião: é regra da Dra. Abaixo disso, ela registra o caso, põe a tag "ANNA renda até 15k" e cria uma tarefa. O card fica na coluna da renda e a equipe decide.' },
+  { p: 'Por que ela não marcou reunião com um lead?', r: 'Só acima de R$ 15 mil de renda bruta ela oferece reunião: é regra da Dra. Abaixo disso, ela registra o caso e põe a tag "ANNA renda até 15k", sem tarefa. O card fica na coluna da renda: filtre pela tag para trabalhar esses leads.' },
   { p: 'Respondi um lead e a Anna parou. Está com problema?', r: 'Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead para não atropelar vocês.' },
   { p: 'Mudei um texto em Ensinar. Já vale no WhatsApp?', r: `Só depois de publicar. A mudança fica no rascunho até o exame aprovar as ${CENARIOS_EXAME} conversas de teste.` },
 ]

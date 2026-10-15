@@ -277,7 +277,7 @@ async function main() {
     eq('sem desconto em conta → variante da 3ª mensagem', w.enviados[0], TEXTOS.mensagem3(0))
     w.leituras.push(L({}))
     await fluxo.turno(ctx(w, seg9, 'sim'), deps)
-    eq('renda abaixo de 10 mil → sem reunião, registrado para a equipe', [w.state.etapa, w.enviados[1] === TEXTOS.semReuniao, w.tags.includes(CRM_MAP.tags.semReuniao), w.tarefas.length, w.msg5.length], ['sem_reuniao', true, true, 1, 0])
+    eq('renda até 15 mil → sem reunião, só a tag, sem tarefa', [w.state.etapa, w.enviados[1] === TEXTOS.semReuniao, w.tags.includes(CRM_MAP.tags.semReuniao), w.tarefas.length, w.msg5.length], ['sem_reuniao', true, true, 0, 0])
   }
 
   {

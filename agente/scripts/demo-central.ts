@@ -68,7 +68,7 @@ async function main() {
       q1(nome),
       opcao(1, '1'),
       renda('meu bruto é 7.500, cai 2.100 líquido e o banco desconta 1.200 da conta', 7500, 1200),
-      { tipo: 'resposta', etapa: 'sem_reuniao', perfil: 'ate_15k', turnoLead: 'sim, concordo', respostaIA: TEXTOS.semReuniao, tools: ['renda abaixo de 10 mil: registrado para a equipe', 'intenção: responde_etapa'], depois: 5, llm: true },
+      { tipo: 'resposta', etapa: 'sem_reuniao', perfil: 'ate_15k', turnoLead: 'sim, concordo', respostaIA: TEXTOS.semReuniao, tools: ['renda até 15 mil: tag, card na coluna da renda', 'intenção: responde_etapa'], depois: 5, llm: true },
     ],
     // perguntou se é robô
     ({ nome }) => [

@@ -30,7 +30,7 @@ export const ITENS = [
   { id: 'horario_ocupado', grupo: 'agenda', titulo: 'Horário que acabou de ser ocupado', ajuda: 'Quando o lead aceita, mas o horário foi preenchido entre a oferta e o "sim". {quando} é o próximo horário.', exige: ['{quando}'], comPergunta: true },
   { id: 'manha_ou_tarde', grupo: 'agenda', titulo: 'Pergunta de manhã ou tarde', ajuda: 'Quando o lead não pode no horário oferecido (regra da Dra.).', comPergunta: true },
   { id: 'agendado', grupo: 'agenda', titulo: 'Confirmação da reunião', ajuda: 'Depois do "sim": a reunião já está na agenda da Dra. {quando} vira "Segunda-feira, 12/10, às 15:00" e {link} o link do Google Meet.', exige: ['{quando}', '{link}'], semPergunta: true },
-  { id: 'sem_reuniao', grupo: 'paradas', titulo: 'Renda até R$ 15 mil', ajuda: 'A Anna não oferece reunião: registra o caso para a equipe e para de conduzir.', semPergunta: true },
+  { id: 'sem_reuniao', grupo: 'paradas', titulo: 'Renda até R$ 15 mil', ajuda: 'A Anna não oferece reunião nem cria tarefa: registra o caso, põe a tag e o card fica na coluna da renda.', semPergunta: true },
   { id: 'passa_humano', grupo: 'paradas', titulo: 'Passagem para a equipe', ajuda: 'Pediu uma pessoa, perguntou se é robô, já é cliente, quer remarcar ou o assunto é de outra área.', semPergunta: true },
   { id: 'sem_agenda', grupo: 'paradas', titulo: 'Sem horário na agenda', ajuda: 'Google Agenda fora do ar ou sem horário livre nos próximos dias: a equipe confirma o horário.', semPergunta: true },
   { id: 'desistiu', grupo: 'paradas', titulo: 'Lead que não quer continuar', ajuda: 'O card vai para "Não quer continuar".', semPergunta: true },

@@ -170,7 +170,7 @@ export function answerCentral(raw: string, live: LiveData | null, data: Executio
     return {
       answer: `Em 30 dias, ${trinta.rendaInformada} lead(s) informaram a renda bruta: ${trinta.acima15k} acima de R$ 15 mil e ${trinta.ate15k} até R$ 15 mil.`,
       evidence: [
-        'Até R$ 15 mil a Anna não oferece reunião: põe a tag "ANNA renda até 15k" e cria uma tarefa para a Dra.',
+        'Até R$ 15 mil a Anna não oferece reunião nem cria tarefa: põe a tag "ANNA renda até 15k" e o card fica na coluna da renda.',
         `Nos últimos 7 dias: ${sete.acima15k} acima de R$ 15 mil, ${sete.ate15k} até R$ 15 mil`,
       ],
       href: '/resultados#conversao', label: 'Abrir a qualificação',

@@ -90,7 +90,7 @@ export const OBJETIVO: Record<string, string> = {
   horario_ocupado: 'avisar que o horário anterior acabou de ser preenchido, oferecer o novo horário, on-line, e perguntar se pode agendar',
   manha_ou_tarde: 'dizer que não tem problema e perguntar se a pessoa prefere de manhã ou à tarde',
   oferta_pendente: 'retomar a oferta de horário e perguntar se pode agendar',
-  sem_reuniao: 'agradecer as informações e dizer que o caso fica registrado para a equipe da Dra. Carolina avaliar o melhor caminho e que alguém da equipe continua o atendimento por aqui',
+  sem_reuniao: 'agradecer as informações, dizer que o caso fica registrado para a equipe da Dra. Carolina avaliar o melhor caminho e que a pessoa pode escrever por aqui se tiver alguma dúvida',
   passa_humano: 'dizer que vai pedir para alguém da equipe da Dra. Carolina continuar o atendimento por aqui',
   sem_agenda: 'dizer que vai pedir para a equipe da Dra. Carolina confirmar o melhor horário por aqui',
   desistiu: 'respeitar a decisão e dizer que a pessoa pode chamar por aqui se mudar de ideia',
@@ -253,10 +253,10 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       await deps.cancelarRegua()
       if (!((s.rendaBruta ?? 0) > RENDA_OFERTA_REUNIAO)) {
         const enviado = await dizer(ctx, deps, TEXTOS.semReuniao, { id: 'sem_reuniao' })
+        // Dra., 15/10: só a tag e o card na coluna da renda. Sem tarefa, sem mover, sem Venda perdida.
         await deps.addTags([CRM_MAP.tags.semReuniao])
-        await deps.tarefa(`Anna: renda bruta até R$ 15 mil, sem oferta de reunião pela IA. Avaliar o caso. ${resumoLead(s)}`)
         await deps.patch({ etapa: 'sem_reuniao' })
-        return { acao: 'renda até 15 mil: registrado para a equipe', enviado, leitura }
+        return { acao: 'renda até 15 mil: tag, card na coluna da renda', enviado, leitura }
       }
       const token = deps.novoToken()
       const enviado = await dizer(ctx, deps, TEXTOS.mensagem4, { id: 'mensagem4', obrigatorio: ['Dra. Carolina'] })
