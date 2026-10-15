@@ -111,6 +111,13 @@ async function main() {
   eq('renderiza variável do card', renderizar('Olá, {{lead.cf.805158}}. Link: {{lead.cf.805162}}', { 805158: 'Maria', 805162: 'https://meet.google.com/x' }), 'Olá, Maria. Link: https://meet.google.com/x')
   eq('primeiro nome', primeiroNome('MARIA DOLORES DA SILVA'), 'Maria')
   eq('nome que não é nome', primeiroNome('Facebook №4431198800481061'), '')
+  const { extensaoAudio } = await import('../lib/media')
+  eq('formato do áudio: pelo tipo, pelo nome ou ogg', [
+    extensaoAudio('https://drive-g.kommo.com/download/abc/123', 'audio/ogg'),
+    extensaoAudio('https://drive-g.kommo.com/download/abc/voz.m4a?x=1', ''),
+    extensaoAudio('https://drive-g.kommo.com/download/abc/123', 'application/octet-stream'),
+    extensaoAudio('https://drive-g.kommo.com/download/abc/arquivo.kommo', ''),
+  ], ['ogg', 'm4a', 'ogg', 'ogg'])
 
   console.log('\n— Roteiro da Anna (intérprete simulado)')
   type Leitura = import('../lib/anna/interprete').Leitura
