@@ -240,7 +240,7 @@ async function main() {
     deps.redigir = async r => `[redigido] ${r.referencia}`
     await fluxo.turno(ctx(w, seg9, 'oi'), deps)
     eq('1ª pergunta: o modelo da Dra., com as opções numeradas', w.enviados[0],
-      'Olá, Maria. Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre os descontos bancários.\n\n' +
+      'Olá, Maria. Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre Superendividamento.\n\n' +
       'Você quer saber se, no seu caso, é possível:\n\n1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?\n' +
       '2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?\n3) as duas opções acima.\n\nÉ só me responder com o número.')
     w.leituras.push(L({ intencao: 'responde_etapa' }))

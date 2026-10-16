@@ -14,9 +14,9 @@ import { AsyncLocalStorage } from 'node:async_hooks'
  * {quando} "HOJE às 15:00" · {link} o link do Meet.
  */
 export const TEXTOS_PADRAO = {
-  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). Modelo da Dra. de 16/10, com as opções numeradas: o mesmo texto do modelo "Anna - Primeiro contato" */
+  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). Texto da Dra. de 16/10, com as opções numeradas ("Superendividamento" no lugar de "os descontos bancários" do modelo "Anna - Primeiro contato") */
   pergunta1:
-    '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre os descontos bancários.\n\n' +
+    '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre Superendividamento.\n\n' +
     'Você quer saber se, no seu caso, é possível:\n\n' +
     '1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?\n' +
     '2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?\n' +
