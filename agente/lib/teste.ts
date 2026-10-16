@@ -150,7 +150,7 @@ async function rodarTurno(s: Sessao, textos: Textos, prompt: string) {
   const w = s.mundo
   const reservados = new Set<string>()
   const interprete = createInterprete({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel, prompt: () => prompt })
-  const redator = process.env.REDACAO === 'off' ? null : createRedator({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel })
+  const redator = process.env.REDACAO === 'on' ? createRedator({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel }) : null
 
   const deps: Deps = {
     async interpretar(e) {

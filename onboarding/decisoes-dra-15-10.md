@@ -12,6 +12,20 @@ Este registro complementa o `escopo-definido.md` (reunião de 08/10) e serve par
 | Fim das sequências de follow-up | A qualificação e a oferta de horário terminam **sem Venda perdida**. O card fica na coluna da renda e, se o lead voltar, a Anna retoma de onde parou. |
 | Negrito | As mensagens mantêm em negrito os destaques do texto da Dra.: horários, orientações e perguntas principais. |
 
+## 16/10: textos da Dra. como ela escreveu, com opções numeradas
+
+Na reunião de 16/10, a Dra. pediu para voltar as opções por número. Desfizemos os dois pedidos de "conversa humanizada" de 15/10:
+
+- **1ª pergunta:** é o modelo da Dra., igual ao modelo aprovado "Anna - Primeiro contato". Termina com "É só me responder com o número".
+- **2ª pergunta:** voltou a ser numerada, com 1) renda bruta, 2) líquido e 3) desconto em conta.
+- **Resposta sem opção:** se o lead responde sem escolher, a Anna pede "Pode me responder com o número da opção: 1, 2 ou 3?". Na retomada depois de uma dúvida, pergunta "Qual das opções você quer saber: 1, 2 ou 3?".
+- **Mensagens do roteiro:** saem exatamente como a Dra. escreveu. A camada que reescrevia cada mensagem como conversa está desligada e só volta com `REDACAO=on`. Mesmo ligada, a 1ª e a 2ª pergunta não seriam reescritas.
+
+Ficam como estavam:
+- o negrito nos destaques;
+- as respostas às dúvidas do lead;
+- todas as regras de 15/10.
+
 ## Etiqueta de mês (Ajuste 4): pronta e desligada
 
 Ela liga com `ETIQUETA_MES_ATIVA=true` na Vercel, depois da aprovação da Dra. O código está em `agente/lib/etiqueta-mes.ts`, e o relógio confere os cards novos de 5 em 5 minutos.

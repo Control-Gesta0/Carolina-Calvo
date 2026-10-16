@@ -20,8 +20,8 @@ import { REGRAS_CLIENTE } from './regras'
 interface Meta { id: string; grupo: string; titulo: string; ajuda: string; exige?: string[]; semPergunta?: boolean; comPergunta?: boolean }
 
 export const ITENS = [
-  { id: 'pergunta1', grupo: 'roteiro', titulo: '1ª pergunta (quando o lead escreve primeiro)', ajuda: 'A apresentação da Anna e o que o lead quer saber (suspender os descontos, reestruturar as dívidas ou as duas coisas). {saudacao} vira "Olá, Maria." ou "Olá." quando o nome do WhatsApp não parece nome. Lead de formulário recebe o modelo aprovado pela Meta, que não muda por aqui.' },
-  { id: 'pergunta2', grupo: 'roteiro', titulo: '2ª pergunta (renda e descontos)', ajuda: 'Enviada quando o lead diz o que quer saber na 1ª pergunta.', comPergunta: true },
+  { id: 'pergunta1', grupo: 'roteiro', titulo: '1ª pergunta (quando o lead escreve primeiro)', ajuda: 'A apresentação da Anna e as três opções numeradas. {saudacao} vira "Olá, Maria." ou "Olá." quando o nome do WhatsApp não parece nome. Lead de formulário recebe o modelo aprovado pela Meta, que não muda por aqui.' },
+  { id: 'pergunta2', grupo: 'roteiro', titulo: '2ª pergunta (renda e descontos)', ajuda: 'Enviada quando o lead escolhe a opção 1, 2 ou 3.', comPergunta: true },
   { id: 'mensagem3', grupo: 'roteiro', titulo: '3ª mensagem (com o desconto em conta)', ajuda: 'Quando o lead informa quanto o banco desconta da conta. {desconto} vira o valor, por exemplo "R$ 2.000".', exige: ['{desconto}'], comPergunta: true },
   { id: 'mensagem3_sem_desconto', grupo: 'roteiro', titulo: '3ª mensagem (sem desconto em conta)', ajuda: 'Quando o banco não desconta nada da conta corrente.', comPergunta: true },
   { id: 'mensagem4', grupo: 'roteiro', titulo: '4ª mensagem (encaminhamento para a Dra.)', ajuda: 'Renda bruta acima de R$ 15 mil. Depois dela vem a pausa de 30 minutos.', semPergunta: true },

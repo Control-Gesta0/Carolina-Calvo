@@ -235,6 +235,23 @@ async function main() {
   }
 
   {
+    // 16/10: a 1ª e a 2ª pergunta saem como a Dra. escreveu, numeradas, mesmo com a redação ligada
+    const { w, deps } = mundo(seg9)
+    deps.redigir = async r => `[redigido] ${r.referencia}`
+    await fluxo.turno(ctx(w, seg9, 'oi'), deps)
+    eq('1ª pergunta: o modelo da Dra., com as opções numeradas', w.enviados[0],
+      'Olá, Maria. Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre os descontos bancários.\n\n' +
+      'Você quer saber se, no seu caso, é possível:\n\n1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?\n' +
+      '2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?\n3) as duas opções acima.\n\nÉ só me responder com o número.')
+    w.leituras.push(L({ intencao: 'responde_etapa' }))
+    await fluxo.turno(ctx(w, seg9, 'não sei'), deps)
+    eq('resposta sem opção: pede o número', w.enviados[1], 'Pode me responder com o número da opção: 1, 2 ou 3?')
+    w.leituras.push(L({ opcao: 1 }))
+    await fluxo.turno(ctx(w, seg9, '1'), deps)
+    eq('2ª pergunta: numerada, como a Dra. escreveu', [w.enviados[2], w.enviados[2].includes('1) Qual é a sua renda bruta mensal?')], [TEXTOS.pergunta2, true])
+  }
+
+  {
     const agora = seg9
     const { w, deps } = mundo(agora)
     await fluxo.turno(ctx(w, agora, 'oi'), deps)

@@ -24,8 +24,8 @@ import crypto from 'crypto'
 
 // o prompt publicado na base (fatos e informações que a equipe pediu pela Central), lido a cada turno com 10 s de cache
 const interprete = createInterprete({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel, prompt: async () => (await baseVigente()).prompt })
-// a mensagem decidida pelo roteiro sai como conversa; REDACAO=off volta para os textos prontos
-const redator = process.env.REDACAO === 'off' ? null : createRedator({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel })
+// textos da Dra. como ela escreveu (pedido de 16/10). REDACAO=on liga a camada que reescreve as mensagens como conversa
+const redator = process.env.REDACAO === 'on' ? createRedator({ apiKey: CONFIG.openaiApiKey, model: CONFIG.llmModel }) : null
 
 /** "MARIA DOLORES DA SILVA" → "Maria". Nome que não parece nome vira vazio. */
 export function primeiroNome(nome: string): string {

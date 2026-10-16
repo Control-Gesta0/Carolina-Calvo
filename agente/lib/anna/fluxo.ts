@@ -94,11 +94,12 @@ export const OBJETIVO: Record<string, string> = {
   passa_humano: 'dizer que vai pedir para alguém da equipe da Dra. Carolina continuar o atendimento por aqui',
   sem_agenda: 'dizer que vai pedir para a equipe da Dra. Carolina confirmar o melhor horário por aqui',
   desistiu: 'respeitar a decisão e dizer que a pessoa pode chamar por aqui se mudar de ideia',
-  pendente_q1: 'retomar a pergunta sobre o que a pessoa quer saber: a suspensão dos descontos, a reestruturação das dívidas ou as duas coisas',
+  pendente_q1: 'retomar a pergunta de qual opção a pessoa quer saber: 1, 2 ou 3',
+  q1_numero: 'pedir que a pessoa responda com o número da opção: 1, 2 ou 3',
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['agendado', 'possui_advogado'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado'])
 
 interface Fala { id: string; obrigatorio?: string[] }
 
@@ -206,8 +207,8 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       }
       const livre = await responderLivre()
       if (livre) return livre
-      const enviado = await falar(ctx, deps, PENDENTE.q1(ctx.state), 'q1', { id: 'pendente_q1' })
-      return { acao: 'q1 sem opção: perguntou de novo', enviado, leitura }
+      const enviado = await falar(ctx, deps, 'Pode me responder com o número da opção: 1, 2 ou 3?', 'q1', { id: 'q1_numero' })
+      return { acao: 'q1 sem opção: pediu o número', enviado, leitura }
     }
 
     case 'q2': {
