@@ -76,7 +76,7 @@ export const ROTEIRO: Etapa[] = [
   },
   {
     titulo: '3ª mensagem: o alívio sem o desconto',
-    texto: 'Usa o valor que o banco desconta da conta ("sem esses R$ 2.000 de descontos... concorda?"). Quem não tem desconto em conta recebe a outra versão.',
+    texto: 'Reforça o alívio de ficar sem os descontos em conta, sem citar o valor ("sem esses descontos em conta corrente... concorda?"). Quem não tem desconto em conta recebe a outra versão.',
     base: ['mensagem3', 'mensagem3_sem_desconto', 'pendente_q3'],
   },
 ]
@@ -98,7 +98,7 @@ export const ACIMA_15K = {
   passos: [
     '4ª mensagem: vai encaminhar a conversa para a Dra. Carolina analisar. Fica uma nota no card.',
     '30 minutos depois, a 5ª mensagem oferece um horário real da agenda Google da Dra.',
-    'Reunião on-line de 30 minutos pelo Google Meet, de segunda a sexta. Primeiro as tardes, das 15:00 às 17:30. Depois as manhãs, começando às 11:30 e indo até as 10:00.',
+    'Reunião on-line de 30 minutos pelo Google Meet, de segunda a sexta. Primeiro as tardes, das 15:00 às 17:30. Depois as manhãs: 11:00, 10:30 e 10:00, nessa ordem.',
     'Pode ser no mesmo dia, com pelo menos 1 hora de antecedência.',
     'Não pode no horário: ela pergunta se prefere manhã ou tarde e oferece outro.',
   ],

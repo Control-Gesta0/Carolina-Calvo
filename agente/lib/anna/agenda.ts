@@ -4,14 +4,14 @@
  * Regra de 08/10/2026: oferecer UM horário por vez, preenchendo a agenda em
  * sequência para a Dra. fazer as reuniões seguidas. Em cada dia, primeiro a
  * tarde (15:00 → 17:30), depois a manhã do mais tarde para o mais cedo
- * (11:30 → 10:00). Reuniões de 30 min, on-line.
+ * (11:00 → 10:00: são os três horários da manhã, Dra., 16/10). Reuniões de 30 min, on-line.
  *
  * Horário de Brasília = UTC-3 fixo (o Brasil não tem horário de verão desde 2019).
  */
 
 export const AGENDA = {
   tarde: ['15:00', '15:30', '16:00', '16:30', '17:00', '17:30'],
-  manha: ['11:30', '11:00', '10:30', '10:00'],
+  manha: ['11:00', '10:30', '10:00'],
   duracaoMin: 30,
   /** 0 = domingo … 6 = sábado */
   diasSemana: [1, 2, 3, 4, 5],

@@ -26,6 +26,28 @@ Ficam como estavam:
 - as respostas às dúvidas do lead;
 - todas as regras de 15/10.
 
+## 16/10: reunião com o Eduardo (gravação no Fathom)
+
+Valendo:
+- **3ª mensagem sem citar o valor:** "Acredito que sem esses descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?". Quem não tem desconto em conta recebe a outra versão. A Dra. também quer esse lead: o fluxo segue normalmente.
+- **Manhã:** são três horários, 11:00, 10:30 e 10:00, nessa ordem (de baixo para cima). As tardes continuam de 15:00 a 17:30.
+- **Negrito:** mantido onde o texto da Dra. tem negrito.
+- **Coluna da renda:** o card muda de coluna assim que o lead informa a renda bruta, mesmo antes dos outros valores. Isso já funcionava assim.
+- **Assistente virtual:** a Anna não diz que é assistente virtual. Isso já funcionava assim.
+
+Propostas mandadas para a Dra. aprovar:
+- **Pergunta sobre limite:** perguntar se o lead ainda tem limite no cheque especial ou no cartão de crédito, para dar prioridade a quem tem.
+- **Prioridade de agenda por renda:** acima de R$ 20 mil, primeiro.
+- **Prazo máximo e ordem:** nunca 2 ou 3 dias à frente. Quando a tarde do dia lotar, a Anna marca na manhã do dia seguinte. Hoje a Anna procura até 14 dias à frente e, a cada dia, oferece a tarde antes da manhã.
+- **Lead que não sabe os valores:** o que a Anna faz quando ele não sabe a renda ou o desconto.
+- **"Plantão" fora do horário:** a Dra. comentou que, depois de certa hora, a Anna diria que é do plantão. Falta definir a partir de que horário e como fica a frase.
+
+Outros pontos da reunião:
+- **Agenda Google:** a Dra. disse que já fez o passo a passo do vídeo e deu o OK ao Guilherme. As 3 credenciais ainda não chegaram à Anna.
+- **Levantamento das conversas de setembro e outubro (objeções):** a Dra. disse que pediu ao Guilherme. O Kommo não entrega pela integração o texto das conversas antigas, então depende de exportação pelo suporte do Kommo ou de leitura na tela.
+- **Entrada em produção:** testes no fim de semana, produção na segunda-feira. Antes, desligar no Kommo os robôs que hoje fazem o primeiro contato e ligar o da Anna. O Thomas fica de sobreaviso.
+- **Asaas:** pronto, em simulação. A Dra. quer ligar. Faltam o teste de R$ 5 e as decisões do escritório.
+
 ## Etiqueta de mês (Ajuste 4): pronta e desligada
 
 Ela liga com `ETIQUETA_MES_ATIVA=true` na Vercel, depois da aprovação da Dra. O código está em `agente/lib/etiqueta-mes.ts`, e o relógio confere os cards novos de 5 em 5 minutos.

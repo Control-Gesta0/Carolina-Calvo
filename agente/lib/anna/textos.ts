@@ -31,8 +31,8 @@ export const TEXTOS_PADRAO = {
     '3) Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?\n\n' +
     'Com essas informações, consigo fazer uma análise inicial e direcionar a melhor estratégia.',
 
-  /** [DRA] 3ª mensagem, com o valor do desconto quando o lead informou (adaptação pedida na reunião) */
-  mensagem3: 'Acredito que sem esses {desconto} de descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
+  /** [DRA] 3ª mensagem, para quem tem desconto em conta corrente. Sem citar o valor (Dra., 16/10) */
+  mensagem3: 'Acredito que sem esses descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
 
   /** [CG] variante da 3ª mensagem para quem não tem desconto em conta corrente */
   mensagem3_sem_desconto: 'Acredito que reduzindo esses descontos e sobrando mais do seu salário todo mês seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
@@ -104,8 +104,7 @@ const saudacao = (nome?: string) => (nome ? `Olá, ${nome}.` : 'Olá.')
 export const TEXTOS = {
   pergunta1: (nome?: string) => preencher(texto('pergunta1'), { saudacao: saudacao(nome) }),
   get pergunta2() { return texto('pergunta2') },
-  mensagem3: (descontoConta: number | null) =>
-    descontoConta && descontoConta > 0 ? preencher(texto('mensagem3'), { desconto: brl(descontoConta) }) : texto('mensagem3_sem_desconto'),
+  mensagem3: (descontoConta: number | null) => (descontoConta && descontoConta > 0 ? texto('mensagem3') : texto('mensagem3_sem_desconto')),
   get mensagem4() { return texto('mensagem4') },
   mensagem5: (quando: string) => preencher(texto('mensagem5'), { quando }),
   novaOferta: (quando: string) => preencher(texto('nova_oferta'), { quando }),

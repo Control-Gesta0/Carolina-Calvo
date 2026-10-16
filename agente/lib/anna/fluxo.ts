@@ -82,7 +82,7 @@ export const OBJETIVO: Record<string, string> = {
   pergunta1: 'se apresentar e perguntar o que a pessoa quer saber: se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas com juros revisados, ou as duas coisas',
   pergunta2: 'pedir os três valores da análise inicial: a renda bruta mensal, quanto recebe líquido depois dos descontos do contracheque e quanto o banco desconta direto da conta corrente por mês',
   q2_falta: 'agradecer o que a pessoa já informou e pedir só o que falta',
-  mensagem3: 'mostrar que, sem esse desconto na conta corrente e recebendo o salário líquido inteiro, seria um alívio financeiro, e perguntar se a pessoa concorda',
+  mensagem3: 'mostrar que, sem esses descontos na conta corrente e recebendo o salário líquido inteiro, seria um alívio financeiro, sem citar o valor, e perguntar se a pessoa concorda',
   mensagem3_sem_desconto: 'mostrar que, reduzindo os descontos e sobrando mais do salário, seria um alívio financeiro, e perguntar se a pessoa concorda',
   mensagem4: 'dizer que a situação é delicada, que vai encaminhar a conversa para a Dra. Carolina analisar e que volta a falar em alguns minutos',
   mensagem5: 'contar que já passou o caso para a Dra. Carolina; explicar que o primeiro atendimento é on-line e que nele a Dra. explica a possibilidade de pedir na Justiça a suspensão dos descontos por até 6 meses, além da revisão de juros e da reestruturação das dívidas; oferecer o horário e perguntar se pode agendar',
@@ -231,7 +231,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (!faltam.length) {
         const desconto = novo.descontoConta ?? null
         await deps.patch({ etapa: 'q3' })
-        const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3', obrigatorio: [brl(desconto)] } : { id: 'mensagem3_sem_desconto' })
+        const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3' } : { id: 'mensagem3_sem_desconto' })
         return { acao: 'q2 completa: mensagem 3', enviado, leitura }
       }
       if (!Object.keys(patch).length) {

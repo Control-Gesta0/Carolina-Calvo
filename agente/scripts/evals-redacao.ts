@@ -38,7 +38,7 @@ async function main() {
     { id: 'pergunta1', ref: P1, obrig: ['Anna', 'Dra. Carolina Calvo', '6 meses'], conversa: [m('in', 'Boa tarde, vi o anúncio de vocês sobre os descontos no salário')] },
     { id: 'pergunta2', ref: P2, obrig: ['bruta', 'líquido', 'conta corrente'], conversa: [m('in', 'Boa tarde, vi o anúncio'), m('out', P1), m('in', 'quero reestruturar e renegociar minhas dividas')] },
     { id: 'q2_falta', ref: 'Obrigada. Falta só quanto o banco desconta da sua conta corrente por mês. Pode me informar?', obrig: ['conta corrente'], conversa: [m('out', P1), m('in', 'as duas'), m('out', P2), m('in', 'ganho 12 mil bruto e recebo uns 7 mil liquido')] },
-    { id: 'mensagem3', ref: M3, obrig: ['R$ 5.000'], conversa: [m('out', P2), m('in', 'Renda de 10000 bruto e uns 9000 liquido e o banco desconta 5000 da conta')] },
+    { id: 'mensagem3', ref: M3, obrig: [], conversa: [m('out', P2), m('in', 'Renda de 10000 bruto e uns 9000 liquido e o banco desconta 5000 da conta')] },
     { id: 'mensagem4', ref: TEXTOS.mensagem4, obrig: ['Dra. Carolina'], conversa: [m('out', M3), m('in', 'sim concordo, ta muito difícil pagar as contas')] },
     { id: 'mensagem5', ref: TEXTOS.mensagem5('AMANHÃ às 15:00'), obrig: ['AMANHÃ às 15:00', '6 meses'], conversa: [m('out', M3), m('in', 'sim concordo'), m('out', TEXTOS.mensagem4)] },
     { id: 'manha_ou_tarde', ref: TEXTOS.manhaOuTarde, obrig: ['manhã', 'tarde'], conversa: [m('out', TEXTOS.mensagem5('AMANHÃ às 15:00')), m('in', 'amanhã nesse horário eu trabalho')] },
