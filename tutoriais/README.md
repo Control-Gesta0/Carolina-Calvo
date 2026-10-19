@@ -3,6 +3,7 @@
 | Vídeo | O que ensina | O que ela envia ao Guilherme |
 |---|---|---|
 | `01-google-agenda.mp4` | Criar o acesso ao Google Agenda (Calendar API, app publicado em produção, cliente OAuth e refresh token pelo OAuth Playground) | ID do cliente, chave secreta do cliente, refresh token e e-mail da agenda |
+| `01-google-agenda-narrado.mp4` | A mesma coisa, com narração em voz e mais devagar (7 min). É o que vai para a Dra. desde 19/10 | Os 3 códigos e o e-mail da agenda, para o Eduardo |
 | `02-asaas.mp4` | Gerar a chave de API de produção do Asaas (Integrações › Chaves de API) | A chave `$aact_prod_...` |
 
 As telas são ilustrativas: o caminho e os nomes dos botões seguem a documentação do Google e do Asaas (outubro/2026), mas o visual pode variar.
