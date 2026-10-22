@@ -49,8 +49,10 @@ export const CONFIG = {
   autoGateFormLeads: process.env.AUTO_GATE_FORM_LEADS === 'true',
   /** régua pós-proposta (24h depois de Cliente decisão). Ligar só depois de desligar a automação antiga do Kommo */
   posPropostaAtivo: process.env.POS_PROPOSTA_ATIVO === 'true',
-  /** devolve ao Closer o card que um robô antigo moveu para o SDR (lib/closer.ts). Liga por padrão (Dra., 22/10) */
+  /** devolve ao Closer o card que um robô antigo moveu para o SDR (lib/closer.ts). Liga por padrão (Dra., 22/10).
+   *  PROTEGE_CLOSER=teste: só nos cards de TEST_LEAD_IDS · false: desligado */
   protegeCloser: process.env.PROTEGE_CLOSER !== 'false',
+  protegeCloserSoTeste: process.env.PROTEGE_CLOSER === 'teste',
   /** etiqueta de mês nas entradas por formulário (lib/etiqueta-mes). Liga só com a aprovação da Dra. */
   etiquetaMesAtiva: process.env.ETIQUETA_MES_ATIVA === 'true',
 

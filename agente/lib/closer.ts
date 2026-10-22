@@ -99,6 +99,7 @@ export async function varrerCloser(): Promise<string[]> {
   for (const ev of (d?._embedded?.events || []).sort((a, b) => a.created_at - b.created_at)) {
     const origem = origemCloser(ev)
     if (!origem) continue
+    if (CONFIG.protegeCloserSoTeste && !CONFIG.testLeadIds.includes(ev.entity_id)) continue
     try {
       const r = await devolverAoCloser(ev, origem)
       if (r) feitos.push(r)
