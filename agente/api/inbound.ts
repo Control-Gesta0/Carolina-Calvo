@@ -6,7 +6,7 @@ import { CONFIG } from '../lib/config'
 import { logExec, marcarWebhook } from '../lib/execlog'
 import { cancelarRegua } from '../lib/followup'
 import { botRodandoRecente } from '../lib/modelos'
-import { appendMessage, isEchoOfSent, markHumanSpoke, seenMessage } from '../lib/history'
+import { appendMessage, getHistory, isEchoOfSent, markHumanSpoke, seenMessage } from '../lib/history'
 import { guardarUltimaMensagem } from '../lib/closer'
 import { addLeadNote, addLeadTags, getLead } from '../lib/kommo'
 import { mediaKind, mediaToText } from '../lib/media'
@@ -121,12 +121,17 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
       if (outgoing) {
         if (await botRodandoRecente(m.leadId)) continue
         // Saída que não é nossa = equipe (ou outra automação) falando: registra, recua e para a régua
+        const antes = await getHistory(m.leadId).catch(() => [])
+        // a Anna já estava atendendo? (o lead escreveu ou a Anna conseguiu mandar algo)
+        const annaAtendia = antes.some(h => h.dir === 'in' || (h.dir === 'out' && !String(h.id).startsWith('kommo:')))
         await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'out', text, ts: Date.now() })
         await markHumanSpoke(m.leadId)
         await cancelarRegua(m.leadId)
         // a equipe assumiu: a Anna sai do atendimento e não volta sozinha (Dra., 22/10). Para devolver: tirar a tag.
         await addLeadTags(m.leadId, [CONFIG.humanTag])
-        await addLeadNote(m.leadId, `A equipe escreveu para o lead pelo Kommo: a Anna saiu do atendimento e não volta sozinha. Para devolver o lead à Anna, tire a tag "${CONFIG.humanTag}".`)
+        await addLeadNote(m.leadId, annaAtendia
+          ? `A equipe escreveu para o lead pelo Kommo: a Anna saiu do atendimento e não volta sozinha. Para devolver o lead à Anna, tire a tag "${CONFIG.humanTag}".`
+          : `A equipe iniciou o atendimento deste lead pelo Kommo antes de a Anna falar com ele. A Anna não vai atuar neste card (tag "${CONFIG.humanTag}"). Para entregar o lead à Anna, tire a tag.`)
         await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: 'a equipe escreveu para o lead: a Anna saiu do atendimento (tag atendimento-humano)' })
         liberado.set(m.leadId, false)
         continue
