@@ -23,6 +23,7 @@ export const MOTIVO_ROTULO: Record<string, string> = {
   pediu_humano: 'Pediu uma pessoa',
   tem_advogado: 'Já tem advogado no caso',
   ja_e_cliente: 'Já é cliente',
+  quer_contratar: 'Quer contratar',
   outro_assunto: 'Assunto de outra área',
   remarcar: 'Pediu para remarcar',
   sem_agenda: 'Sem horário na agenda',

@@ -242,8 +242,8 @@
       <tr><td class="chave">Tem a tag <span class="tag">ia</span></td><td>É a tag que libera a Anna para aquele lead. Sem ela, a Anna não fala.</td></tr>
       <tr><td class="chave">Não tem <span class="tag">atendimento-humano</span></td><td>Essa tag diz que a equipe está com o lead.</td></tr>
       <tr><td class="chave">Não tem <span class="tag">cliente</span></td><td>Cliente do escritório é atendido pela equipe.</td></tr>
-      <tr><td class="chave">Ninguém da equipe escreveu nas últimas 6 horas</td><td>Se alguém respondeu pelo Kommo, a Anna espera 6 horas para não atropelar a conversa.</td></tr>
-      <tr><td class="chave">O card não está em Gestão operacional nem no Financeiro</td><td>Esses funis são de clientes. A Anna atende só no SDR e no Closer.</td></tr>
+      <tr><td class="chave">Ninguém da equipe escreveu para o lead</td><td>Se alguém respondeu pelo Kommo, a Anna sai do atendimento e põe a tag <span class="tag">atendimento-humano</span>. Para devolver, tire a tag.</td></tr>
+      <tr><td class="chave">O card não está no Closer, em Gestão nem no Financeiro</td><td>A Anna qualifica só no SDR. No Closer, quem conversa é a equipe. Também não fala com quem tem a tag <span class="tag">JÁ FEZ REUNIÃO</span>.</td></tr>
     </table>
 
     <h2>Como o lead chega até ela</h2>
@@ -623,7 +623,7 @@ Com essa informação, consigo verificar qual é o próximo passo do seu atendim
       <div class="cartao"><h3>E se o lead mandar áudio, foto ou PDF?</h3><p>Ela ouve o áudio e lê a imagem ou o PDF antes de responder. Ela não pede documento.</p></div>
       <div class="cartao"><h3>E se o lead perguntar quanto custa?</h3><p>Ela diz que a primeira reunião on-line não é cobrada. Honorários ficam para a reunião com a Dra.</p></div>
       <div class="cartao"><h3>Por que ela não marcou reunião com um lead?</h3><p>Só acima de R$ 15 mil de renda bruta ela oferece reunião: é regra da Dra. Abaixo disso, ela registra o caso e põe a tag "ANNA renda até 15k", sem tarefa. Filtre pela tag para trabalhar esses leads.</p></div>
-      <div class="cartao"><h3>Respondi um lead e a Anna parou. Está com problema?</h3><p>Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead.</p></div>
+      <div class="cartao"><h3>Respondi um lead e a Anna parou. Está com problema?</h3><p>Não. Quando alguém da equipe escreve pelo Kommo, ela sai do atendimento daquele lead e põe a tag atendimento-humano. Para devolver, tire a tag.</p></div>
       <div class="cartao"><h3>O lead quer remarcar. O que fazer?</h3><p>A Anna já passou para a equipe como urgente. Remarque com o lead e ajuste a agenda da Dra. e o card.</p></div>
       <div class="cartao"><h3>Quero que a Anna volte a atender um lead.</h3><p>Tire a tag atendimento-humano e coloque a ia. Ela recomeça do início do roteiro.</p></div>
       <div class="cartao"><h3>A Dra. bloqueou um horário. A Anna respeita?</h3><p>Sim. Qualquer compromisso na agenda Google da Dra. bloqueia o horário, e ela confere de novo antes de marcar.</p></div>

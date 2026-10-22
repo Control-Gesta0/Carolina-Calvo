@@ -75,6 +75,9 @@ export function cenarios(textos?: Textos): Cenario[] {
     { id: 'pede-doutora', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'quero falar direto com a doutora, por favor']], espera: { intencao: 'pede_humano' } },
     { id: 'robo', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'isso aqui é um robô respondendo?']], espera: { intencao: 'pergunta_se_robo', resposta: null } },
     { id: 'advogado', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'eu já tenho advogado nesse processo contra o banco']], espera: { intencao: 'tem_advogado' } },
+    { id: 'contratar-erika', etapa: 'q1', conversa: [['out', Q1], ['in', 'Boa tarde'], ['out', 'Boa tarde.\n\nQual das opções você quer saber: 1, 2 ou 3?'], ['in', 'Ontem conversei com a doutora vou fechar com ela para iniciar meu processo']], espera: { intencao: 'quer_contratar' } },
+    { id: 'contratar-direto', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'Doutora, pensei melhor e quero fechar o contrato.']], espera: { intencao: 'quer_contratar' } },
+    { id: 'cliente-de-verdade', etapa: 'q1', conversa: [['out', Q1], ['in', 'Já sou cliente da Dra., queria saber como está o meu processo']], espera: { intencao: 'ja_e_cliente' } },
     { id: 'icms', etapa: 'q1', conversa: [['out', Q1], ['in', 'na verdade é sobre ICMS atrasado da minha empresa']], espera: { intencao: 'outro_assunto' } },
     { id: 'agendado-remarcar', etapa: 'agendado', state: { reuniao: { eventId: 'x', inicio: '2026-10-14T18:00:00.000Z', link: 'https://meet.google.com/x', criadaEm: '' } }, conversa: [['in', 'preciso remarcar a reunião de amanhã']], espera: { intencao: 'remarcar' } },
   ]

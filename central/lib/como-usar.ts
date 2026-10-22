@@ -45,8 +45,9 @@ export const PASSOS: Passo[] = [
 export const ENTRADA = [
   'o lead tem a tag ia',
   'não tem a tag atendimento-humano nem a tag cliente',
-  'ninguém da equipe escreveu para ele pelo Kommo nas últimas 6 horas',
-  'o card não está em Gestão operacional nem no Financeiro',
+  'ninguém da equipe escreveu para ele pelo Kommo (quando a equipe escreve, a Anna sai e põe a tag atendimento-humano)',
+  'o card não está no Closer, em Gestão operacional nem no Financeiro',
+  'o card não tem a tag JÁ FEZ REUNIÃO',
 ]
 export const ENTRADA_NOTA = 'Mensagens seguidas viram uma resposta só: ela espera uns 10 segundos. Áudio, foto e PDF ela ouve ou lê antes de responder. As mensagens do roteiro saem como a Dra. escreveu. Ela fala de forma formal e educada e nunca diz que é IA.'
 
@@ -123,7 +124,8 @@ export const QUALQUER_MOMENTO: Array<{ motivo: string; texto: string }> = [
   { motivo: 'perguntou_robo', texto: 'Perguntou se está falando com um robô. Ela não confirma nem nega: passa.' },
   { motivo: 'pediu_humano', texto: 'Pediu para falar com a Dra. ou com uma pessoa.' },
   { motivo: 'tem_advogado', texto: 'Já tem advogado atuando no caso. Recebe o texto da Dra. sobre a ética da OAB.' },
-  { motivo: 'ja_e_cliente', texto: 'Já é cliente do escritório.' },
+  { motivo: 'ja_e_cliente', texto: 'Já é cliente do escritório (contrato assinado ou processo em andamento). Quem só fez reunião não é cliente.' },
+  { motivo: 'quer_contratar', texto: 'Disse que quer fechar ou contratar. Sem mensagem ao lead: o card vai para Closer › Retorno imediato, com tarefa prioritária de 15 minutos.' },
   { motivo: 'outro_assunto', texto: 'O assunto é de outra área, como tributário ou trabalhista.' },
   { motivo: 'remarcar', texto: 'Tem reunião marcada e pediu para remarcar. Urgente.' },
   { motivo: 'sem_agenda', texto: 'A agenda Google não respondeu ou não tem horário livre nos próximos dias. Urgente.' },
@@ -216,7 +218,7 @@ export const TAGS = [
 export const ACOES = [
   { titulo: 'Tirar a Anna de um lead', texto: 'Coloque a tag atendimento-humano. Ela para de responder na hora.' },
   { titulo: 'Devolver um lead para a Anna', texto: 'Tire a tag atendimento-humano e coloque a tag ia. Ela começa um atendimento novo, do início do roteiro.' },
-  { titulo: 'Responder pelo Kommo', texto: 'Se alguém da equipe escrever para o lead pelo Kommo, a Anna fica 6 horas sem responder aquele lead.' },
+  { titulo: 'Responder pelo Kommo', texto: 'Se alguém da equipe escrever para o lead pelo Kommo, a Anna sai do atendimento daquele lead e põe a tag atendimento-humano. Ela não volta sozinha: para devolver, tire a tag.' },
 ]
 
 /** Campos do card que são da Anna (a equipe não edita). */
@@ -238,6 +240,7 @@ export const FAQ = [
   { p: 'E se o lead mandar áudio, foto ou PDF?', r: 'Ela ouve o áudio e lê a imagem ou o PDF antes de responder, e usa o que leu na conversa. Ela não pede documento.' },
   { p: 'E se o lead perguntar quanto custa?', r: 'Ela diz que a primeira reunião on-line não é cobrada. Honorários e valor da ação ficam para a reunião com a Dra.: ela nunca fala de valor.' },
   { p: 'Por que ela não marcou reunião com um lead?', r: 'Só acima de R$ 15 mil de renda bruta ela oferece reunião: é regra da Dra. Abaixo disso, ela registra o caso e põe a tag "ANNA renda até 15k", sem tarefa. O card fica na coluna da renda: filtre pela tag para trabalhar esses leads.' },
-  { p: 'Respondi um lead e a Anna parou. Está com problema?', r: 'Não. Quando alguém da equipe escreve pelo Kommo, ela fica 6 horas sem responder aquele lead para não atropelar vocês.' },
+  { p: 'Respondi um lead e a Anna parou. Está com problema?', r: 'Não. Quando alguém da equipe escreve pelo Kommo, ela sai do atendimento daquele lead (tag atendimento-humano) e não volta sozinha. Para devolver, tire a tag.' },
+  { p: 'Um robô tirou um card do Closer?', r: 'Não fica no SDR. Se um robô antigo do Kommo mover um card do Closer para o SDR, a Anna devolve: de Cliente decisão vai para Retorno imediato, com tarefa prioritária; das outras etapas volta para onde estava. Nenhuma mensagem é enviada.' },
   { p: 'Mudei um texto em Ensinar. Já vale no WhatsApp?', r: `Só depois de publicar. A mudança fica no rascunho até o exame aprovar as ${CENARIOS_EXAME} conversas de teste.` },
 ]

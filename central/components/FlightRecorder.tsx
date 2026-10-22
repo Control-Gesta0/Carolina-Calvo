@@ -19,6 +19,7 @@ function resumoLinha(e: Execution): string {
   if (e.tipo === 'job') return '5ª mensagem (depois da pausa de 30 min)'
   if (e.tipo === 'followup') return e.tools[0] || 'follow-up'
   if (e.tipo === 'reset') return 'reset de teste'
+  if (e.tipo === 'closer') return e.tools[0] || 'proteção do Closer'
   if (e.tipo === 'resposta') return (e.etapa && ETAPA_ROTULO[e.etapa]) || 'respondeu'
   return e.detalhe
 }

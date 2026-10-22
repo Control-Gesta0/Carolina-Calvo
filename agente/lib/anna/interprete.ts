@@ -1,3 +1,4 @@
+import { querContratar } from '../contratar'
 import fs from 'fs'
 import path from 'path'
 import OpenAI from 'openai'
@@ -16,7 +17,7 @@ import { texto } from './textos'
 
 export const INTENCOES = [
   'responde_etapa', 'aceita_horario', 'recusa_horario', 'escolhe_periodo', 'pergunta', 'pede_humano', 'pergunta_se_robo',
-  'tem_advogado', 'ja_e_cliente', 'outro_assunto', 'pede_reuniao', 'remarcar', 'desiste', 'outro',
+  'tem_advogado', 'ja_e_cliente', 'quer_contratar', 'outro_assunto', 'pede_reuniao', 'remarcar', 'desiste', 'outro',
 ] as const
 export type Intencao = typeof INTENCOES[number]
 
@@ -65,6 +66,12 @@ const SEM_PENDENTE: Partial<Record<Etapa, string>> = {
 /** Recusou o horário oferecido sem dizer o período: o modelo às vezes deduz o período do horário (1 em 10). Não vale. */
 export function periodoSoSeDito(l: Leitura, etapa: Etapa, textoLead: string): Leitura {
   if (etapa === 'oferta' && l.intencao === 'recusa_horario' && l.periodo && !/manh[aã]|tarde|almo[cç]o|cedo|noite/i.test(textoLead)) return { ...l, periodo: null }
+  return l
+}
+
+/** "quer_contratar" tira o lead da qualificação: só vale se o lead falou mesmo em fechar/contratar (o modelo às vezes confunde com "as duas"). */
+export function contratarSoSeDito(l: Leitura, textoLead: string): Leitura {
+  if (l.intencao === 'quer_contratar' && !querContratar(textoLead)) return { ...l, intencao: 'responde_etapa' }
   return l
 }
 
@@ -163,7 +170,8 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
       ...conversaParaMensagens(e.conversa),
     ]
     const iOut = e.conversa.map(m => m.dir).lastIndexOf('out')
-    const leitura = periodoSoSeDito(await chamar(messages, usage), e.etapa, e.conversa.slice(iOut + 1).filter(m => m.dir === 'in').map(m => m.text).join('\n'))
+    const textoLead = e.conversa.slice(iOut + 1).filter(m => m.dir === 'in').map(m => m.text).join('\n')
+    const leitura = contratarSoSeDito(periodoSoSeDito(await chamar(messages, usage), e.etapa, textoLead), textoLead)
     const guard: string[] = []
     if (leitura.resposta) {
       let texto = semTravessao(leitura.resposta.trim())

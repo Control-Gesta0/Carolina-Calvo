@@ -7,7 +7,8 @@ import { logExec, marcarWebhook } from '../lib/execlog'
 import { cancelarRegua } from '../lib/followup'
 import { botRodandoRecente } from '../lib/modelos'
 import { appendMessage, isEchoOfSent, markHumanSpoke, seenMessage } from '../lib/history'
-import { getLead } from '../lib/kommo'
+import { guardarUltimaMensagem } from '../lib/closer'
+import { addLeadNote, addLeadTags, getLead } from '../lib/kommo'
 import { mediaKind, mediaToText } from '../lib/media'
 import { isResetCommand, resetLead } from '../lib/reset'
 import { sendReply } from '../lib/transport'
@@ -109,6 +110,7 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         await logExec({ tipo: 'reset', leadId: m.leadId, detalhe: 'reset de teste' })
         continue
       }
+      if (!outgoing && text) await guardarUltimaMensagem(m.leadId, text)
       if (!(await podeAtender(m.leadId))) continue
       const kind = mediaKind(m.attachType)
       if (kind && !outgoing) text = await mediaToText(kind, m.attachLink, text)
@@ -122,6 +124,11 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'out', text, ts: Date.now() })
         await markHumanSpoke(m.leadId)
         await cancelarRegua(m.leadId)
+        // a equipe assumiu: a Anna sai do atendimento e não volta sozinha (Dra., 22/10). Para devolver: tirar a tag.
+        await addLeadTags(m.leadId, [CONFIG.humanTag])
+        await addLeadNote(m.leadId, `A equipe escreveu para o lead pelo Kommo: a Anna saiu do atendimento e não volta sozinha. Para devolver o lead à Anna, tire a tag "${CONFIG.humanTag}".`)
+        await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: 'a equipe escreveu para o lead: a Anna saiu do atendimento (tag atendimento-humano)' })
+        liberado.set(m.leadId, false)
         continue
       }
       // O lead respondeu: qualquer régua de follow-up dele para na hora

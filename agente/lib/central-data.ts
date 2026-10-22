@@ -17,6 +17,7 @@ export const MOTIVOS: Record<string, { rotulo: string; urgente?: boolean }> = {
   pediu_humano: { rotulo: 'Pediu uma pessoa' },
   tem_advogado: { rotulo: 'Já tem advogado no caso' },
   ja_e_cliente: { rotulo: 'Já é cliente' },
+  quer_contratar: { rotulo: 'Quer contratar', urgente: true },
   outro_assunto: { rotulo: 'Assunto de outra área' },
   // reunião marcada que pode estar perto: a equipe precisa ver logo
   remarcar: { rotulo: 'Pediu para remarcar', urgente: true },
@@ -33,6 +34,7 @@ const MOTIVO_POR_FRASE: Record<string, string> = {
   'pediu atendimento humano': 'pediu_humano',
   'já tem advogado no caso': 'tem_advogado',
   'já é cliente': 'ja_e_cliente',
+  'quer contratar': 'quer_contratar',
   'assunto de outra área': 'outro_assunto',
   'pediu para remarcar': 'remarcar',
   'agenda indisponível': 'sem_agenda',

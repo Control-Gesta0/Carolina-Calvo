@@ -40,7 +40,7 @@ export interface Deps {
   addTags(tags: string[]): Promise<void>
   nota(texto: string): Promise<void>
   /** tag de humano, tira o gate, tarefa para a equipe, nota, cancela régua */
-  passarParaHumano(motivo: string, resumo: string): Promise<void>
+  passarParaHumano(motivo: string, resumo: string, prioritaria?: boolean): Promise<void>
   tarefa(texto: string): Promise<void>
   agendarMsg5(token: string, quando: number): Promise<void>
   novoToken(): string
@@ -176,6 +176,15 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     case 'pede_humano': return humano(ctx, deps, 'pediu atendimento humano', TEXTOS.passaHumano, leitura)
     case 'tem_advogado': return humano(ctx, deps, 'já tem advogado no caso', TEXTOS.possuiAdvogado, leitura, 'possui_advogado')
     case 'ja_e_cliente': return humano(ctx, deps, 'já é cliente', TEXTOS.passaHumano, leitura)
+    case 'quer_contratar': {
+      // Dra., 22/10: prioridade comercial máxima. Sem pergunta e sem mensagem: Closer › Retorno imediato + tarefa prioritária
+      const resumo = `${leitura.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`
+      await deps.cancelarRegua()
+      await deps.passarParaHumano('Lead deseja contratar — retorno imediato', resumo, true)
+      await deps.mover(STATUS.retornoImediato, PIPELINES.closer)
+      await deps.patch({ etapa: 'humano', finalizado: { motivo: 'quer contratar', em: ctx.agora.toISOString() } })
+      return { acao: 'passou para humano: quer contratar', leitura, resumo }
+    }
     case 'outro_assunto': return humano(ctx, deps, 'assunto de outra área', TEXTOS.passaHumano, leitura)
     case 'remarcar': return humano(ctx, deps, 'pediu para remarcar', TEXTOS.passaHumano, leitura)
     case 'desiste': {

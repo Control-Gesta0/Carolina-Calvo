@@ -19,6 +19,9 @@ export const STATUS = {
   naoQuerContinuar: 76490255,
   reuniaoAgendada: 75401491, // funil Closer
   clienteDecisao: 75538167, // funil Closer
+  /** Closer › Retorno imediato: criada em 22/10/2026 (pedido da Dra.), logo depois de Cliente decisão */
+  retornoImediato: 113268367,
+  naoCompareceu: 75401495, // funil Closer
   perdido: 143, // "Venda perdida" quando o funil é Gestão operacional
   ganho: 142,
 } as const
@@ -63,12 +66,16 @@ export const CRM_MAP = {
     semReuniao: 'ANNA renda até 15k',
     passouHumano: 'ANNA passou para humano',
     agendou: 'ANNA agendou',
+    /** posta pela equipe depois da reunião: a Anna nunca qualifica de novo quem tem esta tag */
+    jaFezReuniao: 'JÁ FEZ REUNIÃO',
     /** cobrança: entra no D+1 e sai quando o cliente não tem mais parcela vencida */
     inadimplente: 'inadimplentes',
   },
 
   /** tarefa criada para a equipe quando a Anna passa o atendimento */
   tarefa: { responsavelId: 12068987, tipo: 1, prazoMin: 60 },
+  /** lead que quer contratar ou respondeu em Cliente decisão: retorno imediato */
+  tarefaPrioritaria: { responsavelId: 12068987, tipo: 1, prazoMin: 15 },
 
   /** funis onde a Anna nunca fala (clientes e financeiro) */
   pipelinesProibidos: [PIPELINES.gestao, PIPELINES.financeiro] as number[],

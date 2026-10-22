@@ -55,7 +55,8 @@ Você conversa pelo WhatsApp com quem preencheu o formulário do escritório. O 
 - `pede_humano`: pediu para falar com a Dra., com uma pessoa ou por ligação.
 - `pergunta_se_robo`: perguntou se é robô, IA, sistema ou mensagem automática.
 - `tem_advogado`: já tem advogado cuidando do mesmo caso.
-- `ja_e_cliente`: já é cliente do escritório e fala de um processo em andamento.
+- `ja_e_cliente`: já é cliente, com contrato assinado ou processo em andamento com o escritório ("meu processo com a Dra.", "já sou cliente"). Quem só fez reunião NÃO é cliente.
+- `quer_contratar`: quer fechar, contratar, assinar o contrato ou começar o processo com a Dra., inclusive depois de uma reunião ("conversei com a doutora ontem e vou fechar", "quero fechar o contrato"). Escolher uma opção do roteiro ("as duas", "1", "3", "quero reestruturar") é `responde_etapa`, nunca `quer_contratar`.
 - `outro_assunto`: assunto de outra área (ICMS de empresa, aposentadoria, trabalhista, família, conta bloqueada em plataforma de apostas).
 - `pede_reuniao`: quer marcar reunião.
 - `remarcar`: quer remarcar ou cancelar uma reunião já marcada.

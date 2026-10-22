@@ -99,11 +99,11 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
     addTags: t => addLeadTags(leadId, t),
     nota: t => addLeadNote(leadId, t),
     tarefa: t => addLeadTask(leadId, t, CRM_MAP.tarefa),
-    async passarParaHumano(motivo, resumo) {
+    async passarParaHumano(motivo, resumo, prioritaria) {
       await cancelarRegua(leadId)
       await addLeadTags(leadId, [CONFIG.humanTag, CRM_MAP.tags.passouHumano])
       if (CONFIG.gateTag && tags().includes(CONFIG.gateTag)) await removeLeadTags(leadId, [CONFIG.gateTag])
-      await addLeadTask(leadId, `Anna passou o atendimento: ${motivo}. ${resumo}`, CRM_MAP.tarefa)
+      await addLeadTask(leadId, prioritaria ? `${motivo}. ${resumo}` : `Anna passou o atendimento: ${motivo}. ${resumo}`, prioritaria ? CRM_MAP.tarefaPrioritaria : CRM_MAP.tarefa)
     },
     async agendarMsg5(token, quando) {
       // lead de teste (TEST_LEAD_IDS): a pausa de 30 min vira 1 min, para os testes no WhatsApp não esperarem

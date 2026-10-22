@@ -8,7 +8,7 @@ export type Marco = 'agendou' | 'passou'
 /** Faixa da renda bruta informada (só acima de 15 mil a Anna oferece reunião). */
 export type Perfil = 'acima_15k' | 'ate_15k'
 
-export type TipoExecucao = 'resposta' | 'inicio' | 'agendou' | 'humano' | 'followup' | 'job' | 'pulou' | 'erro' | 'reset'
+export type TipoExecucao = 'resposta' | 'inicio' | 'agendou' | 'humano' | 'followup' | 'job' | 'pulou' | 'erro' | 'reset' | 'closer'
 
 export interface Execution {
   ts: string

@@ -436,6 +436,37 @@ async function main() {
   }
 
   {
+    // Caso Erika (Dra., 22/10): Closer protegido, intenção de contratar, sem requalificação
+    const C = await import('../lib/closer')
+    const { foraDaQualificacao } = await import('../lib/agent')
+    const ev = (por: number, de: [number, number], para: [number, number]) => ({ id: 'e', created_at: 0, created_by: por, entity_id: 1,
+      value_before: [{ lead_status: { pipeline_id: de[0], id: de[1] } }], value_after: [{ lead_status: { pipeline_id: para[0], id: para[1] } }] })
+    eq('robô tirando card do Closer para o SDR é detectado (e pessoa da equipe não)', [
+      C.origemCloser(ev(0, [PIPELINES.closer, STATUS.clienteDecisao], [PIPELINES.sdr, STATUS.de5a10])),
+      C.origemCloser(ev(12068987, [PIPELINES.closer, STATUS.clienteDecisao], [PIPELINES.sdr, STATUS.de5a10])),
+      C.origemCloser(ev(0, [PIPELINES.sdr, STATUS.contatoInicial], [PIPELINES.sdr, STATUS.de5a10])),
+    ], [STATUS.clienteDecisao, null, null])
+    eq('Cliente decisão + "quero fechar o contrato" → Retorno imediato com tarefa de contratar',
+      C.destinoDaResposta(STATUS.clienteDecisao, 'Doutora, pensei melhor e quero fechar o contrato.'),
+      { statusId: STATUS.retornoImediato, tarefa: 'Lead deseja contratar — retorno imediato' })
+    eq('Cliente decisão + qualquer resposta → Retorno imediato com tarefa',
+      C.destinoDaResposta(STATUS.clienteDecisao, 'Boa tarde'), { statusId: STATUS.retornoImediato, tarefa: 'Lead respondeu em Cliente decisão — retorno imediato' })
+    eq('Reunião agendada + "ok" → volta para Reunião agendada, sem tarefa',
+      C.destinoDaResposta(STATUS.reuniaoAgendada, 'Ok combinado'), { statusId: STATUS.reuniaoAgendada, tarefa: null })
+    eq('intenção de contratar nas frases reais', ['Ontem conversei com a doutora vou fechar com ela para iniciar meu processo', 'quero contratar', 'Boa tarde', 'Ok'].map(C.querContratar), [true, true, false, false])
+    const card = (pipeline_id: number, tags: string[] = ['ia']) => ({ id: 1, pipeline_id, status_id: 1, _embedded: { tags: tags.map((name, i) => ({ id: i, name })) } })
+    eq('a Anna não conversa no Closer nem com quem já fez reunião', [
+      !!foraDaQualificacao(card(PIPELINES.closer)), !!foraDaQualificacao(card(PIPELINES.sdr, ['ia', 'JÁ FEZ REUNIÃO'])), foraDaQualificacao(card(PIPELINES.sdr)),
+    ], [true, true, null])
+    const { w, deps } = mundo(seg9)
+    w.state = { etapa: 'q1' }
+    w.leituras.push(L({ intencao: 'quer_contratar', resumo: 'conversou com a Dra. e quer fechar' }))
+    const r = await fluxo.turno(ctx(w, seg9, 'Ontem conversei com a doutora vou fechar com ela para iniciar meu processo'), deps)
+    eq('quer contratar: sem mensagem, Closer › Retorno imediato e passagem prioritária', [r.enviado, w.enviados.length, w.movido, w.humano[0], w.state.etapa],
+      [undefined, 0, [STATUS.retornoImediato], 'Lead deseja contratar — retorno imediato', 'humano'])
+  }
+
+  {
     // Ajuste 4: etiqueta de mês nas entradas por formulário (regra da Dra., 15/10/2026)
     const M = await import('../lib/etiqueta-mes')
     const ts = (iso: string) => Date.parse(iso) / 1000

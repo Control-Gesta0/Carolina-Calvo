@@ -1,5 +1,6 @@
 import { CONFIG } from './config'
-import { CRM_MAP } from './crm-map'
+import { CRM_MAP, PIPELINES } from './crm-map'
+import { devolverAoCloser, jaPassouPeloCloser, veioDoCloser } from './closer'
 import { adoptToken, currentToken, debounceAndClaim, releaseLock, renewLock } from './buffer'
 import { emptyUsage, logExec } from './execlog'
 import { alreadyAnswered, getHistory, humanSpokeRecently, lastInbound, markAnswered } from './history'
@@ -29,6 +30,13 @@ export function bloqueio(lead: KommoLead): string | null {
   return null
 }
 
+/** Por que a Anna não CONVERSA com este lead, mesmo liberado (os lembretes e jobs seguem). Dra., 22/10. */
+export function foraDaQualificacao(lead: KommoLead): string | null {
+  if (lead.pipeline_id === PIPELINES.closer) return 'card no Closer: quem conversa é a equipe'
+  if (leadTags(lead).some(t => t.toLowerCase() === CRM_MAP.tags.jaFezReuniao.toLowerCase())) return `tag "${CRM_MAP.tags.jaFezReuniao}": a Anna não qualifica de novo`
+  return null
+}
+
 export async function processLead(leadId: number, webhookId: string): Promise<void> {
   const t0 = Date.now()
   let lockOwner: string | undefined
@@ -44,6 +52,10 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
     // sem gate: silêncio sem poluir o diário (a conta inteira manda add_message)
     if (b) return pular(b, !b.startsWith('sem a tag'))
     if (await humanSpokeRecently(leadId)) return pular('a equipe falou pelo Kommo nas últimas 6h: a Anna não atropela')
+    const fora = foraDaQualificacao(lead)
+    if (fora) return pular(fora)
+    // card de teste (TEST_LEAD_IDS) pode voltar a ser qualificado depois de um teste no Closer
+    if (!CONFIG.testLeadIds.includes(leadId) && await jaPassouPeloCloser(leadId)) return pular('o card já passou pelo Closer: a Anna não qualifica de novo')
 
     const st0 = await getState(leadId)
     if (st0.etapa === 'humano' && st0.finalizado) {
@@ -56,6 +68,16 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
     if (!claim.proceed) { console.log(`[debounce] lead ${leadId}: ${claim.reason}`); return }
     lockOwner = claim.lockOwner
     let myToken = webhookId
+
+    // Um robô antigo pode ter tirado o card do Closer segundos depois da mensagem (antes do buffer acabar)
+    const doCloser = await veioDoCloser(leadId).catch(() => null)
+    if (doCloser) {
+      const r = await devolverAoCloser(doCloser.ev, doCloser.origem, lastInbound(await getHistory(leadId))?.text)
+      return pular(`card veio do Closer por um robô: ${r || 'já devolvido'}`)
+    }
+    const agoraLead = await getLead(leadId)
+    const fora2 = foraDaQualificacao(agoraLead)
+    if (fora2) return pular(fora2)
 
     for (let round = 0; round < MAX_ROUNDS; round++) {
       await renewLock(leadId, lockOwner!)

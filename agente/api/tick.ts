@@ -12,6 +12,7 @@ import { CONFIG } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
 import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
+import { varrerCloser } from '../lib/closer'
 import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
@@ -43,6 +44,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       feitos.push(`${job.tipo} ${job.leadId}: ERRO ${msg}`)
       await logExec({ tipo: 'erro', leadId: job.leadId, detalhe: `job ${job.tipo}: ${msg}` })
     }
+  }
+  try {
+    feitos.push(...(await varrerCloser()).map(l => `closer ${l}`))
+  } catch (e) {
+    feitos.push(`closer: ERRO ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}`)
   }
   if (CONFIG.etiquetaMesAtiva) {
     try {
