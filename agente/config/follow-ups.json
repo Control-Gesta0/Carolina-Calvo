@@ -85,25 +85,13 @@
         }
       ],
       "ao_terminar_obs": "Decisao da Dra. (15/10/2026): igual a qualificacao, encerra sem mover o card para Venda perdida."
-    },
-    "pos_proposta": {
-      "inicio": "lead entra em Closer > Cliente decisao",
-      "etapas": [
-        {
-          "nome": "FOLLOW 1",
-          "modelo": "Pergunta reunião",
-          "template_id": 48922,
-          "depois_de": "entrada em Cliente decisao",
-          "horas": 24
-        }
-      ],
-      "_obs": "Demais etapas ainda nao definidas; seguem manuais. Quero fechar (data fixa 07/05/2026) e Fechamento 2 (prazo 'amanha') nao entram sem ajuste."
     }
   },
   "desligar_antes_da_virada": [
     "Salesbot que coloca as tags FOLLOW 1 a 4 (nos leads da Anna)",
-    "Automacao de 24h em Closer > Cliente decisao (tag Follow-up Cliente Decisao Enviado)",
+    "Automacao de 24h em Closer > Cliente decisao, robo \"Follow Cliente decisao\" 52156 (so depois do teste do pos-reuniao da Anna)",
     "Regra que move para SDR > 5 A 10 MIL quando o lead manda mensagem",
     "Salesbot FOLLOW AGENDAR REUNIAO (53764) nos leads da Anna: a Anna ja manda o mesmo texto 2h depois da oferta"
-  ]
+  ],
+  "reguas_obs": "A antiga régua pos_proposta (24h depois de entrar em Cliente decisao) saiu em 23/10/2026: o follow-up pos-reuniao agora sai 23h depois do horario da reuniao (lib/pos-reuniao.ts, POS_REUNIAO)."
 }

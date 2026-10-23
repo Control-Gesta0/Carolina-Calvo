@@ -101,8 +101,8 @@ async function main() {
   eq('agendamento: 2ª etapa = 24h da oferta', h(new Date(F.horaDaEtapa('agendamento', 1, t0, t0 + 2 * 3600_000))), '13/10 10:00')
   eq('agendamento: final = 48h da oferta', h(new Date(F.horaDaEtapa('agendamento', 2, t0, t0 + 24 * 3600_000))), '14/10 10:00')
   eq('FOLLOW 1 de lead que falou às 19h sai às 7h', h(new Date(F.horaDaEtapa('qualificacao', 0, A.deBrt(2026, 9, 12, 19, 0).getTime()))), '13/10 7:00')
-  eq('modelos das réguas', ['qualificacao', 'agendamento', 'pos_proposta'].map(r => F.CONFIG_REGUAS.reguas[r as 'qualificacao'].etapas.map((_e, i) => F.modeloDaEtapa(r as 'qualificacao', i))),
-    [['follow1', 'follow2', 'follow3', 'follow4'], ['fupHorario', 'se524h', 'fupEncerramento'], ['perguntaReuniao']])
+  eq('modelos das réguas', ['qualificacao', 'agendamento'].map(r => F.CONFIG_REGUAS.reguas[r as 'qualificacao'].etapas.map((_e, i) => F.modeloDaEtapa(r as 'qualificacao', i))),
+    [['follow1', 'follow2', 'follow3', 'follow4'], ['fupHorario', 'se524h', 'fupEncerramento']])
 
   console.log('\n— Parsers e utilitários')
   eq('add_message plano', parseKommoWebhook({ 'account[id]': '33595135', 'message[add][0][id]': 'm1', 'message[add][0][entity_id]': '77', 'message[add][0][text]': 'oi', 'message[add][0][type]': 'incoming' })?.msgs.map(m => [m.leadId, m.text, m.direction]), [[77, 'oi', 'incoming']])
@@ -506,6 +506,93 @@ async function main() {
       card(35, '2026-09-20T10:00:00-03:00', FORM),
       [card(14, '2026-10-02T10:00:00-03:00', FORM, ['OUT 26'])]),
       ['SET 26'])
+  }
+
+  console.log('\n— 1ª mensagem pela API oficial do WhatsApp (quem nunca falou com o escritório)')
+  {
+    const W = await import('../lib/whatsapp')
+    eq('telefone do card no formato da Meta', ['+55 (61) 99999-1234', '61999991234', '6133331234', '5561999991234', '999991234', ''].map(W.numeroMeta),
+      ['5561999991234', '5561999991234', '556133331234', '5561999991234', null, null])
+    const kommo = 'Olá, {{lead.cf.805158}}. Aqui é a Anna, da equipe da Dra. Carolina Calvo.\n\nÉ só me responder com o número.\n'
+    const meta = 'Olá, {{1}}. Aqui é a Anna, da equipe da Dra. Carolina Calvo.\n\nÉ só me responder com o número.'
+    eq('modelo do Kommo casa com o da Meta e acha a variável', W.casarModelo(kommo, meta), { 1: '{{lead.cf.805158}}' })
+    eq('texto diferente não casa', W.casarModelo(kommo, 'Olá, {{1}}. Aqui é a Anna.'), null)
+    eq('duas variáveis na ordem', W.casarModelo('Vence em {{lead.cf.805166}}: {{lead.cf.805164}}', 'Vence em {{1}}: {{2}}'), { 1: '{{lead.cf.805166}}', 2: '{{lead.cf.805164}}' })
+    eq('modelo sem variável', W.casarModelo('Bom dia !', 'Bom dia !'), {})
+  }
+
+  console.log('\n— Pós-reunião (23h depois, resposta → Retorno imediato)')
+  {
+    const P = await import('../lib/pos-reuniao')
+    const reuniao = Math.floor(new Date('2026-10-20T15:00:00-03:00').getTime() / 1000)
+    eq('follow-up 23h depois da reunião das 15h: 14h do dia seguinte', new Date(P.horaDoFollowup(reuniao)).toISOString(), '2026-10-21T17:00:00.000Z')
+    const noite = Math.floor(new Date('2026-10-20T21:30:00-03:00').getTime() / 1000)
+    eq('reunião às 21h30: 20h30 do dia seguinte cai fora da janela, sai às 7h', new Date(P.horaDoFollowup(noite)).toISOString(), '2026-10-22T10:00:00.000Z')
+    const depois = reuniao * 1000 + 3600_000
+    const closer = (status: number) => ({ pipeline_id: PIPELINES.closer, status_id: status })
+    eq('resposta em Cliente decisão → Retorno imediato', P.destinoPosReuniao(closer(STATUS.clienteDecisao), reuniao, 'ok, obrigada', depois),
+      { statusId: STATUS.retornoImediato, tarefa: 'Lead respondeu em Cliente decisão — retorno imediato' })
+    eq('resposta depois da reunião, ainda em Reunião agendada → Retorno imediato', P.destinoPosReuniao(closer(STATUS.reuniaoAgendada), reuniao, 'gostei muito', depois)?.tarefa,
+      'Lead respondeu depois da reunião — retorno imediato')
+    eq('quer contratar depois da reunião → tarefa de contratar', P.destinoPosReuniao(closer(STATUS.reuniaoAgendada), reuniao, 'Doutora, quero fechar o contrato', depois)?.tarefa,
+      'Lead deseja contratar — retorno imediato')
+    eq('antes da reunião: não mexe', P.destinoPosReuniao(closer(STATUS.reuniaoAgendada), reuniao, 'confirmado', reuniao * 1000 - 3600_000), null)
+    eq('fora do Closer: não mexe', P.destinoPosReuniao({ pipeline_id: PIPELINES.sdr, status_id: STATUS.de5a10 }, reuniao, 'oi', depois), null)
+  }
+
+  console.log('\n— Memória dos atendimentos (cards do mesmo telefone)')
+  {
+    const M = await import('../lib/memoria')
+    const agora = new Date('2026-10-23T12:00:00-03:00')
+    const c = (id: number, iso: string, pipeline: number, status: number, tags: string[] = [], valores: Record<number, number> = {}) => ({
+      id, pipeline_id: pipeline, status_id: status, created_at: Math.floor(new Date(iso).getTime() / 1000),
+      custom_fields_values: Object.entries(valores).map(([f, v]) => ({ field_id: Number(f), values: [{ value: v }] })),
+      _embedded: { tags: tags.map((name, i) => ({ id: i + 1, name })) },
+    })
+    const comValores = c(10, '2026-09-12T10:00:00-03:00', PIPELINES.sdr, STATUS.acima15, [], { [CRM_MAP.campos.rendaBruta]: 18000, [CRM_MAP.campos.rendaLiquida]: 9000, [CRM_MAP.campos.descontoConta]: 2500 })
+    const m1 = M.montarMemoria(99, [c(99, '2026-10-22T10:00:00-03:00', PIPELINES.sdr, STATUS.contatoInicial), comValores], agora)
+    eq('memória: valores do atendimento de setembro, sem bloqueio', [m1.valores, m1.bloqueio], [{ quando: 'setembro', rendaBruta: 18000, rendaLiquida: 9000, descontoConta: 2500 }, null])
+    eq('memória: só cita o que está registrado', [M.valoresTexto(m1.valores!), M.valoresTexto({ quando: 'x', rendaBruta: 12000 })],
+      ['renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500', 'renda bruta de R$ 12.000'])
+    eq('memória: quem já fez reunião não é qualificado de novo', M.montarMemoria(99, [c(11, '2026-08-01T10:00:00-03:00', PIPELINES.sdr, STATUS.perdido, ['JÁ FEZ REUNIÃO'])], agora).bloqueio?.startsWith('já fez reunião'), true)
+    eq('memória: cliente (Gestão operacional) também não', M.montarMemoria(99, [c(12, '2025-03-01T10:00:00-03:00', PIPELINES.gestao, 107743695)], agora).bloqueio?.startsWith('já é cliente'), true)
+    eq('memória: atendimento antigo sem reunião não bloqueia e sem valor não vira memória', [M.montarMemoria(99, [c(13, '2025-11-01T10:00:00-03:00', PIPELINES.sdr, STATUS.perdido)], agora).bloqueio, M.montarMemoria(99, [c(13, '2025-11-01T10:00:00-03:00', PIPELINES.sdr, STATUS.perdido)], agora).valores], [null, null])
+    eq('memória: mês de outro ano leva o ano', M.mesExtenso(Math.floor(new Date('2025-11-01T10:00:00-03:00').getTime() / 1000), agora), 'novembro de 2025')
+    eq('memória: lê igual, mudou ou não dá para saber', ['continua igual', 'está a mesma coisa', 'não mudou nada', 'piorou bastante', 'melhorou um pouco', 'aumentou o desconto', 'oi'].map(M.leituraMemoria),
+      ['igual', 'igual', 'igual', 'mudou', 'mudou', 'mudou', null])
+
+    // no roteiro: opção escolhida → confirmação da memória → "igual" reaproveita os valores e segue para a 3ª mensagem
+    const { w, deps } = mundo(seg9)
+    deps.memoria = async () => ({ quando: 'setembro', rendaBruta: 18000, rendaLiquida: 9000, descontoConta: 2500 })
+    w.state = { etapa: 'q1' }
+    w.leituras.push(L({ opcao: 1 }))
+    await fluxo.turno(ctx(w, seg9, '1'), deps)
+    eq('memória: no lugar da 2ª pergunta, confirma a situação', w.enviados[0],
+      'Ótimo! Vi aqui que você já falou com a gente em setembro e, naquela ocasião, informou renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500.\n\nDe lá para cá, a sua situação *melhorou, piorou ou continua igual*?')
+    w.leituras.push(L({ intencao: 'responde_etapa' }))
+    await fluxo.turno(ctx(w, seg9, 'continua igual'), deps)
+    eq('memória: "igual" reaproveita os valores, move pela renda e manda a 3ª mensagem',
+      [w.state.etapa, w.state.rendaBruta, w.campos[CRM_MAP.campos.descontoConta], w.movido, w.enviados[1]],
+      ['q3', 18000, 2500, [STATUS.acima15], TEXTOS.mensagem3(2500)])
+    const b = mundo(seg9)
+    b.deps.memoria = deps.memoria
+    b.w.state = { etapa: 'q1' }
+    b.w.leituras.push(L({ opcao: 2 }), L({ intencao: 'responde_etapa' }))
+    await fluxo.turno(ctx(b.w, seg9, '2'), b.deps)
+    await fluxo.turno(ctx(b.w, seg9, 'piorou, agora desconta mais'), b.deps)
+    eq('memória: "piorou" pede os valores de hoje (2ª pergunta)', [b.w.state.etapa, b.w.state.rendaBruta, b.w.enviados[1]], ['q2', undefined, TEXTOS.pergunta2])
+    const d = mundo(seg9)
+    d.deps.memoria = deps.memoria
+    d.w.state = { etapa: 'q1' }
+    d.w.leituras.push(L({ opcao: 3 }), L({ renda_bruta: 20000, renda_liquida: 8000, desconto_conta: 3000 }))
+    await fluxo.turno(ctx(d.w, seg9, '3'), d.deps)
+    await fluxo.turno(ctx(d.w, seg9, 'mudou: bruta 20 mil, líquido 8 mil e o banco tira 3 mil'), d.deps)
+    eq('memória: valores novos ditos na resposta valem', [d.w.state.etapa, d.w.state.rendaBruta, d.w.state.descontoConta], ['q3', 20000, 3000])
+    const sem = mundo(seg9)
+    sem.w.state = { etapa: 'q1' }
+    sem.w.leituras.push(L({ opcao: 1 }))
+    await fluxo.turno(ctx(sem.w, seg9, '1'), sem.deps)
+    eq('sem memória: a 2ª pergunta de sempre', sem.w.enviados[0], TEXTOS.pergunta2)
   }
 
   console.log(`\n${falhas ? `❌ ${falhas} de ${total} falharam` : `✅ ${total}/${total} passaram`}`)

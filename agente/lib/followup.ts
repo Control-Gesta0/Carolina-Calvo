@@ -10,7 +10,7 @@ import { k, redis } from './redis'
  * lead cancela a régua (o token muda e os jobs pendentes morrem sozinhos).
  */
 
-export type Regua = 'qualificacao' | 'agendamento' | 'pos_proposta'
+export type Regua = 'qualificacao' | 'agendamento'
 
 /** texto_livre: sai exatamente assim (sem redação), dentro da janela de 24h da Meta; fora dela, sai o modelo */
 interface EtapaCfg { nome: string; modelo: string; template_id: number; depois_de: string; horas: number; texto_livre?: string }

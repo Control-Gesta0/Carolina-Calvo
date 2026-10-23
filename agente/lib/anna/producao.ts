@@ -1,8 +1,8 @@
-import { CONFIG, googleConfigurado } from '../config'
+import { CONFIG } from '../config'
 import { CRM_MAP, PIPELINES, STATUS } from '../crm-map'
 import { emptyUsage, type Usage } from '../execlog'
 import { cancelarRegua, iniciarRegua } from '../followup'
-import { criarReuniao, ocupados } from '../google'
+import { agendaConectada, criarReuniao, ocupados } from '../google'
 import { appendMessage, getHistory } from '../history'
 import { addLeadNote, addLeadTags, addLeadTask, getLead, getMainContactName, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from '../kommo'
 import { agendarJob, novoToken } from '../jobs'
@@ -14,6 +14,7 @@ import type { Ctx, Deps } from './fluxo'
 import { baseVigente } from '../base'
 import { createInterprete } from './interprete'
 import { createRedator } from './redator'
+import { memoriaDoLead, memoriaVale } from '../memoria'
 import crypto from 'crypto'
 
 /**
@@ -86,6 +87,10 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       await appendMessage(leadId, { id: crypto.randomUUID(), dir: 'out', text: texto, ts: Date.now() })
     },
     patch: p => patchState(leadId, p),
+    async memoria() {
+      if (!memoriaVale(leadId)) return null
+      return (await memoriaDoLead(lead)).valores
+    },
     async salvarCampos(valores) {
       const vs = Object.entries(valores).map(([id, value]) => ({ field_id: Number(id), values: [{ value }] })).filter(v => !CRM_MAP.camposProibidos.includes(v.field_id))
       if (vs.length) await updateLeadFields(leadId, vs)
@@ -114,7 +119,7 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
     iniciarRegua: (regua, base) => iniciarRegua(leadId, regua, base),
     async cancelarRegua() { await cancelarRegua(leadId) },
     agenda: {
-      disponivel: googleConfigurado,
+      disponivel: agendaConectada,
       async buscar(o) {
         const agora = new Date()
         const busy = await ocupados(agora, new Date(agora.getTime() + (AGENDA.horizonteDias + 1) * 86400_000))

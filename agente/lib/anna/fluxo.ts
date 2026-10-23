@@ -6,6 +6,7 @@ import { AGENDA, diaIso, primeiraMaiuscula, proximoDiaUtil, quandoExtenso, quand
 import { compor, ehPerguntaRobo, PENDENTE, type Entrada, type Leitura } from './interprete'
 import type { Redacao } from './redator'
 import { brl, TEXTOS } from './textos'
+import { leituraMemoria, valoresTexto } from '../memoria'
 
 /**
  * O roteiro da Anna como máquina de estados. Tudo que é decisão (próxima
@@ -47,13 +48,15 @@ export interface Deps {
   iniciarRegua(regua: Regua, base: number): Promise<void>
   cancelarRegua(): Promise<void>
   agenda: {
-    disponivel(): boolean
+    disponivel(): boolean | Promise<boolean>
     buscar(o: { periodo?: Periodo; aPartirDoDia?: string; mesmoDia: boolean }): Promise<Slot | null>
     reservar(slot: Slot): Promise<void>
     /** confere de novo no Google e cria o evento com Meet; null = o horário foi ocupado */
     confirmar(slot: Slot, titulo: string, descricao: string): Promise<{ eventId: string; link: string } | null>
   }
   agendarLembretes(inicio: Date, eventId: string): Promise<void>
+  /** valores de um atendimento anterior do mesmo telefone (memória); null = nada registrado ou memória desligada */
+  memoria?(): Promise<LeadState['memoria'] | null>
   /** reescreve a mensagem do roteiro como conversa (redator.ts); sem ela, sai o texto pronto */
   redigir?(r: Redacao): Promise<string>
 }
@@ -137,7 +140,7 @@ async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitu
 }
 
 async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string }, textoDe: (q: string) => string, id: string): Promise<Resultado> {
-  if (!deps.agenda.disponivel()) return humano(ctx, deps, 'agenda indisponível', TEXTOS.semAgenda, undefined, 'sem_agenda')
+  if (!(await deps.agenda.disponivel())) return humano(ctx, deps, 'agenda indisponível', TEXTOS.semAgenda, undefined, 'sem_agenda')
   const mesmoDia = (ctx.state.rendaBruta ?? 0) >= AGENDA.rendaMesmoDia && !busca.aPartirDoDia
   const slot = await deps.agenda.buscar({ ...busca, mesmoDia })
   if (!slot) return humano(ctx, deps, 'sem horário livre nos próximos dias', TEXTOS.semAgenda, undefined, 'sem_agenda')
@@ -210,6 +213,13 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (leitura.opcao) {
         await deps.patch({ objetivo: leitura.opcao })
         await deps.salvarCampos({ [CRM_MAP.campos.objetivo]: String(leitura.opcao) })
+        // memória: já informou os valores antes → confirma se a situação mudou, em vez de perguntar tudo de novo
+        const mem = deps.memoria ? await deps.memoria().catch(() => null) : null
+        if (mem && valoresTexto(mem)) {
+          const enviado = await falar(ctx, deps, TEXTOS.memoriaConfirma(mem.quando, valoresTexto(mem)), 'q2', { id: 'memoria_confirma', obrigatorio: ['melhorou', 'igual'] })
+          await deps.patch({ etapa: 'q2', memoria: mem, memoriaPendente: true })
+          return { acao: `opção ${leitura.opcao}: memória (valores de ${mem.quando})`, enviado, leitura }
+        }
         const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
         await deps.patch({ etapa: 'q2' })
         return { acao: `opção ${leitura.opcao}: pergunta 2`, enviado, leitura }
@@ -223,9 +233,30 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     case 'q2': {
       const patch: Partial<LeadState> = {}
       const campos: Record<number, number> = {}
-      if (leitura.renda_bruta != null && s.rendaBruta == null) { patch.rendaBruta = leitura.renda_bruta; campos[CRM_MAP.campos.rendaBruta] = leitura.renda_bruta }
-      if (leitura.renda_liquida != null && s.rendaLiquida == null) { patch.rendaLiquida = leitura.renda_liquida; campos[CRM_MAP.campos.rendaLiquida] = leitura.renda_liquida }
-      if (leitura.desconto_conta != null && s.descontoConta == null) { patch.descontoConta = leitura.desconto_conta; campos[CRM_MAP.campos.descontoConta] = leitura.desconto_conta }
+      const disse = { rendaBruta: leitura.renda_bruta, rendaLiquida: leitura.renda_liquida, descontoConta: leitura.desconto_conta }
+      if (s.memoriaPendente) {
+        // resposta ao "melhorou, piorou ou continua igual?": igual reaproveita os valores registrados;
+        // mudou (ou não deu para saber) pede os valores de hoje. Números ditos agora sempre valem.
+        const deuValor = disse.rendaBruta != null || disse.rendaLiquida != null || disse.descontoConta != null
+        const r = leituraMemoria(ctx.textoTurno)
+        patch.memoriaPendente = false
+        if (r === 'igual' && s.memoria) {
+          disse.rendaBruta ??= s.memoria.rendaBruta ?? null
+          disse.rendaLiquida ??= s.memoria.rendaLiquida ?? null
+          disse.descontoConta ??= s.memoria.descontoConta ?? null
+        } else if (!deuValor) {
+          if (leitura.intencao === 'pergunta' && leitura.resposta) {
+            const livre = await responderLivre()
+            if (livre) return livre
+          }
+          await deps.patch(patch)
+          const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
+          return { acao: `memória: situação ${r === 'mudou' ? 'mudou' : 'sem resposta clara'}, pergunta 2`, enviado, leitura }
+        }
+      }
+      if (disse.rendaBruta != null && s.rendaBruta == null) { patch.rendaBruta = disse.rendaBruta; campos[CRM_MAP.campos.rendaBruta] = disse.rendaBruta }
+      if (disse.rendaLiquida != null && s.rendaLiquida == null) { patch.rendaLiquida = disse.rendaLiquida; campos[CRM_MAP.campos.rendaLiquida] = disse.rendaLiquida }
+      if (disse.descontoConta != null && s.descontoConta == null) { patch.descontoConta = disse.descontoConta; campos[CRM_MAP.campos.descontoConta] = disse.descontoConta }
       const novo = { ...s, ...patch }
       if (Object.keys(campos).length) await deps.salvarCampos(campos)
       if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
@@ -243,12 +274,13 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3' } : { id: 'mensagem3_sem_desconto' })
         return { acao: 'q2 completa: mensagem 3', enviado, leitura }
       }
-      if (!Object.keys(patch).length) {
+      const recebeuValor = Object.keys(campos).length > 0
+      if (!recebeuValor) {
         const livre = await responderLivre()
         if (livre) return livre
       }
       const lista = faltam.length === 1 ? faltam[0] : `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}`
-      const texto = Object.keys(patch).length
+      const texto = recebeuValor
         ? `Obrigada. Falta só ${lista}. Pode me informar?`
         : `Para eu fazer a análise inicial, preciso saber ${lista}. Pode me informar?`
       const enviado = await falar(ctx, deps, texto, 'q2', { id: 'q2_falta', obrigatorio: faltando.map(f => f[1]) })

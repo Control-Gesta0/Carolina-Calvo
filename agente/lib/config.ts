@@ -47,12 +47,15 @@ export const CONFIG = {
   testLeadIds: list(process.env.TEST_LEAD_IDS).map(Number).filter(Boolean),
   /** true = lead novo de formulário de superendividamento já entra com a tag e recebe o primeiro contato */
   autoGateFormLeads: process.env.AUTO_GATE_FORM_LEADS === 'true',
-  /** régua pós-proposta (24h depois de Cliente decisão). Ligar só depois de desligar a automação antiga do Kommo */
-  posPropostaAtivo: process.env.POS_PROPOSTA_ATIVO === 'true',
+  /** follow-up 23h depois da reunião e resposta → Retorno imediato (lib/pos-reuniao.ts).
+   *  POS_REUNIAO=true: todas as reuniões · teste: só TEST_LEAD_IDS · sem valor: desligado */
+  posReuniao: (process.env.POS_REUNIAO === 'true' ? 'on' : process.env.POS_REUNIAO === 'teste' ? 'teste' : 'off') as 'on' | 'teste' | 'off',
   /** devolve ao Closer o card que um robô antigo moveu para o SDR (lib/closer.ts). Liga por padrão (Dra., 22/10).
    *  PROTEGE_CLOSER=teste: só nos cards de TEST_LEAD_IDS · false: desligado */
   protegeCloser: process.env.PROTEGE_CLOSER !== 'false',
   protegeCloserSoTeste: process.env.PROTEGE_CLOSER === 'teste',
+  /** memória dos atendimentos anteriores do mesmo telefone (lib/memoria.ts). MEMORIA=true: todos · teste: só TEST_LEAD_IDS */
+  memoria: (process.env.MEMORIA === 'true' ? 'on' : process.env.MEMORIA === 'teste' ? 'teste' : 'off') as 'on' | 'teste' | 'off',
   /** etiqueta de mês nas entradas por formulário (lib/etiqueta-mes). Liga só com a aprovação da Dra. */
   etiquetaMesAtiva: process.env.ETIQUETA_MES_ATIVA === 'true',
 
@@ -67,6 +70,15 @@ export const CONFIG = {
   /** só estes leads recebem cobrança (teste ponta a ponta); vazio = todos os vinculados */
   cobrancaTesteLeads: list(process.env.COBRANCA_TESTE_LEADS).map(Number).filter(Boolean),
 
+  /** WhatsApp Cloud API direto (lib/whatsapp.ts): só para abrir conversa com quem nunca falou com o escritório */
+  whatsapp: {
+    token: process.env.WHATSAPP_TOKEN || '',
+    /** WABA conectada ao Kommo (waba_selected_waba_ids dos modelos) */
+    wabaId: process.env.WHATSAPP_WABA_ID || '2343930862777873',
+    /** opcional: sem ele, sai do único número da WABA */
+    phoneId: process.env.WHATSAPP_PHONE_ID || '',
+  },
+
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
@@ -75,4 +87,3 @@ export const CONFIG = {
   },
 }
 
-export const googleConfigurado = () => !!(CONFIG.google.clientId && CONFIG.google.clientSecret && CONFIG.google.refreshToken)

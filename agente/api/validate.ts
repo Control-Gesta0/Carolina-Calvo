@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { CONFIG, googleConfigurado } from '../lib/config'
+import { CONFIG } from '../lib/config'
+import { agendaConectada } from '../lib/google'
+import { whatsappDiretoConfigurado } from '../lib/whatsapp'
 import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
 import { CONFIG_REGUAS, modeloDaEtapa, type Regua } from '../lib/followup'
 import { prompt } from '../lib/anna/interprete'
@@ -23,7 +25,8 @@ export async function validar() {
 
   try { prompt() } catch { problemas.push('prompts/anna.md não está no bundle (includeFiles)') }
   if (!CONFIG.kommoBotId) pendencias.push('KOMMO_BOT_ID: Salesbot de texto livre ainda não criado')
-  if (!googleConfigurado()) pendencias.push('Google Agenda: faltam GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN (sem isso a Anna não agenda, passa para a equipe)')
+  if (!(await agendaConectada().catch(() => false))) pendencias.push('Google Agenda: falta o app OAuth (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) ou a autorização da Dra. pelo link de convite (sem isso a Anna não agenda, passa para a equipe)')
+  if (!whatsappDiretoConfigurado()) pendencias.push('WHATSAPP_TOKEN ausente: lead que nunca falou com o escritório não recebe o 1º contato (o robô do Kommo não abre conversa)')
   if (!CONFIG.cronSecret) pendencias.push('CRON_SECRET ausente: o relógio (/api/tick) não roda, sem pausa de 30 min, follow-up e lembretes')
   if (!CONFIG.gateTag) pendencias.push('GATE_TAG vazio = a Anna atende TODOS os leads. Só no fim da rampagem.')
   for (const regua of Object.keys(CONFIG_REGUAS.reguas) as Regua[]) {

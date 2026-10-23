@@ -22,6 +22,7 @@ interface Meta { id: string; grupo: string; titulo: string; ajuda: string; exige
 export const ITENS = [
   { id: 'pergunta1', grupo: 'roteiro', titulo: '1ª pergunta (quando o lead escreve primeiro)', ajuda: 'A apresentação da Anna e as três opções numeradas. {saudacao} vira "Olá, Maria." ou "Olá." quando o nome do WhatsApp não parece nome. Lead de formulário recebe o modelo aprovado pela Meta, que não muda por aqui.' },
   { id: 'pergunta2', grupo: 'roteiro', titulo: '2ª pergunta (renda e descontos)', ajuda: 'Enviada quando o lead escolhe a opção 1, 2 ou 3.', comPergunta: true },
+  { id: 'memoria_confirma', grupo: 'roteiro', titulo: '2ª pergunta para quem já falou com a gente (memória)', ajuda: 'No lugar da 2ª pergunta, quando o mesmo telefone já informou os valores num atendimento anterior. {quando} vira "setembro" e {valores} os valores registrados (só os que existem). Se a pessoa disser que continua igual, a Anna usa esses valores.', exige: ['{quando}', '{valores}'], comPergunta: true },
   { id: 'mensagem3', grupo: 'roteiro', titulo: '3ª mensagem (com o desconto em conta)', ajuda: 'Quando o banco desconta algum valor da conta corrente. Sem citar o valor (pedido da Dra. de 16/10).', comPergunta: true },
   { id: 'mensagem3_sem_desconto', grupo: 'roteiro', titulo: '3ª mensagem (sem desconto em conta)', ajuda: 'Quando o banco não desconta nada da conta corrente.', comPergunta: true },
   { id: 'mensagem4', grupo: 'roteiro', titulo: '4ª mensagem (encaminhamento para a Dra.)', ajuda: 'Renda bruta acima de R$ 15 mil. Depois dela vem a pausa de 30 minutos.', semPergunta: true },
@@ -126,13 +127,13 @@ export function validarTexto(id: string, texto: string): string[] {
   if (!instrucao) {
     const m = meta(id as ItemId)
     for (const v of m.exige || []) if (t.split(v).length - 1 !== 1) out.push(`O texto precisa ter ${v} uma vez (é onde entra o valor certo de cada lead).`)
-    const permitidas = new Set(['{saudacao}', '{desconto}', '{quando}', '{link}'].filter(v => (m.exige as string[] | undefined)?.includes(v) || (id === 'pergunta1' && v === '{saudacao}')))
+    const permitidas = new Set(['{saudacao}', '{desconto}', '{quando}', '{link}', '{valores}'].filter(v => (m.exige as string[] | undefined)?.includes(v) || (id === 'pergunta1' && v === '{saudacao}')))
     for (const v of t.match(/\{[a-z_]+\}/g) || []) if (!permitidas.has(v)) out.push(`${v} não existe neste texto (não vai virar nada para o lead).`)
     if (m.semPergunta && /\?/.test(t)) out.push('Este texto não pode ter pergunta: depois dele a Anna para ou a equipe assume.')
     if (m.comPergunta && !/\?/.test(t)) out.push('Este texto precisa terminar em pergunta: é o que leva o lead ao próximo passo.')
   }
   // as travas olham a mensagem como o lead vai ler (variáveis preenchidas com um exemplo)
-  const exemplo = t.replace(/\{saudacao\}/g, 'Olá, Maria.').replace(/\{desconto\}/g, 'R$ 2.000').replace(/\{quando\}/g, 'HOJE às 15:00').replace(/\{link\}/g, 'https://meet.google.com/abc-defg-hij')
+  const exemplo = t.replace(/\{saudacao\}/g, 'Olá, Maria.').replace(/\{desconto\}/g, 'R$ 2.000').replace(/\{quando\}/g, 'HOJE às 15:00').replace(/\{link\}/g, 'https://meet.google.com/abc-defg-hij').replace(/\{valores\}/g, 'renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500')
   for (const v of checkReply(exemplo, REGRAS_CLIENTE)) {
     if (['mais de uma pergunta', 'vazio'].includes(v.regra)) continue
     if (instrucao && SO_MENSAGEM.has(v.regra)) continue

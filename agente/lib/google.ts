@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import { CONFIG } from './config'
+import { k, redis } from './redis'
 import type { Intervalo } from './anna/agenda'
 
 /**
@@ -7,7 +8,25 @@ import type { Intervalo } from './anna/agenda'
  * tutoriais/01-google-agenda.mp4). O Meet é criado junto com o evento
  * (conferenceData), não precisa de outra API.
  * Bloqueio de horário = qualquer evento na agenda: o free/busy enxerga.
+ * O refresh token vem da env GOOGLE_REFRESH_TOKEN ou, desde 23/10, da conexão por link
+ * (api/google.ts), que o guarda no Redis.
  */
+
+const K_REFRESH = () => k('google', 'refresh')
+
+export async function guardarRefreshToken(token: string): Promise<void> {
+  await redis.set(K_REFRESH(), token)
+  cache = null
+}
+
+async function refreshToken(): Promise<string> {
+  return CONFIG.google.refreshToken || (await redis.get<string>(K_REFRESH()).catch(() => null)) || ''
+}
+
+/** A Anna pode agendar? App OAuth configurado e acesso da agenda concedido (env ou link). */
+export async function agendaConectada(): Promise<boolean> {
+  return !!(CONFIG.google.clientId && CONFIG.google.clientSecret && (await refreshToken()))
+}
 
 let cache: { token: string; ate: number } | null = null
 
@@ -19,7 +38,7 @@ async function accessToken(): Promise<string> {
     body: new URLSearchParams({
       client_id: CONFIG.google.clientId,
       client_secret: CONFIG.google.clientSecret,
-      refresh_token: CONFIG.google.refreshToken,
+      refresh_token: await refreshToken(),
       grant_type: 'refresh_token',
     }),
   })
@@ -74,4 +93,10 @@ export async function criarReuniao(o: { inicio: Date; fim: Date; titulo: string;
 
 export async function apagarReuniao(eventId: string): Promise<void> {
   await google('DELETE', `${cal()}/events/${encodeURIComponent(eventId)}`)
+}
+
+/** Nome da agenda em uso (prova de que o acesso funciona). */
+export async function testarAgenda(): Promise<string> {
+  const c = await google<{ summary?: string; id: string }>('GET', cal())
+  return c.summary || c.id
 }

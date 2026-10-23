@@ -15,6 +15,7 @@ import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { varrerCloser } from '../lib/closer'
 import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
+import { executarPosReuniao } from '../lib/pos-reuniao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
 import { addLeadNote, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
@@ -26,7 +27,7 @@ import { getState } from '../lib/state'
 /**
  * O RELÓGIO. QStash chama de 5 em 5 minutos (Authorization: Bearer CRON_SECRET)
  * e cada chamada executa os jobs vencidos: 5ª mensagem (pausa de 30 min),
- * etapas das réguas de follow-up, encerramento e lembretes de reunião. Com
+ * etapas das réguas de follow-up, encerramento, lembretes e o follow-up 23h depois da reunião. Com
  * ETIQUETA_MES_ATIVA, também põe a etiqueta de mês nos cards novos de formulário.
  * Granularidade de 5 min é o piso da promessa (comum/PEGADINHAS: o tique da janela).
  */
@@ -102,6 +103,8 @@ async function executar(job: Job): Promise<string> {
     }, job))
   }
 
+  if (job.tipo === 'posreuniao') return executarPosReuniao(job)
+
   if (job.tipo === 'lembrete') {
     const state = await getState(leadId)
     if (state.reuniao?.eventId !== job.token || state.etapa !== 'agendado') return 'lembrete cancelado (reunião mudou)'
@@ -128,10 +131,6 @@ async function executar(job: Job): Promise<string> {
     async podeSeguir(regua: Regua) {
       const lead = await getLead(leadId)
       if (await humanSpokeRecently(leadId)) return 'a equipe falou com o lead'
-      if (regua === 'pos_proposta') {
-        if (!CONFIG.posPropostaAtivo) return 'régua pós-proposta desligada'
-        return lead.pipeline_id === PIPELINES.closer && lead.status_id === STATUS.clienteDecisao ? null : 'lead saiu de Cliente decisão'
-      }
       const b = bloqueio(lead)
       if (b) return b
       const etapa = (await getState(leadId)).etapa

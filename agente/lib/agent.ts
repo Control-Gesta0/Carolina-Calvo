@@ -8,6 +8,7 @@ import { getLead, leadTags, type KommoLead } from './kommo'
 import { turno } from './anna/fluxo'
 import { depsProducao, montarCtx, type Telemetria } from './anna/producao'
 import { clearState, getState } from './state'
+import { memoriaNoInicio } from './memoria'
 import { motivoDaFrase, perfilDaRenda } from './central-data'
 import { comTextos } from './anna/textos'
 import { baseVigente } from './base'
@@ -78,6 +79,11 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
     const agoraLead = await getLead(leadId)
     const fora2 = foraDaQualificacao(agoraLead)
     if (fora2) return pular(fora2)
+    // ciclo novo: quem já fez reunião ou é cliente (em outro card do mesmo telefone) vai para a equipe
+    if (!(await getState(leadId)).etapa) {
+      const h = await memoriaNoInicio(agoraLead)
+      if (h) return pular(h)
+    }
 
     for (let round = 0; round < MAX_ROUNDS; round++) {
       await renewLock(leadId, lockOwner!)

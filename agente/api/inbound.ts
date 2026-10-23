@@ -12,6 +12,9 @@ import { addLeadNote, addLeadTags, getLead } from '../lib/kommo'
 import { mediaKind, mediaToText } from '../lib/media'
 import { isResetCommand, resetLead } from '../lib/reset'
 import { sendReply } from '../lib/transport'
+import { respostaEmOutroCard, whatsappDiretoConfigurado } from '../lib/whatsapp'
+import { posReuniaoVale, respostaPosReuniao } from '../lib/pos-reuniao'
+import { PIPELINES } from '../lib/crm-map'
 
 /**
  * Webhook nativo "add_message" do Kommo (form-urlencoded, chaves em colchetes):
@@ -110,8 +113,24 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         await logExec({ tipo: 'reset', leadId: m.leadId, detalhe: 'reset de teste' })
         continue
       }
-      if (!outgoing && text) await guardarUltimaMensagem(m.leadId, text)
-      if (!(await podeAtender(m.leadId))) continue
+      if (!outgoing && text) {
+        await guardarUltimaMensagem(m.leadId, text)
+        // cliente respondeu depois da reunião: Closer › Retorno imediato + tarefa, sem mensagem (Dra., 22/10)
+        if (posReuniaoVale(m.leadId)) {
+          const lead = await getLead(m.leadId).catch(() => null)
+          if (lead?.pipeline_id === PIPELINES.closer) await respostaPosReuniao(lead, text).catch(e => console.error(`[inbound] pós-reunião ${m.leadId}:`, e))
+        }
+      }
+      if (!(await podeAtender(m.leadId))) {
+        // resposta a um primeiro contato aberto pela Meta que o Kommo pôs em outro card: avisa a equipe
+        if (!outgoing && whatsappDiretoConfigurado()) {
+          const lead = await getLead(m.leadId).catch(() => null)
+          const contato = lead?._embedded?.contacts?.find(c => c.is_main) || lead?._embedded?.contacts?.[0]
+          const origem = await respostaEmOutroCard(m.leadId, contato?.id, text).catch(() => null)
+          if (origem) await logExec({ tipo: 'pulou', leadId: origem, detalhe: `o lead respondeu ao primeiro contato, mas a conversa abriu no card ${m.leadId}: equipe avisada` })
+        }
+        continue
+      }
       const kind = mediaKind(m.attachType)
       if (kind && !outgoing) text = await mediaToText(kind, m.attachLink, text)
       if (!text) continue

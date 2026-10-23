@@ -6,7 +6,9 @@ import { primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
 import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
 import { logExec, marcarWebhook } from '../lib/execlog'
-import { getFu, iniciarRegua } from '../lib/followup'
+import { iniciarRegua } from '../lib/followup'
+import { memoriaNoInicio } from '../lib/memoria'
+import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
 import { addLeadTags, getLead, getMainContactName } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
@@ -17,7 +19,7 @@ import { clearState, getState, patchState } from '../lib/state'
  *  - lead com a tag da Anna e sem conversa → primeiro contato com o modelo aprovado
  *    (lead de formulário nunca escreveu, então só modelo entrega);
  *  - AUTO_GATE_FORM_LEADS=true → lead novo de formulário de superendividamento ganha a tag;
- *  - entrou em Closer › Cliente decisão → régua pós-proposta (se POS_PROPOSTA_ATIVO).
+ *  - card do Closer com reunião (Reunião agendada / Cliente decisão) → follow-up 23h depois da reunião (POS_REUNIAO).
  * Payload: form-urlencoded "leads[add|update|status][0][id|status_id|pipeline_id]".
  */
 
@@ -64,16 +66,12 @@ const ehLeadDeFormularioSE = (lead: Awaited<ReturnType<typeof getLead>>) =>
 async function tratar(ev: Evento): Promise<void> {
   let iniciou = false
   try {
-    if (ev.tipo === 'status') {
-      if (CONFIG.posPropostaAtivo && ev.pipelineId === PIPELINES.closer && ev.statusId === STATUS.clienteDecisao) {
-        const fu = await getFu(ev.id)
-        if (fu?.regua !== 'pos_proposta') {
-          await iniciarRegua(ev.id, 'pos_proposta')
-          await logExec({ tipo: 'followup', leadId: ev.id, tools: ['régua pós-proposta iniciada'] })
-        }
-      }
-      return
+    // reunião no Closer (marcada pela Anna ou pela equipe): follow-up 23h depois, uma vez por data de reunião
+    if (ev.pipelineId === PIPELINES.closer && posReuniaoVale(ev.id)) {
+      const r = await agendarPosReuniao(await getLead(ev.id))
+      if (r) await logExec({ tipo: 'followup', leadId: ev.id, tools: [r] })
     }
+    if (ev.tipo === 'status') return
 
     let lead = await getLead(ev.id)
     if (ev.tipo === 'add' && CONFIG.autoGateFormLeads && CONFIG.gateTag && ehLeadDeFormularioSE(lead)) {
@@ -89,6 +87,12 @@ async function tratar(ev: Evento): Promise<void> {
     }
     // um primeiro contato por lead, mesmo com webhooks repetidos
     if ((await redis.set(k('iniciado', ev.id), '1', { nx: true, ex: 30 * 86400 })) !== 'OK') return
+    // quem já fez reunião ou é cliente (outro card do mesmo telefone) não recebe o primeiro contato: vai para a equipe
+    const historico = await memoriaNoInicio(lead)
+    if (historico) {
+      await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, detalhe: historico })
+      return
+    }
 
     const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
     const agora = Date.now()

@@ -25,6 +25,9 @@ export interface LeadState {
   /** quantas vezes o lead recusou um horário oferecido */
   recusas?: number
   reuniao?: { eventId: string; inicio: string; link: string; criadaEm: string }
+  /** memória (Ajuste 3): valores de um atendimento anterior do mesmo telefone, e se a Anna espera o "melhorou, piorou ou igual" */
+  memoria?: { quando: string; rendaBruta?: number; rendaLiquida?: number; descontoConta?: number }
+  memoriaPendente?: boolean
   /** token do job da 5ª mensagem (pausa de 30 min); trocar o token cancela o job */
   msg5Token?: string
   finalizado?: { motivo: string; em: string; resumo?: string }

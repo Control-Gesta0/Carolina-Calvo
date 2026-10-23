@@ -31,6 +31,9 @@ export const TEXTOS_PADRAO = {
     '3) Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?\n\n' +
     'Com essas informações, consigo fazer uma análise inicial e direcionar a melhor estratégia.',
 
+  /** [CG] lead que volta e já informou os valores num atendimento anterior (memória, Ajuste 3). Só cita o que está registrado */
+  memoria_confirma: 'Ótimo! Vi aqui que você já falou com a gente em {quando} e, naquela ocasião, informou {valores}.\n\nDe lá para cá, a sua situação *melhorou, piorou ou continua igual*?',
+
   /** [DRA] 3ª mensagem, para quem tem desconto em conta corrente. Sem citar o valor (Dra., 16/10) */
   mensagem3: 'Acredito que sem esses descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
 
@@ -104,6 +107,7 @@ const saudacao = (nome?: string) => (nome ? `Olá, ${nome}.` : 'Olá.')
 export const TEXTOS = {
   pergunta1: (nome?: string) => preencher(texto('pergunta1'), { saudacao: saudacao(nome) }),
   get pergunta2() { return texto('pergunta2') },
+  memoriaConfirma: (quando: string, valores: string) => preencher(texto('memoria_confirma'), { quando, valores }),
   mensagem3: (descontoConta: number | null) => (descontoConta && descontoConta > 0 ? texto('mensagem3') : texto('mensagem3_sem_desconto')),
   get mensagem4() { return texto('mensagem4') },
   mensagem5: (quando: string) => preencher(texto('mensagem5'), { quando }),
