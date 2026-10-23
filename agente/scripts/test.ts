@@ -595,6 +595,14 @@ async function main() {
     eq('sem memória: a 2ª pergunta de sempre', sem.w.enviados[0], TEXTOS.pergunta2)
   }
 
+  console.log('\n— Treino com as conversas de setembro e outubro')
+  {
+    const { lerConversas } = await import('./treino-conversas')
+    const arq = '=== CARD 123 | etapa final: Closer › Cliente decisão | entrada: 14/10/2026\n[LEAD 14/10 10:02] meu cpf é 123.456.789-00, quanto custa?\ncontinua aqui\n[EQUIPE 14/10 10:05] A primeira reunião é on-line.\n\n=== CARD 456 | etapa final: SDR › 5 A 10 MIL | entrada: 15/10/2026\nsem conversa\n'
+    eq('exportação: um bloco por card, CPF mascarado, card sem conversa fica de fora', lerConversas(arq),
+      [{ card: '123', etapa: 'Closer › Cliente decisão', entrada: '14/10/2026', linhas: ['[LEAD 14/10 10:02] meu cpf é [cpf], quanto custa? continua aqui', '[EQUIPE 14/10 10:05] A primeira reunião é on-line.'] }])
+  }
+
   console.log(`\n${falhas ? `❌ ${falhas} de ${total} falharam` : `✅ ${total}/${total} passaram`}`)
   process.exit(falhas ? 1 : 0)
 }
