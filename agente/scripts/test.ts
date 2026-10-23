@@ -595,6 +595,15 @@ async function main() {
     eq('sem memória: a 2ª pergunta de sempre', sem.w.enviados[0], TEXTOS.pergunta2)
   }
 
+  console.log('\n— Lembrete confere a reunião na agenda')
+  {
+    const { conferirLembrete } = await import('../lib/google')
+    const combinado = '2026-10-27T18:00:00.000Z'
+    eq('reunião igual na agenda: o lembrete sai', conferirLembrete(combinado, { status: 'confirmed', inicio: '2026-10-27T15:00:00-03:00' }), 'ok')
+    eq('reunião apagada ou cancelada: não sai', [conferirLembrete(combinado, null), conferirLembrete(combinado, { status: 'cancelled', inicio: combinado })], ['apagada', 'apagada'])
+    eq('a Dra. moveu a reunião: não sai com o horário velho', conferirLembrete(combinado, { status: 'confirmed', inicio: '2026-10-28T15:00:00-03:00' }), 'mudou')
+  }
+
   console.log('\n— Treino com as conversas de setembro e outubro')
   {
     const { lerConversas } = await import('./treino-conversas')

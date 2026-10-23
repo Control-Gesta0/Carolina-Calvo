@@ -18,7 +18,9 @@ import { executarFu, type Regua } from '../lib/followup'
 import { executarPosReuniao } from '../lib/pos-reuniao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
-import { addLeadNote, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
+import { addLeadNote, addLeadTask, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
+import { conferirLembrete, lerReuniao } from '../lib/google'
+import { quandoExtenso } from '../lib/anna/agenda'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
 import { sendReply } from '../lib/transport'
@@ -110,6 +112,27 @@ async function executar(job: Job): Promise<string> {
     if (state.reuniao?.eventId !== job.token || state.etapa !== 'agendado') return 'lembrete cancelado (reunião mudou)'
     const lead = await getLead(leadId)
     const modelo = String(job.dados?.modelo) as ChaveModelo
+    // a Dra. pode ter movido ou apagado a reunião direto no Google: lembrete com horário velho não sai
+    let conferencia: 'ok' | 'apagada' | 'mudou' = 'ok'
+    let novoInicio = ''
+    try {
+      const ev = await lerReuniao(state.reuniao.eventId)
+      conferencia = conferirLembrete(state.reuniao.inicio, ev)
+      novoInicio = ev?.inicio || ''
+    } catch (e) {
+      console.error(`[tick] não deu para conferir a reunião ${state.reuniao.eventId} na agenda:`, e)
+    }
+    if (conferencia !== 'ok') {
+      const motivo = conferencia === 'apagada'
+        ? 'a reunião foi apagada da agenda da Dra.'
+        : `a reunião mudou de horário na agenda da Dra. (agora: ${quandoExtenso(new Date(novoInicio))})`
+      if ((await redis.set(k('lembrete-aviso', leadId, state.reuniao.eventId, conferencia), '1', { nx: true, ex: 7 * 86400 })) === 'OK') {
+        await addLeadNote(leadId, `Anna: lembrete não enviado porque ${motivo}. O lead ainda tem o horário antigo.`)
+        await addLeadTask(leadId, `Reunião ${conferencia === 'apagada' ? 'apagada' : 'remarcada'} direto na agenda: avisar o lead e atualizar o card (${motivo}).`, CRM_MAP.tarefa)
+      }
+      await logExec({ tipo: 'pulou', leadId, nome: lead.name, tools: [`lembrete ${modelo}`], detalhe: `lembrete não enviado: ${motivo}` })
+      return `lembrete não enviado: ${motivo}`
+    }
     // 1h e 15 min: com o card em Closer › Reunião agendada, a automação do escritório já manda (2h, 1h e
     // 15 min antes do campo "Reunião"). A Anna só cobre quando o card saiu de lá (ex.: o robô
     // "SDR RETORNO IMEDIATO" devolveu para o SDR porque o lead respondeu).

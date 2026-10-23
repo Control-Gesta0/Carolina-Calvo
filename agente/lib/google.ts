@@ -91,6 +91,23 @@ export async function criarReuniao(o: { inicio: Date; fim: Date; titulo: string;
   return { id: ev.id, link, htmlLink: ev.htmlLink }
 }
 
+/** Como o evento está HOJE na agenda (a Dra. pode ter movido ou apagado direto no Google). null = apagado. */
+export async function lerReuniao(eventId: string): Promise<{ status: string; inicio: string } | null> {
+  try {
+    const ev = await google<{ status?: string; start?: { dateTime?: string; date?: string } }>('GET', `${cal()}/events/${encodeURIComponent(eventId)}`)
+    return { status: ev.status || 'confirmed', inicio: ev.start?.dateTime || ev.start?.date || '' }
+  } catch (e) {
+    if (/-> (404|410):/.test(e instanceof Error ? e.message : '')) return null
+    throw e
+  }
+}
+
+/** Puro: o lembrete pode sair? A reunião continua na agenda, no mesmo horário que o lead recebeu? */
+export function conferirLembrete(inicioCombinado: string, ev: { status: string; inicio: string } | null): 'ok' | 'apagada' | 'mudou' {
+  if (!ev || ev.status === 'cancelled') return 'apagada'
+  return Date.parse(ev.inicio) === Date.parse(inicioCombinado) ? 'ok' : 'mudou'
+}
+
 export async function apagarReuniao(eventId: string): Promise<void> {
   await google('DELETE', `${cal()}/events/${encodeURIComponent(eventId)}`)
 }
