@@ -11,7 +11,7 @@ A Anna continua **pausada**: ela não fala com nenhum lead real. Tudo abaixo é 
 | 3 | Google Agenda | A Dra. conecta a agenda **por um link**: abre, entra na conta Google e clica em "Permitir". Não copia código nenhum. | App da agenda (B) e o clique da Dra. |
 | 4 | Memória dos atendimentos | Consulta os cards do mesmo telefone.<br>- Quem já informou renda e descontos ouve só o que está registrado e responde se a situação **melhorou, piorou ou continua igual**. "Igual" aproveita os valores.<br>- Quem já fez reunião ou é cliente não é qualificado de novo: a equipe recebe tarefa, e nenhuma mensagem sai. | Texto da confirmação para a Dra. aprovar e teste (D) |
 | 5 | Follow-up 23h depois da reunião | O modelo "Pergunta reunião" sai 23 horas depois do horário da reunião, para qualquer reunião. Se o cliente responder depois da reunião, o card vai para **Closer › Retorno imediato** com tarefa prioritária, sem mensagem para ele.<br>**Testado em 23/10:**<br>- 15h05: a mensagem saiu, com envio confirmado no WhatsApp;<br>- 15h07: o Eduardo respondeu e o card foi para Retorno imediato com a tarefa "Lead respondeu depois da reunião — retorno imediato", sem mensagem;<br>- 1 segundo depois, o robô antigo levou o card para o SDR, e a proteção do Closer o devolveu às 15h10.<br>**Achado:** o robô antigo "Follow Cliente decisão" (52156) manda a mesma mensagem 24h depois da entrada em Cliente decisão, **mesmo se o card já saiu da etapa**. No card de teste foi às 15h19, e com a Erika em 22/10, às 18h11. | Desligar o robô 52156 junto com a ativação, para o cliente não receber a mensagem duas vezes |
-| 6 | Envio real das cobranças (Asaas) | A cobrança usa o mesmo envio corrigido. A chave e o webhook do Asaas já estavam prontos. | Teste de R$ 5 autorizado (E) e as decisões do escritório |
+| 6 | Envio real das cobranças (Asaas) | A cobrança usa o mesmo envio corrigido. A chave e o webhook do Asaas já estavam prontos.<br>Os 28 clientes que a régua simulou desde 14/10 já têm conversa de WhatsApp no Kommo, então o robô entrega para eles.<br>**Teste de R$ 5 em 23/10, aprovado:**<br>- 15h45: aviso "antes do vencimento" com o link, envio confirmado no WhatsApp; o cliente real da rodada ficou de fora do teste;<br>- 15h48: PIX pago, o Asaas avisou no mesmo segundo e saiu "Pagamento confirmado", também confirmado no WhatsApp.<br>Depois do teste, o envio real foi desligado de novo. | Corrigir os 9 cadastros sem card (telefone do Asaas diferente do Kommo); escolher o modelo no robô "Cobrança · 5 dias de atraso" (54192); decisões do escritório e a aprovação da Dra. |
 | 7 | Treino com as conversas de setembro e outubro | Amostra de 91 conversas reais escolhida e roteiro de exportação pronto (`prompt-cowork-conversas-set-out.md`). O relatório de objeções e perguntas sai num comando e passa pela Dra. antes de entrar na Anna. | Rodar a exportação no Cowork |
 
 ## A. Token do WhatsApp (Meta): quem é administrador do portfólio da Dra. no Meta
@@ -69,9 +69,9 @@ Com isso, o Claude gera o link de convite para a Dra. (`scripts/convite-google.t
 
 Ele só aparece para quem já informou os valores à Anna antes. Os valores do formulário são faixas e não entram.
 
-## E. Cobrança: teste de R$ 5
+## E. Cobrança: teste de R$ 5 (feito em 23/10, aprovado)
 
-Precisa da autorização do Eduardo:
+Autorizado pelo Eduardo. O cadastro de teste no Asaas é "TESTE ANNA - Eduardo do Vale (Control Gestão)" (cus_000208744992, CNPJ da Control Gestão, avisos do próprio Asaas desligados). A cobrança é pay_oeyvtoac9aef3yf1. Como foi feito:
 1. O Claude cria uma cobrança de R$ 5 no Asaas da Dra. para o cadastro de teste do Eduardo.
 2. A régua manda o link pelo WhatsApp só para o card de teste.
 3. O Eduardo paga e confere a mensagem de pagamento confirmado.
