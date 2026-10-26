@@ -53,5 +53,11 @@
       "destination": "https://central-carolina-calvo.vercel.app",
       "permanent": false
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/privacidade",
+      "destination": "/api/privacidade"
+    }
   ]
 }
