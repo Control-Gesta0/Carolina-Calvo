@@ -28,6 +28,8 @@ export interface LeadState {
   /** memória (Ajuste 3): valores de um atendimento anterior do mesmo telefone, e se a Anna espera o "melhorou, piorou ou igual" */
   memoria?: { quando: string; rendaBruta?: number; rendaLiquida?: number; descontoConta?: number }
   memoriaPendente?: boolean
+  /** PRIMEIRO_CONTATO=kommo: ms em que a Anna passou a esperar a saudação do robô do Kommo (some quando ela sai) */
+  saudacaoKommo?: number
   /** token do job da 5ª mensagem (pausa de 30 min); trocar o token cancela o job */
   msg5Token?: string
   finalizado?: { motivo: string; em: string; resumo?: string }

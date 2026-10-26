@@ -111,8 +111,8 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       await addLeadTask(leadId, prioritaria ? `${motivo}. ${resumo}` : `Anna passou o atendimento: ${motivo}. ${resumo}`, prioritaria ? CRM_MAP.tarefaPrioritaria : CRM_MAP.tarefa)
     },
     async agendarMsg5(token, quando) {
-      // lead de teste (TEST_LEAD_IDS): a pausa de 30 min vira 1 min, para os testes no WhatsApp não esperarem
-      const q = CONFIG.testLeadIds.includes(leadId) ? Math.min(quando, Date.now() + 60_000) : quando
+      // lead de teste (TEST_LEAD_IDS): a pausa de 30 min vira 1 min, salvo com TESTE_TEMPO_REAL=true
+      const q = CONFIG.testLeadIds.includes(leadId) && !CONFIG.testeTempoReal ? Math.min(quando, Date.now() + 60_000) : quando
       await agendarJob({ tipo: 'msg5', leadId, quando: q, token })
     },
     novoToken,

@@ -54,6 +54,10 @@ export const CONFIG = {
    *  PROTEGE_CLOSER=teste: só nos cards de TEST_LEAD_IDS · false: desligado */
   protegeCloser: process.env.PROTEGE_CLOSER !== 'false',
   protegeCloserSoTeste: process.env.PROTEGE_CLOSER === 'teste',
+  /** PRIMEIRO_CONTATO=kommo: lead de formulário recebe a saudação de um robô do Kommo (abre a conversa) e a Anna espera (lib/saudacao.ts) */
+  primeiroContatoKommo: process.env.PRIMEIRO_CONTATO === 'kommo',
+  /** TESTE_TEMPO_REAL=true: os cards de teste usam os tempos reais (a pausa de 30 min não vira 1 min) */
+  testeTempoReal: process.env.TESTE_TEMPO_REAL === 'true',
   /** memória dos atendimentos anteriores do mesmo telefone (lib/memoria.ts). MEMORIA=true: todos · teste: só TEST_LEAD_IDS */
   memoria: (process.env.MEMORIA === 'true' ? 'on' : process.env.MEMORIA === 'teste' ? 'teste' : 'off') as 'on' | 'teste' | 'off',
   /** etiqueta de mês nas entradas por formulário (lib/etiqueta-mes). Liga só com a aprovação da Dra. */

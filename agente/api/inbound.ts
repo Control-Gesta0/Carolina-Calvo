@@ -15,6 +15,8 @@ import { sendReply } from '../lib/transport'
 import { respostaEmOutroCard, whatsappDiretoConfigurado } from '../lib/whatsapp'
 import { posReuniaoVale, respostaPosReuniao } from '../lib/pos-reuniao'
 import { PIPELINES } from '../lib/crm-map'
+import { confirmarSaudacao } from '../lib/saudacao'
+import { getState } from '../lib/state'
 
 /**
  * Webhook nativo "add_message" do Kommo (form-urlencoded, chaves em colchetes):
@@ -139,6 +141,11 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
       if (await isEchoOfSent(m.leadId, text)) continue
       if (outgoing) {
         if (await botRodandoRecente(m.leadId)) continue
+        // a Anna esperava a saudação do robô do Kommo (lead de formulário): esta saída é ela, não a equipe
+        if ((await getState(m.leadId)).saudacaoKommo) {
+          await confirmarSaudacao(m.leadId, text, 'webhook de saída')
+          continue
+        }
         // Saída que não é nossa = equipe (ou outra automação) falando: registra, recua e para a régua
         const antes = await getHistory(m.leadId).catch(() => [])
         // a Anna já estava atendendo? (o lead escreveu ou a Anna conseguiu mandar algo)

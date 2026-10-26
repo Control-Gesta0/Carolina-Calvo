@@ -12,7 +12,7 @@ import { k, redis } from './redis'
  * o job morre sem fazer nada. Não é preciso caçar jobs para apagar.
  */
 
-export type TipoJob = 'msg5' | 'fu' | 'encerra' | 'lembrete' | 'posreuniao'
+export type TipoJob = 'msg5' | 'fu' | 'encerra' | 'lembrete' | 'posreuniao' | 'saudacao'
 
 export interface Job {
   id: string

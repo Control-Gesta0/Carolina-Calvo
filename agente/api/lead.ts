@@ -8,6 +8,7 @@ import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
 import { logExec, marcarWebhook } from '../lib/execlog'
 import { iniciarRegua } from '../lib/followup'
 import { memoriaNoInicio } from '../lib/memoria'
+import { esperarSaudacao } from '../lib/saudacao'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
 import { addLeadTags, getLead, getMainContactName } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
@@ -91,6 +92,13 @@ async function tratar(ev: Evento): Promise<void> {
     const historico = await memoriaNoInicio(lead)
     if (historico) {
       await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, detalhe: historico })
+      return
+    }
+
+    // lead de formulário com PRIMEIRO_CONTATO=kommo: a saudação sai do robô do Kommo (abre a conversa); a Anna espera
+    if (CONFIG.primeiroContatoKommo && ehLeadDeFormularioSE(lead)) {
+      await esperarSaudacao(ev.id)
+      await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: 'primeiro contato: aguardando a saudação do robô do Kommo' })
       return
     }
 

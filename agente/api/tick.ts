@@ -16,6 +16,7 @@ import { varrerCloser } from '../lib/closer'
 import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
 import { executarPosReuniao } from '../lib/pos-reuniao'
+import { verificarSaudacao } from '../lib/saudacao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
 import { addLeadNote, addLeadTask, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
@@ -106,6 +107,7 @@ async function executar(job: Job): Promise<string> {
   }
 
   if (job.tipo === 'posreuniao') return executarPosReuniao(job)
+  if (job.tipo === 'saudacao') return verificarSaudacao(job)
 
   if (job.tipo === 'lembrete') {
     const state = await getState(leadId)
