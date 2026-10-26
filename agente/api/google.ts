@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import { CONFIG } from '../lib/config'
-import { guardarRefreshToken, ocupados, testarAgenda } from '../lib/google'
+import { guardarRefreshToken, testarAgenda } from '../lib/google'
 import { k, redis } from '../lib/redis'
 
 /**
@@ -69,8 +69,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await redis.del(k('google', 'state', q.state), k('google', 'convite', convite))
     try {
       const agenda = await testarAgenda()
-      const agora = new Date()
-      await ocupados(agora, new Date(agora.getTime() + 86400_000))
       return res.status(200).send(pagina('Agenda conectada ✅', `<p>A agenda <b>${agenda.replace(/[<>&"]/g, '')}</b> está ligada à Anna. Pode fechar esta página.</p><p>Os horários ocupados nesta agenda não serão oferecidos, e cada reunião marcada aparece nela com o link do Google Meet.</p>`, true))
     } catch (e) {
       return res.status(200).send(pagina('Acesso recebido, agenda com erro', `<p>O acesso foi guardado, mas a leitura da agenda falhou. A Control Gestão já consegue ver o erro e resolver sem nova autorização.</p><p style="color:#667">${(e instanceof Error ? e.message : String(e)).slice(0, 200).replace(/[<>&"]/g, '')}</p>`, false))

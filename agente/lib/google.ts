@@ -112,8 +112,9 @@ export async function apagarReuniao(eventId: string): Promise<void> {
   await google('DELETE', `${cal()}/events/${encodeURIComponent(eventId)}`)
 }
 
-/** Nome da agenda em uso (prova de que o acesso funciona). */
+/** Prova de que o acesso funciona, só com as permissões que a Anna tem (horários ocupados). Devolve o nome da agenda. */
 export async function testarAgenda(): Promise<string> {
-  const c = await google<{ summary?: string; id: string }>('GET', cal())
-  return c.summary || c.id
+  const agora = new Date()
+  await ocupados(agora, new Date(agora.getTime() + 86400_000))
+  return CONFIG.google.calendarId === 'primary' ? 'principal da conta' : CONFIG.google.calendarId
 }
