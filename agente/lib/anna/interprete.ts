@@ -75,6 +75,13 @@ export function contratarSoSeDito(l: Leitura, textoLead: string): Leitura {
   return l
 }
 
+/** "Sem desconto" só vale se o lead DISSE que o banco não desconta nada ("débito em conta" é o contrário). Puro. */
+const RX_SEM_DESCONTO = /\b(n[aã]o|nada|nenhum|zero|sem)\b|\b0\b/i
+export function semDescontoSoSeDito(l: Leitura, textoLead: string): Leitura {
+  if (l.desconto_conta === 0 && !RX_SEM_DESCONTO.test(textoLead)) return { ...l, desconto_conta: null }
+  return l
+}
+
 /** Mensagem final de uma resposta livre: a resposta do modelo + a pergunta pendente (do código). */
 export const compor = (resposta: string, pendente: string) => (pendente ? `${resposta.trim()}\n\n${pendente}` : resposta.trim())
 
@@ -171,7 +178,7 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
     ]
     const iOut = e.conversa.map(m => m.dir).lastIndexOf('out')
     const textoLead = e.conversa.slice(iOut + 1).filter(m => m.dir === 'in').map(m => m.text).join('\n')
-    const leitura = contratarSoSeDito(periodoSoSeDito(await chamar(messages, usage), e.etapa, textoLead), textoLead)
+    const leitura = semDescontoSoSeDito(contratarSoSeDito(periodoSoSeDito(await chamar(messages, usage), e.etapa, textoLead), textoLead), textoLead)
     const guard: string[] = []
     if (leitura.resposta) {
       let texto = semTravessao(leitura.resposta.trim())

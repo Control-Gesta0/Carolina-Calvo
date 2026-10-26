@@ -595,6 +595,16 @@ async function main() {
     eq('sem memória: a 2ª pergunta de sempre', sem.w.enviados[0], TEXTOS.pergunta2)
   }
 
+  {
+    const { semDescontoSoSeDito } = await import('../lib/anna/interprete')
+    eq('"débito em conta" sem valor não vira desconto zero', [
+      semDescontoSoSeDito(L({ desconto_conta: 0 }), 'Líquido uns 16, débito em conta').desconto_conta,
+      semDescontoSoSeDito(L({ desconto_conta: 0 }), 'não tenho desconto na conta').desconto_conta,
+      semDescontoSoSeDito(L({ desconto_conta: 0 }), 'desconto em conta: 0').desconto_conta,
+      semDescontoSoSeDito(L({ desconto_conta: 1500 }), 'débito em conta de 1500').desconto_conta,
+    ], [null, 0, 0, 1500])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')
