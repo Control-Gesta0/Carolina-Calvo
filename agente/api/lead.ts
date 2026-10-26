@@ -10,7 +10,7 @@ import { iniciarRegua } from '../lib/followup'
 import { memoriaNoInicio } from '../lib/memoria'
 import { esperarSaudacao } from '../lib/saudacao'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
-import { addLeadTags, getLead, getMainContactName } from '../lib/kommo'
+import { addLeadTags, getLead, getMainContactName, updateLeadFields } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
 import { clearState, getState, patchState } from '../lib/state'
@@ -97,6 +97,9 @@ async function tratar(ev: Evento): Promise<void> {
 
     // lead de formulário com PRIMEIRO_CONTATO=kommo: a saudação sai do robô do Kommo (abre a conversa); a Anna espera
     if (CONFIG.primeiroContatoKommo && ehLeadDeFormularioSE(lead)) {
+      // o modelo começa com "Olá, {primeiro nome}": o campo fica pronto antes do robô (que espera 1 min) disparar
+      const nomeSaudacao = primeiroNome(await getMainContactName(lead).catch(() => ''))
+      await updateLeadFields(ev.id, [{ field_id: CRM_MAP.campos.primeiroNome, values: [{ value: nomeSaudacao || 'tudo bem' }] }])
       await esperarSaudacao(ev.id)
       await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: 'primeiro contato: aguardando a saudação do robô do Kommo' })
       return
