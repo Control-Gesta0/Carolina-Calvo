@@ -71,6 +71,19 @@ Este aplicativo é a "chave" que permite à Anna ver os horários livres e marca
 - Marque a caixa **"Concordo com a Política de Dados do Usuário..."**.
 - Clique em **Continuar** e depois em **Criar**.
 
+**Ainda no Passo 4, complete o branding.** Sem isso, o botão "Publicar app" do Passo 6 fica cinza.
+
+👉 Volte em **<https://console.cloud.google.com/auth/branding>**, role a página, preencha os campos abaixo e clique em **Salvar** no fim:
+
+| Campo | O que colocar |
+|---|---|
+| **Página inicial do aplicativo** | `https://anna-carolina-calvo.vercel.app/privacidade` |
+| **Link da Política de Privacidade do aplicativo** | `https://anna-carolina-calvo.vercel.app/privacidade` |
+| **Link dos Termos de Serviço** | deixe em branco |
+| **Domínios autorizados** › **+ Adicionar domínio** | `anna-carolina-calvo.vercel.app` |
+| **Informações de contato do desenvolvedor** | o e-mail da Dra. |
+| **Logotipo do app** | **não coloque logo**: com logo, o Google exige uma verificação que leva semanas |
+
 ### Passo 5: dizer o que a Anna pode fazer na agenda
 
 👉 Clique aqui: **<https://console.cloud.google.com/auth/scopes>**
@@ -161,6 +174,7 @@ O Claude grava as chaves na Anna e devolve um **link de convite**. O link vale p
 
 | Apareceu isto | Faça isto |
 |---|---|
+| **Botão "Publicar app" cinza** ("conclua a configuração na página de branding") | Volte ao **Passo 4** e preencha a tabela do branding: página inicial, política de privacidade, domínio autorizado e e-mail de contato. Depois clique em **Salvar**. |
 | **"Acesso bloqueado"** ou "app não concluiu a verificação" | Volte ao **Passo 6** e confira se está "Em produção". Volte também ao **Passo 4** e confira se o público é "Externo". |
 | **"redirect_uri_mismatch"** | Volte ao **Passo 7** e confira se o endereço está **exatamente igual**, sem espaço e sem barra no final. |
 | **"O administrador bloqueou este app"** | O e-mail da Dra. é de empresa (Google Workspace). Quem administra o e-mail do escritório precisa liberar. Chame o Claude. |
