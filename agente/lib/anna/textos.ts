@@ -30,6 +30,12 @@ export const TEXTOS_PADRAO = {
     '3) *Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?*\n\n' +
     'Com essas informações, consigo fazer uma *análise inicial* e direcionar a melhor estratégia.',
 
+  /** [DRA] o lead diz que vai ver os valores e manda depois (Dra., 27/10) */
+  aguardo_valores:
+    'Ok, aguardo.\n\n' +
+    'Sem esses valores, *não consigo avaliar a dimensão do problema nem dar continuidade ao seu atendimento.*\n\n' +
+    'Somente com essas informações é possível verificar a possibilidade da *LIMINAR DE SUSPENSÃO por 6 MESES* e *DIMINUIÇÃO no valor da dívida*.',
+
   /** [DRA] 3ª mensagem nova (27/10): limite de cheque especial e cartão, depois dos valores */
   pergunta_limite:
     'Só para esclarecer mais duas informações:\n\n' +
@@ -115,6 +121,7 @@ export const TEXTOS = {
   pergunta1: (nome?: string) => preencher(texto('pergunta1'), { saudacao: saudacao(nome) }),
   get pergunta2() { return texto('pergunta2') },
   get perguntaLimite() { return texto('pergunta_limite') },
+  get aguardoValores() { return texto('aguardo_valores') },
   memoriaConfirma: (quando: string, valores: string) => preencher(texto('memoria_confirma'), { quando, valores }),
   mensagem3: (descontoConta: number | null) => (descontoConta && descontoConta > 0 ? texto('mensagem3') : texto('mensagem3_sem_desconto')),
   get mensagem4() { return texto('mensagem4') },

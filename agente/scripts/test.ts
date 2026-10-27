@@ -611,6 +611,15 @@ async function main() {
     ], [null, 0, 0, 1500])
   }
 
+  {
+    eq('"vou ver e depois envio" é reconhecido', ['vou ver e depois te envio', 'preciso olhar o contracheque', 'não sei de cabeça, te mando mais tarde', 'ganho 12 mil', 'quanto custa?', 'e depois da reunião, quanto custa?'].map(fluxo.vaiMandarDepois), [true, true, true, false, false, false])
+    const { w, deps } = mundo(seg9)
+    w.state = { etapa: 'q2', objetivo: 1 }
+    w.leituras.push(L({ intencao: 'outro' }))
+    await fluxo.turno(ctx(w, seg9, 'vou ver no contracheque e depois te mando'), deps)
+    eq('vai mandar depois → mensagem da Dra., continua na 2ª pergunta e a régua recomeça', [w.enviados[0], w.state.etapa, w.reguas[w.reguas.length - 1]], [TEXTOS.aguardoValores, 'q2', 'qualificacao'])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')
