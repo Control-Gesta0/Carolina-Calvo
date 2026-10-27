@@ -22,19 +22,26 @@ export const TEXTOS_PADRAO = {
     '2) *reestruturar o pagamento* das dívidas em condições mais favoráveis e com *juros revisados*?\n' +
     '3) as duas opções acima.',
 
-  /** [DRA] 2ª pergunta, numerada como a Dra. escreveu */
+  /** [DRA] 2ª pergunta, numerada como a Dra. escreveu (negrito pedido em 27/10) */
   pergunta2:
     'Ótimo! Preciso apenas de três informações:\n\n' +
-    '1) Qual é a sua renda bruta mensal?\n' +
-    '2) Quanto você recebe líquido, após todos os descontos do contracheque?\n' +
-    '3) Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?\n\n' +
-    'Com essas informações, consigo fazer uma análise inicial e direcionar a melhor estratégia.',
+    '1) *Qual é a sua renda bruta mensal?*\n' +
+    '2) *Quanto você recebe líquido, após todos os descontos do contracheque?*\n' +
+    '3) *Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?*\n\n' +
+    'Com essas informações, consigo fazer uma *análise inicial* e direcionar a melhor estratégia.',
+
+  /** [DRA] 3ª mensagem nova (27/10): limite de cheque especial e cartão, depois dos valores */
+  pergunta_limite:
+    'Só para esclarecer mais duas informações:\n\n' +
+    '*1. CHEQUE ESPECIAL:* Você também utiliza o limite do cheque especial atualmente?\n\n' +
+    '*2. CARTÃO DE CRÉDITO:* Você possui cartão de crédito ativo e com limite disponível?\n\n' +
+    'Essas informações nos ajudam a entender melhor *sua situação financeira e direcionar seu atendimento*.',
 
   /** [CG] lead que volta e já informou os valores num atendimento anterior (memória, Ajuste 3). Só cita o que está registrado */
   memoria_confirma: 'Ótimo! Vi aqui que você já falou com a gente em {quando} e, naquela ocasião, informou {valores}.\n\nDe lá para cá, a sua situação *melhorou, piorou ou continua igual*?',
 
-  /** [DRA] 3ª mensagem, para quem tem desconto em conta corrente. Sem citar o valor (Dra., 16/10) */
-  mensagem3: 'Acredito que sem esses descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
+  /** [DRA] 4ª mensagem (era a 3ª até 27/10), para quem tem desconto em conta corrente. Sem citar o valor (Dra., 16/10), com negrito (27/10) */
+  mensagem3: 'Acredito que *sem esses descontos em conta corrente*, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
 
   /** [CG] variante da 3ª mensagem para quem não tem desconto em conta corrente */
   mensagem3_sem_desconto: 'Acredito que reduzindo esses descontos e sobrando mais do seu salário todo mês seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
@@ -83,6 +90,7 @@ export const TEXTOS_PADRAO = {
   /** [CG] perguntas de retomada: emendadas depois de uma resposta livre da Anna */
   pendente_q1: 'Qual das opções você quer saber: 1, 2 ou 3?',
   pendente_q2: 'Pode me passar a sua renda bruta, o valor líquido e quanto o banco desconta da sua conta corrente?',
+  pendente_limite: 'Você utiliza o limite do cheque especial e tem cartão de crédito com limite disponível?',
   pendente_q3: 'Concorda que, sem esses descontos, seria um alívio financeiro?',
   pendente_preferencia: 'Você prefere de manhã ou à tarde?',
 }
@@ -106,6 +114,7 @@ const saudacao = (nome?: string) => (nome ? `Olá, ${nome}.` : 'Olá.')
 export const TEXTOS = {
   pergunta1: (nome?: string) => preencher(texto('pergunta1'), { saudacao: saudacao(nome) }),
   get pergunta2() { return texto('pergunta2') },
+  get perguntaLimite() { return texto('pergunta_limite') },
   memoriaConfirma: (quando: string, valores: string) => preencher(texto('memoria_confirma'), { quando, valores }),
   mensagem3: (descontoConta: number | null) => (descontoConta && descontoConta > 0 ? texto('mensagem3') : texto('mensagem3_sem_desconto')),
   get mensagem4() { return texto('mensagem4') },

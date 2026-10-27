@@ -159,7 +159,7 @@ async function executar(job: Job): Promise<string> {
       const b = bloqueio(lead)
       if (b) return b
       const etapa = (await getState(leadId)).etapa
-      const esperadas = regua === 'qualificacao' ? ['q1', 'q2', 'q3'] : ['oferta', 'preferencia']
+      const esperadas = regua === 'qualificacao' ? ['q1', 'q2', 'limite', 'q3'] : ['oferta', 'preferencia']
       return etapa && esperadas.includes(etapa) ? null : `etapa atual ${etapa || '(nenhuma)'}`
     },
     async enviar(modelo) {

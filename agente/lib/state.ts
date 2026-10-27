@@ -4,12 +4,12 @@ import { k, redis } from './redis'
  * Estado do lead na conversa com a Anna. A etapa é decisão do CÓDIGO (o roteiro
  * da Dra. é fixo); o modelo só interpreta o que o lead escreveu.
  *
- *   q1 → q2 → q3 → analise (pausa 30 min) → oferta ⇄ preferencia → agendado
+ *   q1 → q2 → limite → q3 → analise (pausa 30 min) → oferta ⇄ preferencia → agendado
  *                └→ sem_reuniao (renda até R$ 15 mil)
  *   qualquer etapa → humano (passou para a equipe)
  */
 
-export type Etapa = 'q1' | 'q2' | 'q3' | 'analise' | 'oferta' | 'preferencia' | 'agendado' | 'sem_reuniao' | 'humano'
+export type Etapa = 'q1' | 'q2' | 'limite' | 'q3' | 'analise' | 'oferta' | 'preferencia' | 'agendado' | 'sem_reuniao' | 'humano'
 
 export interface Oferta { chave: string; inicio: string; fim: string; em: number }
 
@@ -21,6 +21,8 @@ export interface LeadState {
   rendaBruta?: number
   rendaLiquida?: number
   descontoConta?: number
+  /** resposta do lead sobre cheque especial e cartão de crédito com limite (Dra., 27/10) */
+  limite?: string
   oferta?: Oferta
   /** quantas vezes o lead recusou um horário oferecido */
   recusas?: number

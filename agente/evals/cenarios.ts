@@ -63,6 +63,11 @@ export function cenarios(textos?: Textos): Cenario[] {
       id: 'q2-valor-acao', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'quanto vocês cobram pra entrar com a ação?']], espera: { intencao: 'pergunta' }, comResposta: true,
       criterios: [...RESPOSTA_BOA, 'Diz que valores e estratégia são tratados somente na reunião com a Dra. Carolina, sem citar valor em dinheiro, parcela ou porcentagem dos honorários ou da ação (dizer que a primeira reunião não é cobrada, ou quanto ela dura, é permitido)'],
     },
+    { id: 'limite-responde', etapa: 'limite', state: { ...comQ2, rendaBruta: 18000, rendaLiquida: 9000, descontoConta: 2500 }, conversa: [['out', TEXTOS.perguntaLimite], ['in', 'uso o cheque especial todo mês, cartão tenho mas está estourado']], espera: { intencaoEm: ['responde_etapa', 'outro'] } },
+    {
+      id: 'limite-pergunta', etapa: 'limite', state: { ...comQ2, rendaBruta: 18000, rendaLiquida: 9000, descontoConta: 2500 }, conversa: [['out', TEXTOS.perguntaLimite], ['in', 'por que vocês precisam saber do meu cartão?']], espera: { intencao: 'pergunta' }, comResposta: true,
+      criterios: RESPOSTA_BOA,
+    },
     { id: 'q3-concorda', etapa: 'q3', state: { ...comQ2, rendaBruta: 12000, rendaLiquida: 3800, descontoConta: 2000 }, conversa: [['out', Q3], ['in', 'com certeza, seria um alívio enorme']], espera: { intencaoEm: ['responde_etapa', 'outro'] } },
     {
       id: 'q3-garantia', etapa: 'q3', state: { ...comQ2, rendaBruta: 12000, rendaLiquida: 3800, descontoConta: 2000 }, conversa: [['out', Q3], ['in', 'vocês garantem que vão conseguir suspender os descontos?']], espera: { intencao: 'pergunta' }, comResposta: true,

@@ -66,7 +66,7 @@ export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; 
 const PAUSA_ANALISE_MS = 30 * 60_000
 
 const reguaDaEtapa = (e: Etapa): Regua | null =>
-  e === 'q1' || e === 'q2' || e === 'q3' ? 'qualificacao' : e === 'oferta' || e === 'preferencia' ? 'agendamento' : null
+  e === 'q1' || e === 'q2' || e === 'limite' || e === 'q3' ? 'qualificacao' : e === 'oferta' || e === 'preferencia' ? 'agendamento' : null
 
 const slotDaOferta = (o: Oferta): Slot => ({ chave: o.chave, inicio: new Date(o.inicio), fim: new Date(o.fim) })
 
@@ -77,6 +77,7 @@ function resumoLead(s: LeadState): string {
     `Renda bruta: ${s.rendaBruta != null ? brl(s.rendaBruta) : '?'}`,
     `Líquido: ${s.rendaLiquida != null ? brl(s.rendaLiquida) : '?'}`,
     `Desconto em conta: ${s.descontoConta != null ? brl(s.descontoConta) : '?'}`,
+    ...(s.limite ? [`Cheque especial e cartão: "${s.limite.slice(0, 120)}"`] : []),
   ].join(' · ')
 }
 
@@ -85,6 +86,7 @@ export const OBJETIVO: Record<string, string> = {
   pergunta1: 'se apresentar e perguntar o que a pessoa quer saber: se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas com juros revisados, ou as duas coisas',
   pergunta2: 'pedir os três valores da análise inicial: a renda bruta mensal, quanto recebe líquido depois dos descontos do contracheque e quanto o banco desconta direto da conta corrente por mês',
   q2_falta: 'agradecer o que a pessoa já informou e pedir só o que falta',
+  pergunta_limite: 'perguntar se a pessoa usa o limite do cheque especial e se tem cartão de crédito ativo com limite disponível',
   mensagem3: 'mostrar que, sem esses descontos na conta corrente e recebendo o salário líquido inteiro, seria um alívio financeiro, sem citar o valor, e perguntar se a pessoa concorda',
   mensagem3_sem_desconto: 'mostrar que, reduzindo os descontos e sobrando mais do salário, seria um alívio financeiro, e perguntar se a pessoa concorda',
   mensagem4: 'dizer que a situação é delicada, que vai encaminhar a conversa para a Dra. Carolina analisar e que volta a falar em alguns minutos',
@@ -269,10 +271,10 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       ].filter((x): x is string[] => !!x)
       const faltam = faltando.map(f => f[0])
       if (!faltam.length) {
-        const desconto = novo.descontoConta ?? null
-        await deps.patch({ etapa: 'q3' })
-        const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3' } : { id: 'mensagem3_sem_desconto' })
-        return { acao: 'q2 completa: mensagem 3', enviado, leitura }
+        // Dra., 27/10: antes da mensagem do alívio, cheque especial e cartão de crédito
+        await deps.patch({ etapa: 'limite' })
+        const enviado = await falar(ctx, deps, TEXTOS.perguntaLimite, 'limite', { id: 'pergunta_limite', obrigatorio: ['CHEQUE ESPECIAL', 'CARTÃO DE CRÉDITO'] })
+        return { acao: 'q2 completa: pergunta do cheque especial e do cartão', enviado, leitura }
       }
       const recebeuValor = Object.keys(campos).length > 0
       if (!recebeuValor) {
@@ -285,6 +287,19 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         : `Para eu fazer a análise inicial, preciso saber ${lista}. Pode me informar?`
       const enviado = await falar(ctx, deps, texto, 'q2', { id: 'q2_falta', obrigatorio: faltando.map(f => f[1]) })
       return { acao: `q2 incompleta (faltam ${faltam.length})`, enviado, leitura }
+    }
+
+    case 'limite': {
+      if (leitura.intencao === 'pergunta') {
+        const livre = await responderLivre()
+        if (livre) return livre
+      }
+      const limite = ctx.textoTurno.trim().slice(0, 300)
+      const desconto = s.descontoConta ?? null
+      await deps.patch({ etapa: 'q3', limite })
+      await deps.nota(`Anna: cheque especial e cartão de crédito, resposta do lead: "${limite}"`)
+      const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3' } : { id: 'mensagem3_sem_desconto' })
+      return { acao: 'limite respondido: mensagem do alívio', enviado, leitura }
     }
 
     case 'q3': {

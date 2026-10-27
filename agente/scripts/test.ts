@@ -248,7 +248,7 @@ async function main() {
     eq('resposta sem opção: pede o número', w.enviados[1], 'Pode me responder com o número da opção: 1, 2 ou 3?')
     w.leituras.push(L({ opcao: 1 }))
     await fluxo.turno(ctx(w, seg9, '1'), deps)
-    eq('2ª pergunta: numerada, como a Dra. escreveu', [w.enviados[2], w.enviados[2].includes('1) Qual é a sua renda bruta mensal?')], [TEXTOS.pergunta2, true])
+    eq('2ª pergunta: numerada, como a Dra. escreveu', [w.enviados[2], w.enviados[2].includes('1) *Qual é a sua renda bruta mensal?*')], [TEXTOS.pergunta2, true])
   }
 
   {
@@ -265,15 +265,18 @@ async function main() {
     eq('pede só o que falta', w.enviados[2], 'Obrigada. Falta só quanto você recebe líquido e quanto o banco desconta da sua conta corrente por mês. Pode me informar?')
     w.leituras.push(L({ renda_liquida: 4000, desconto_conta: 3500 }))
     await fluxo.turno(ctx(w, agora, 'líquido 4 mil e o banco tira 3.500 da conta'), deps)
-    eq('3ª mensagem com o desconto, sem citar o valor (Dra., 16/10)', w.enviados[3], 'Acredito que sem esses descontos em conta corrente, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?')
+    eq('3ª mensagem: cheque especial e cartão (Dra., 27/10)', [w.enviados[3], w.state.etapa], [TEXTOS.perguntaLimite, 'limite'])
     eq('campos gravados no card', [w.campos[CRM_MAP.campos.rendaBruta], w.campos[CRM_MAP.campos.rendaLiquida], w.campos[CRM_MAP.campos.descontoConta]], [16000, 4000, 3500])
     w.leituras.push(L({}))
+    await fluxo.turno(ctx(w, agora, 'uso o cheque especial sim, e tenho cartão com limite'), deps)
+    eq('4ª mensagem com o desconto, sem citar o valor e com negrito (Dra., 16 e 27/10)', [w.enviados[4], w.state.limite], ['Acredito que *sem esses descontos em conta corrente*, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?', 'uso o cheque especial sim, e tenho cartão com limite'])
+    w.leituras.push(L({}))
     await fluxo.turno(ctx(w, agora, 'concordo'), deps)
-    eq('4ª mensagem (texto da Dra.)', w.enviados[4], TEXTOS.mensagem4)
+    eq('5ª mensagem (texto da Dra.)', w.enviados[5], TEXTOS.mensagem4)
     eq('pausa de 30 min agendada', w.msg5, [agora.getTime() + 30 * 60_000])
     const r5 = await fluxo.quintaMensagem(ctx(w, new Date(agora.getTime() + 30 * 60_000), ''), deps, 'tok')
-    eq('5ª mensagem oferece HOJE 15:00, em negrito', w.enviados[5].endsWith('Ela pode atender você *HOJE às 15:00*, ON LINE. Posso agendar?'), true)
-    eq('5ª mensagem não afirma análise da Dra.', /analisou/.test(w.enviados[5]), false)
+    eq('mensagem da oferta: HOJE 15:00, em negrito', w.enviados[6].endsWith('Ela pode atender você *HOJE às 15:00*, ON LINE. Posso agendar?'), true)
+    eq('a oferta não afirma análise da Dra.', /analisou/.test(w.enviados[6]), false)
     eq('régua de agendamento começa na oferta', w.reguas[w.reguas.length - 1], 'agendamento')
     void r5
     w.leituras.push(L({ intencao: 'aceita_horario' }))
@@ -281,7 +284,7 @@ async function main() {
     eq('evento criado no horário oferecido', w.eventos, ['2026-10-12T15:00'])
     eq('lead vai para Closer › Reunião agendada', w.movido[w.movido.length - 1], STATUS.reuniaoAgendada)
     eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 12, 18) / 1000, Date.UTC(2026, 9, 12, 18) / 1000])
-    eq('confirmação com link do Meet', w.enviados[6].includes('https://meet.google.com/abc') && w.enviados[6].startsWith('*Agendado!* *Segunda-feira, 12/10, às 15:00*'), true)
+    eq('confirmação com link do Meet', w.enviados[7].includes('https://meet.google.com/abc') && w.enviados[7].startsWith('*Agendado!* *Segunda-feira, 12/10, às 15:00*'), true)
     eq('lembretes agendados', w.lembretes, 1)
     eq('etapa agendado', w.state.etapa, 'agendado')
   }
@@ -291,10 +294,13 @@ async function main() {
     w.state = { etapa: 'q2', objetivo: 1 }
     w.leituras.push(L({ renda_bruta: 8000, renda_liquida: 2500, desconto_conta: 0 }))
     await fluxo.turno(ctx(w, seg9, '8 mil, líquido 2500, não desconta da conta'), deps)
-    eq('sem desconto em conta → variante da 3ª mensagem', w.enviados[0], TEXTOS.mensagem3(0))
+    eq('valores completos → pergunta do cheque especial e do cartão', w.enviados[0], TEXTOS.perguntaLimite)
+    w.leituras.push(L({}))
+    await fluxo.turno(ctx(w, seg9, 'não uso cheque especial, cartão tenho'), deps)
+    eq('sem desconto em conta → variante da mensagem do alívio', w.enviados[1], TEXTOS.mensagem3(0))
     w.leituras.push(L({}))
     await fluxo.turno(ctx(w, seg9, 'sim'), deps)
-    eq('renda até 15 mil → sem reunião, só a tag, sem tarefa', [w.state.etapa, w.enviados[1] === TEXTOS.semReuniao, w.tags.includes(CRM_MAP.tags.semReuniao), w.tarefas.length, w.msg5.length], ['sem_reuniao', true, true, 0, 0])
+    eq('renda até 15 mil → sem reunião, só a tag, sem tarefa', [w.state.etapa, w.enviados[2] === TEXTOS.semReuniao, w.tags.includes(CRM_MAP.tags.semReuniao), w.tarefas.length, w.msg5.length], ['sem_reuniao', true, true, 0, 0])
   }
 
   {
@@ -571,9 +577,9 @@ async function main() {
       'Ótimo! Vi aqui que você já falou com a gente em setembro e, naquela ocasião, informou renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500.\n\nDe lá para cá, a sua situação *melhorou, piorou ou continua igual*?')
     w.leituras.push(L({ intencao: 'responde_etapa' }))
     await fluxo.turno(ctx(w, seg9, 'continua igual'), deps)
-    eq('memória: "igual" reaproveita os valores, move pela renda e manda a 3ª mensagem',
+    eq('memória: "igual" reaproveita os valores, move pela renda e segue para o cheque especial e o cartão',
       [w.state.etapa, w.state.rendaBruta, w.campos[CRM_MAP.campos.descontoConta], w.movido, w.enviados[1]],
-      ['q3', 18000, 2500, [STATUS.acima15], TEXTOS.mensagem3(2500)])
+      ['limite', 18000, 2500, [STATUS.acima15], TEXTOS.perguntaLimite])
     const b = mundo(seg9)
     b.deps.memoria = deps.memoria
     b.w.state = { etapa: 'q1' }
@@ -587,7 +593,7 @@ async function main() {
     d.w.leituras.push(L({ opcao: 3 }), L({ renda_bruta: 20000, renda_liquida: 8000, desconto_conta: 3000 }))
     await fluxo.turno(ctx(d.w, seg9, '3'), d.deps)
     await fluxo.turno(ctx(d.w, seg9, 'mudou: bruta 20 mil, líquido 8 mil e o banco tira 3 mil'), d.deps)
-    eq('memória: valores novos ditos na resposta valem', [d.w.state.etapa, d.w.state.rendaBruta, d.w.state.descontoConta], ['q3', 20000, 3000])
+    eq('memória: valores novos ditos na resposta valem', [d.w.state.etapa, d.w.state.rendaBruta, d.w.state.descontoConta], ['limite', 20000, 3000])
     const sem = mundo(seg9)
     sem.w.state = { etapa: 'q1' }
     sem.w.leituras.push(L({ opcao: 1 }))

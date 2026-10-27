@@ -47,6 +47,7 @@ export interface Entrada {
 export const PENDENTE: Record<Etapa, (s: LeadState, quando?: string) => string> = {
   q1: () => texto('pendente_q1'),
   q2: () => texto('pendente_q2'),
+  limite: () => texto('pendente_limite'),
   q3: () => texto('pendente_q3'),
   analise: () => '',
   oferta: (_s, quando) => (quando ? `Posso agendar para ${quando}?` : 'Posso ver um novo horário com a Dra. para você?'),
