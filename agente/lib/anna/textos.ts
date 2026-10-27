@@ -14,14 +14,13 @@ import { AsyncLocalStorage } from 'node:async_hooks'
  * {quando} "HOJE às 15:00" · {link} o link do Meet.
  */
 export const TEXTOS_PADRAO = {
-  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). Texto da Dra. de 16/10, com as opções numeradas ("Superendividamento" no lugar de "os descontos bancários" do modelo "Anna - Primeiro contato") */
+  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). Texto da Dra. de 16/10, com as opções numeradas; em 27/10 ela pediu negrito nos destaques e tirou "É só me responder com o número" ("Superendividamento" no lugar de "os descontos bancários" do modelo "Anna - Primeiro contato") */
   pergunta1:
     '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre Superendividamento.\n\n' +
     'Você quer saber se, no seu caso, é possível:\n\n' +
-    '1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?\n' +
-    '2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?\n' +
-    '3) as duas opções acima.\n\n' +
-    'É só me responder com o número.',
+    '1) *suspender* os descontos bancários e pagamento das dívidas por *até 6 meses*?\n' +
+    '2) *reestruturar o pagamento* das dívidas em condições mais favoráveis e com *juros revisados*?\n' +
+    '3) as duas opções acima.',
 
   /** [DRA] 2ª pergunta, numerada como a Dra. escreveu */
   pergunta2:

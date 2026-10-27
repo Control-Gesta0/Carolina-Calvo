@@ -241,8 +241,8 @@ async function main() {
     await fluxo.turno(ctx(w, seg9, 'oi'), deps)
     eq('1ª pergunta: o modelo da Dra., com as opções numeradas', w.enviados[0],
       'Olá, Maria. Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre Superendividamento.\n\n' +
-      'Você quer saber se, no seu caso, é possível:\n\n1) suspender os descontos bancários e pagamento das dívidas por até 6 meses?\n' +
-      '2) reestruturar o pagamento das dívidas em condições mais favoráveis e com juros revisados?\n3) as duas opções acima.\n\nÉ só me responder com o número.')
+      'Você quer saber se, no seu caso, é possível:\n\n1) *suspender* os descontos bancários e pagamento das dívidas por *até 6 meses*?\n' +
+      '2) *reestruturar o pagamento* das dívidas em condições mais favoráveis e com *juros revisados*?\n3) as duas opções acima.')
     w.leituras.push(L({ intencao: 'responde_etapa' }))
     await fluxo.turno(ctx(w, seg9, 'não sei'), deps)
     eq('resposta sem opção: pede o número', w.enviados[1], 'Pode me responder com o número da opção: 1, 2 ou 3?')
