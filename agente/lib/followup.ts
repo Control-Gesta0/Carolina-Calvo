@@ -94,6 +94,8 @@ export async function executarFu(
   const etapa = cfg.etapas[idx]
   if (!etapa) return `etapa ${idx} não existe`
   const modelo = modeloDaEtapa(fu.regua, idx)
+  // cada etapa de uma régua sai uma vez só, mesmo com tarefa repetida na fila (28/10: Follow 2 duplicado no teste)
+  if ((await redis.set(k('fu-etapa', job.leadId, fu.token, idx), '1', { nx: true, ex: TTL })) !== 'OK') return `etapa ${idx} da régua ${fu.regua} já enviada: duplicata ignorada`
   const comoSaiu = etapa.texto_livre ? await acoes.enviarTexto(etapa.texto_livre, modelo) : (await acoes.enviar(modelo), 'modelo')
   const agora = Date.now()
   const prox = idx + 1
