@@ -20,7 +20,7 @@ import { REGRAS_CLIENTE } from './regras'
 interface Meta { id: string; grupo: string; titulo: string; ajuda: string; exige?: string[]; semPergunta?: boolean; comPergunta?: boolean }
 
 export const ITENS = [
-  { id: 'pergunta1', grupo: 'roteiro', titulo: '1ª pergunta (quando o lead escreve primeiro)', ajuda: 'A apresentação da Anna e as três opções numeradas. {saudacao} vira "Olá, Maria." ou "Olá." quando o nome do WhatsApp não parece nome. Lead de formulário recebe o modelo aprovado pela Meta, que não muda por aqui.' },
+  { id: 'pergunta1', grupo: 'roteiro', titulo: '1ª pergunta (quando o lead escreve primeiro)', ajuda: 'As três opções numeradas (texto da Dra. de 28/10). {saudacao} vira "Maria, bom dia!" (ou boa tarde / boa noite, pela hora), ou só "Bom dia!" quando o nome do WhatsApp não parece nome. Lead de formulário recebe o modelo aprovado pela Meta, que não muda por aqui.' },
   { id: 'pergunta2', grupo: 'roteiro', titulo: '2ª pergunta (renda e descontos)', ajuda: 'Enviada quando o lead escolhe a opção 1, 2 ou 3.', comPergunta: true },
   { id: 'memoria_confirma', grupo: 'roteiro', titulo: '2ª pergunta para quem já falou com a gente (memória)', ajuda: 'No lugar da 2ª pergunta, quando o mesmo telefone já informou os valores num atendimento anterior. {quando} vira "setembro" e {valores} os valores registrados (só os que existem). Se a pessoa disser que continua igual, a Anna usa esses valores.', exige: ['{quando}', '{valores}'], comPergunta: true },
   { id: 'aguardo_valores', grupo: 'roteiro', titulo: 'Quando o lead vai ver os valores e mandar depois', ajuda: 'Pedido da Dra. de 27/10: na 2ª pergunta, se a pessoa diz que vai verificar e envia depois, sai esta mensagem. Os follow-ups continuam se ela não mandar.', semPergunta: true },
@@ -136,7 +136,7 @@ export function validarTexto(id: string, texto: string): string[] {
     if (m.comPergunta && !/\?/.test(t)) out.push('Este texto precisa terminar em pergunta: é o que leva o lead ao próximo passo.')
   }
   // as travas olham a mensagem como o lead vai ler (variáveis preenchidas com um exemplo)
-  const exemplo = t.replace(/\{saudacao\}/g, 'Olá, Maria.').replace(/\{desconto\}/g, 'R$ 2.000').replace(/\{quando\}/g, 'HOJE às 15:00').replace(/\{link\}/g, 'https://meet.google.com/abc-defg-hij').replace(/\{valores\}/g, 'renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500')
+  const exemplo = t.replace(/\{saudacao\}/g, 'Maria, bom dia!').replace(/\{desconto\}/g, 'R$ 2.000').replace(/\{quando\}/g, 'HOJE às 15:00').replace(/\{link\}/g, 'https://meet.google.com/abc-defg-hij').replace(/\{valores\}/g, 'renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500')
   for (const v of checkReply(exemplo, REGRAS_CLIENTE)) {
     if (['mais de uma pergunta', 'vazio'].includes(v.regra)) continue
     if (instrucao && SO_MENSAGEM.has(v.regra)) continue

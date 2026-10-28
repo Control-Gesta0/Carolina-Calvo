@@ -14,21 +14,26 @@ import { AsyncLocalStorage } from 'node:async_hooks'
  * {quando} "HOJE às 15:00" · {link} o link do Meet.
  */
 export const TEXTOS_PADRAO = {
-  /** [DRA] 1ª pergunta, com a apresentação da Anna (lead que escreveu primeiro). Texto da Dra. de 16/10, com as opções numeradas; em 27/10 ela pediu negrito nos destaques e tirou "É só me responder com o número" ("Superendividamento" no lugar de "os descontos bancários" do modelo "Anna - Primeiro contato") */
+  /** [DRA] 1ª pergunta (lead que escreveu primeiro), texto da Dra. de 28/10. {saudacao} vira "Maria, bom dia!" (ou "Bom dia!") pela hora do envio */
   pergunta1:
-    '{saudacao} Aqui é a Anna, da equipe da Dra. Carolina Calvo. Recebemos o seu contato sobre Superendividamento.\n\n' +
-    'Você quer saber se, no seu caso, é possível:\n\n' +
-    '1) *suspender* os descontos bancários e pagamento das dívidas por *até 6 meses*?\n' +
-    '2) *reestruturar o pagamento* das dívidas em condições mais favoráveis e com *juros revisados*?\n' +
-    '3) as duas opções acima.',
+    '{saudacao}\n\n' +
+    '*Imagine poder respirar financeiramente, com menos descontos comprometendo sua renda todos os meses.*\n\n' +
+    'Qual dessas possibilidades faria mais diferença para você hoje?\n\n' +
+    '*1️⃣* Buscar judicialmente a *suspensão dos descontos bancários por até 6 meses*.\n\n' +
+    '*2️⃣* Buscar a *reestruturação das dívidas*, com revisão dos juros e condições de pagamento mais favoráveis.\n\n' +
+    '*3️⃣ AS DUAS OPÇÕES*, para buscar um alívio financeiro e reorganizar suas dívidas.\n\n' +
+    '*Me responda apenas 1, 2 ou 3*, para verificarmos o que pode ser feito no seu caso.',
 
-  /** [DRA] 2ª pergunta, numerada como a Dra. escreveu (negrito pedido em 27/10) */
+  /** [DRA] 2ª pergunta, texto da Dra. de 28/10 */
   pergunta2:
-    'Ótimo! Preciso apenas de três informações:\n\n' +
-    '1) *Qual é a sua renda bruta mensal?*\n' +
-    '2) *Quanto você recebe líquido, após todos os descontos do contracheque?*\n' +
-    '3) *Atualmente, quanto o banco desconta diretamente da sua conta corrente todos os meses?*\n\n' +
-    'Com essas informações, consigo fazer uma *análise inicial* e direcionar a melhor estratégia.',
+    'Ótimo!\n\n' +
+    'Agora precisamos entender *quanto da sua renda realmente sobra depois dos descontos bancários*.\n\n' +
+    'Para isso, me informe apenas três valores:\n\n' +
+    '*1️⃣ RENDA BRUTA:* Qual é o seu salário bruto mensal?\n\n' +
+    '*2️⃣ SALÁRIO LÍQUIDO:* Quanto você recebe após os descontos do contracheque?\n\n' +
+    '*3️⃣ DESCONTOS NA CONTA:* Quanto o banco retira diretamente da sua conta corrente todos os meses?\n\n' +
+    'Com essas informações, conseguimos fazer uma *análise inicial do comprometimento da sua renda* e verificar quais medidas jurídicas podem ajudar você a *recuperar seu fôlego financeiro*.\n\n' +
+    '*Pode me informar esses três valores?*',
 
   /** [DRA] o lead diz que vai ver os valores e manda depois (Dra., 27/10) */
   aguardo_valores:
@@ -36,24 +41,31 @@ export const TEXTOS_PADRAO = {
     'Sem esses valores, *não consigo avaliar a dimensão do problema nem dar continuidade ao seu atendimento.*\n\n' +
     'Somente com essas informações é possível verificar a possibilidade da *LIMINAR DE SUSPENSÃO por 6 MESES* e *DIMINUIÇÃO no valor da dívida*.',
 
-  /** [DRA] 3ª mensagem nova (27/10): limite de cheque especial e cartão, depois dos valores */
+  /** [DRA] 3ª mensagem (cheque especial e cartão), texto da Dra. de 28/10 */
   pergunta_limite:
-    'Só para esclarecer mais duas informações:\n\n' +
-    '*1. CHEQUE ESPECIAL:* Você também utiliza o limite do cheque especial atualmente?\n\n' +
-    '*2. CARTÃO DE CRÉDITO:* Você possui cartão de crédito ativo e com limite disponível?\n\n' +
-    'Essas informações nos ajudam a entender melhor *sua situação financeira e direcionar seu atendimento*.',
+    'Para entendermos melhor *o quanto sua renda está comprometida e quais soluções podem ajudar você a recuperar seu equilíbrio financeiro*, preciso confirmar apenas duas informações:\n\n' +
+    '*1️⃣ CHEQUE ESPECIAL:* Você utiliza o limite do cheque especial atualmente?\n\n' +
+    '*2️⃣ CARTÃO DE CRÉDITO:* Você utiliza o cartão de crédito atualmente?\n\n' +
+    '*Essas respostas são importantes para identificarmos o próximo passo do seu atendimento.*\n\n' +
+    'Pode me responder os dois pontos?',
 
   /** [CG] lead que volta e já informou os valores num atendimento anterior (memória, Ajuste 3). Só cita o que está registrado */
   memoria_confirma: 'Ótimo! Vi aqui que você já falou com a gente em {quando} e, naquela ocasião, informou {valores}.\n\nDe lá para cá, a sua situação *melhorou, piorou ou continua igual*?',
 
-  /** [DRA] 4ª mensagem (era a 3ª até 27/10), para quem tem desconto em conta corrente. Sem citar o valor (Dra., 16/10), com negrito (27/10) */
-  mensagem3: 'Acredito que *sem esses descontos em conta corrente*, tendo todo o seu salário líquido seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
+  /** [DRA] 4ª mensagem (alívio), para quem tem desconto em conta corrente, texto da Dra. de 28/10 (sem citar o valor) */
+  mensagem3:
+    'Acredito que *receber seu salário líquido sem os descontos diretamente na conta corrente* faria uma grande diferença, não é?\n\n' +
+    'Imagine ter *mais dinheiro disponível todos os meses para pagar suas despesas, respirar financeiramente e começar a reorganizar sua vida*.\n\n' +
+    '*Seria um alívio importante para você, concorda?*',
 
   /** [CG] variante da 3ª mensagem para quem não tem desconto em conta corrente */
   mensagem3_sem_desconto: 'Acredito que reduzindo esses descontos e sobrando mais do seu salário todo mês seria uma grande ajuda para respirar e ter um alívio financeiro, concorda?',
 
-  /** [DRA] 4ª mensagem (o encaminhamento é real: vira nota e tarefa no card) */
-  mensagem4: 'A sua *situação é delicada*, vou encaminhar esta conversa para a Dra. Carolina analisar e em alguns minutos *volto a falar com você*.',
+  /** [DRA] 5ª mensagem (encaminhamento real: vira nota e tarefa no card), texto da Dra. de 28/10 */
+  mensagem4:
+    'Pelo que você nos relatou, *sua situação financeira merece atenção e uma análise cuidadosa*.\n\n' +
+    'Vou encaminhar suas informações para a *Dra. Carolina Calvo avaliar quais medidas jurídicas podem ajudar a aliviar o comprometimento da sua renda*.\n\n' +
+    '*Retorno em alguns minutos.*',
 
   /** [CG] 5ª mensagem: mesma oferta da Dra., sem afirmar uma análise que não aconteceu */
   mensagem5:
@@ -115,10 +127,15 @@ export const texto = (id: TextoId): string => vigentes.getStore()?.[id] ?? TEXTO
 /** Troca {variavel} pelo valor; variável sem valor fica como está (o validarTexto barra variável desconhecida). */
 export const preencher = (t: string, v: Record<string, string>) => t.replace(/\{([a-z_]+)\}/g, (m, k: string) => v[k] ?? m)
 
-const saudacao = (nome?: string) => (nome ? `Olá, ${nome}.` : 'Olá.')
+/** "Maria, bom dia!" / "Boa tarde!" pela hora de Brasília (Dra., 28/10) */
+export function saudacao(nome?: string, agora = new Date()): string {
+  const h = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }).format(agora)) % 24
+  const s = h >= 5 && h < 12 ? 'bom dia' : h >= 12 && h < 18 ? 'boa tarde' : 'boa noite'
+  return nome ? `${nome}, ${s}!` : `${s.charAt(0).toUpperCase()}${s.slice(1)}!`
+}
 
 export const TEXTOS = {
-  pergunta1: (nome?: string) => preencher(texto('pergunta1'), { saudacao: saudacao(nome) }),
+  pergunta1: (nome?: string, agora = new Date()) => preencher(texto('pergunta1'), { saudacao: saudacao(nome, agora) }),
   get pergunta2() { return texto('pergunta2') },
   get perguntaLimite() { return texto('pergunta_limite') },
   get aguardoValores() { return texto('aguardo_valores') },

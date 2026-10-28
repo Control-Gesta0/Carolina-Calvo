@@ -134,7 +134,7 @@ async function falar(ctx: Ctx, deps: Deps, texto: string, etapa: Etapa, f: Fala)
 /** Primeira mensagem quando o lead escreveu antes de a Anna se apresentar. */
 export async function abrir(ctx: Ctx, deps: Deps): Promise<Resultado> {
   await deps.patch({ etapa: 'q1', inicioEm: ctx.agora.getTime() })
-  const enviado = await falar(ctx, deps, TEXTOS.pergunta1(ctx.primeiroNome), 'q1', { id: 'pergunta1', obrigatorio: ['Anna', 'Dra. Carolina Calvo', '6 meses'] })
+  const enviado = await falar(ctx, deps, TEXTOS.pergunta1(ctx.primeiroNome, ctx.agora), 'q1', { id: 'pergunta1', obrigatorio: ['6 meses'] })
   return { acao: 'abriu: pergunta 1', enviado }
 }
 
