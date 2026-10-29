@@ -85,7 +85,9 @@ export const CRM_MAP = {
   modelos: {
     // Os 4 da Anna foram recriados pela tela (os rascunhos 51584–51590 da API não tinham número WABA)
     // e a Meta aprovou em 13/10. Modelos escolhidos nos bots pelo Eduardo em 19/10 (entrada em produção).
-    primeiroContato: modelo(51744, 'Anna - Primeiro contato', 54154),
+    // 29/10: modelo v2 com o texto da Dra. de 28/10 (aprovado pela Meta), enviado pelo robô de saudação
+    // do Kommo (SDR › Contato inicial, tag anna-teste) e pelo Salesbot 54604. O 51744 (bot 54154) ficou antigo.
+    primeiroContato: modelo(52384, 'Anna - Primeiro contato v2', 54604),
     lembrete24h: modelo(51746, 'Anna - Lembrete reunião 24h', 54156),
     lembrete1h: modelo(51748, 'Anna - Lembrete reunião 1h', 54158),
     lembrete15m: modelo(51750, 'Anna - Lembrete reunião 15min', 54160),

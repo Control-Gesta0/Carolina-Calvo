@@ -3,7 +3,7 @@ import { logExec } from './execlog'
 import { iniciarRegua } from './followup'
 import { appendMessage } from './history'
 import { agendarJob, type Job } from './jobs'
-import { addLeadNote, getLead, getTemplateText, kommoGet } from './kommo'
+import { addLeadNote, fieldValue, getLead, getTemplateText, kommoGet } from './kommo'
 import { getState, patchState } from './state'
 
 /**
@@ -43,7 +43,9 @@ export async function verificarSaudacao(job: Job): Promise<string> {
   const desde = Math.floor(st.saudacaoKommo / 1000) - 60
   const d = c ? await kommoGet<{ _embedded?: { events?: unknown[] } }>(`/api/v4/events?filter[entity]=contact&filter[entity_id]=${c.id}&filter[type]=outgoing_chat_message&filter[created_at][from]=${desde}&limit=1`) : null
   if ((d?._embedded?.events || []).length) {
-    const texto = await getTemplateText(CRM_MAP.modelos.primeiroContato.templateId).catch(() => '') || '[saudação do robô do Kommo]'
+    const nome = String(fieldValue(lead, CRM_MAP.campos.primeiroNome) || '')
+    const modelo = await getTemplateText(CRM_MAP.modelos.primeiroContato.templateId).catch(() => '')
+    const texto = modelo.replace(/\{\{lead\.cf\.\d+\}\}/g, nome).trim() || '[saudação do robô do Kommo]'
     await confirmarSaudacao(job.leadId, texto, 'histórico do Kommo')
     return 'saudação do Kommo confirmada'
   }
