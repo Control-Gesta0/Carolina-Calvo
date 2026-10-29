@@ -6,7 +6,7 @@ A Anna continua pausada para leads reais. Tudo abaixo roda só nos cards de test
 
 | # | Ponto | Situação | Teste e evidência | Data |
 |---|---|---|---|---|
-| 1 | Primeira mensagem para lead novo | Depende da Meta aprovar o modelo "Anna - Primeiro contato v2" e do robô de saudação (Guilherme) | Card como lead de formulário, com um número que nunca falou com o escritório: saudação, resposta, régua | Depois da aprovação |
+| 1 | Primeira mensagem para lead novo | Depende da Meta aprovar o modelo "Anna - Primeiro contato v2" e do robô de saudação (Guilherme) | Card como lead de formulário com o número +55 11 96486-6458, depois de excluir no Kommo o card e os contatos antigos dele (Cowork, Parte 0): saudação, resposta, régua | Depois da aprovação |
 | 2 | Régua F1 a F4 sem duplicidade | F1 27/10 e F2 28/10 saíram; a trava contra envio duplicado está no ar desde 28/10 | (11) 97895-1830: F3 30/10 07h e F4 02/11 07h, cada um uma vez só | 30/10 e 02/11 |
 | 3 | Pós-reunião depois de reunião apagada | **Corrigido em 29/10** (commit eaa0d31): antes de enviar, a Anna confere na agenda da Dra. se a reunião continua lá. Apagada ou desmarcada: não envia e anota no card | Três reuniões de teste: uma mantida (a mensagem sai), uma apagada da agenda (não sai, com a nota) e uma em que o cliente não compareceu, com o card movido para Closer › Não compareceu (não sai) | 30/10 e 31/10 |
 | 4 | Reteste das correções | Desconto "débito em conta" sem valor já não vira zero | (41) 98802-5120 do zero: desconto sem valor, pergunta do limite, "Ok, aguardo" | 30/10 |

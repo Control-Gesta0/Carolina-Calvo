@@ -9,15 +9,28 @@
 ```text
 Implantação da Anna (Carolina Calvo Advogados). Faça pelo meu Chrome, no Kommo https://advogadacarolinacalvo.kommo.com (account_id 33595135), nesta ordem, e no fim me devolva um relatório único. Confirme que está nessa conta antes de começar.
 
-AUTORIZAÇÃO (só isto pode ser criado ou alterado)
+AUTORIZAÇÃO (só isto pode ser criado, alterado ou excluído)
+- Parte 0: excluir EXATAMENTE o card e os 2 contatos listados na Parte 0, e nada mais.
 - Parte 1: criar 1 modelo de WhatsApp novo e enviá-lo para a aprovação da Meta.
 - Parte 2: criar 1 automação nova na etapa SDR › Contato inicial e 1 Salesbot novo para ela, só se o modelo da Parte 1 já estiver APROVADO.
 
 LIMITES
-- NÃO altere, desative, exclua nem reordene nenhum robô, Salesbot, automação, modelo, etapa, campo ou tag que já exista. Isso vale principalmente para os robôs antigos: eles só mudam depois da decisão da Dra.
+- Fora o card e os 2 contatos da Parte 0, NÃO altere, desative, exclua nem reordene nada que já exista: robô, Salesbot, automação, modelo, etapa, campo, tag, card ou contato. Isso vale principalmente para os robôs antigos: eles só mudam depois da decisão da Dra.
 - Não escreva para nenhum lead e não mude cards de etapa.
 - Senhas e códigos de verificação são comigo. Se pedirem, me chame e espere.
 - Se um passo travar, anote o que a tela mostrou, pule só aquele item e siga.
+
+==================================================
+PARTE 0 · LIMPAR O NÚMERO DE TESTE +55 11 96486-6458
+==================================================
+Este número vai ser usado no teste da primeira mensagem, como se fosse um lead novo. Hoje ele aparece no Kommo em um card e dois contatos antigos, que devem ser excluídos.
+a. Abra e confira antes de excluir. Só exclua se o telefone for +55 11 96486-6458:
+   - card https://advogadacarolinacalvo.kommo.com/leads/detail/19914892 ("Lead #19914892", funil SDR, tag ABR 25);
+   - contato https://advogadacarolinacalvo.kommo.com/contacts/detail/16379536 ("Guilherme Gomes");
+   - contato https://advogadacarolinacalvo.kommo.com/contacts/detail/21642973 (sem nome).
+b. Exclua primeiro o card e depois os dois contatos, pelo menu "..." de cada um > Excluir.
+c. Na busca do Kommo, procure por 964866458. Se aparecer outro card ou contato com esse telefone, NÃO exclua: anote o link.
+d. Na lista de Chats, procure por 964866458 e anote se ainda aparece alguma conversa, sem apagar nada.
 
 ==================================================
 PARTE 1 · MODELO "Anna - Primeiro contato v2"
@@ -91,6 +104,7 @@ d. Marque cada automação com uma destas situações, olhando o que ela faz com
 ==================================================
 RELATÓRIO FINAL
 ==================================================
+0. Parte 0: o que foi excluído; o que a busca e os Chats ainda mostram para 964866458.
 1. Parte 1: nome, ID e status do modelo; se a variável ficou como o campo "IA - Primeiro nome".
 2. Parte 2: feito ou "aguardando aprovação"; se feito, o nome do Salesbot, a condição da tag e o print da automação salva.
 3. Parte 3: uma tabela com funil › etapa | automação/Salesbot (ID) | gatilho e espera | condição | o que faz | situação (MANDA MENSAGEM / MOVE O CARD / SÓ TAREFA-TAG / INATIVA) | ativa? Depois, a descrição bloco a bloco dos Salesbots do item c. Se possível, um print de cada etapa.
