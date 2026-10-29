@@ -10,7 +10,7 @@ Leitura feita em 29/10/2026, só leitura: nenhum robô foi alterado. Abaixo est�
 | 2 | **Follow Cliente decisão** (52156), em Closer › Cliente decisão | 24h depois de entrar na etapa, manda "Pergunta reunião" | A Anna manda essa mesma pergunta 23h depois da reunião. **Hoje, 29/10, o (41) recebeu as duas.** | Desligar quando o pós-reunião da Anna for ligado |
 | 3 | **SDR- Alterar etapa plan-Rtrnimed.** (50370), em SDR › 10 A 15 MIL | Quando o lead responde, move de 10 A 15 MIL para 5 A 10 MIL | Desfaz a coluna de renda em que a Anna pôs o lead | Tirar da etapa 10 A 15 MIL |
 | 4 | **Fluxo Superendividamento - Vídeo** (15160), em SDR › Venda ganha/perdida | Quando um lead encerrado volta a escrever, roda o questionário antigo da "Luíza" (12 mensagens) | O lead recebe o questionário antigo e a Anna ao mesmo tempo | Desligar nessa etapa |
-| 5 | **Robo inicial** (52872) e **horário de funcionamento** (41258) | Ativos e já rodaram, mas não estão em nenhuma etapa: provavelmente ligados ao canal de WhatsApp | Se rodam em toda conversa nova, o lead recebe o questionário antigo e o aviso de horário junto com a Anna | Conferir onde estão ligados; depois decidir |
+| 5 | **horário de funcionamento** (41258) | Não está em etapa nem canal, mas tem 166 conversas em que segue rodando: quando o lead escreve fora do expediente (seg–sex antes das 9h, no almoço, depois das 17h30, e fim de semana), manda "Nosso horário de funcionamento é…" | Esses leads recebem o aviso de horário junto com a resposta da Anna, que atende a qualquer hora | Encerrar as 166 conversas em que ele roda e deixar o robô desligado |
 
 ## Podem continuar como estão
 
@@ -20,6 +20,7 @@ Leitura feita em 29/10/2026, só leitura: nenhum robô foi alterado. Abaixo est�
 | Reunião agendada → Cliente decisão, 24h depois do campo "Agendamento" | A Anna preenche esse campo ao marcar |
 | Não compareceu (21100) | A Anna não fala com quem faltou. O pós-reunião não sai em "Não compareceu". |
 | Campanha (16332), em Contato inicial | Não manda mensagem |
+| Robo inicial (52872) | Ativo, mas nunca rodou e não está ligado a nada |
 | Cards encerrados que voltam ao SDR quando o lead escreve | Com a memória, a Anna reconhece quem já foi atendido |
 | Comandos manuais da equipe ("/follow up", "FOLLOW AGENDAR REUNIÃO", "Ativar follow 1 a 4") | Continuam valendo para os leads sem a tag `ia`. A Anna roda a régua dela nos leads com a tag. |
 
