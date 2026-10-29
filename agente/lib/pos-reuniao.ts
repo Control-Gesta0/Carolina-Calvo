@@ -7,6 +7,7 @@ import { agendarJob, type Job } from './jobs'
 import { addLeadNote, addLeadTask, fieldValue, getLead, getMainContactName, kommoGet, leadTags, updateLeadStatus, type KommoLead } from './kommo'
 import { enviarModelo } from './modelos'
 import { primeiroNome } from './anna/producao'
+import { agendaConectada, ocupados } from './google'
 import { k, redis } from './redis'
 
 /**
@@ -56,6 +57,12 @@ export function destinoPosReuniao(lead: Pick<KommoLead, 'pipeline_id' | 'status_
   return null
 }
 
+/** Puro: a reunião continua na agenda? (algum horário ocupado cobre o início dela) */
+export function reuniaoNaAgenda(ocupadosNaHora: Array<{ inicio: number; fim: number }>, reuniaoSeg: number): boolean {
+  const t = reuniaoSeg * 1000
+  return ocupadosNaHora.some(b => b.inicio <= t && b.fim > t)
+}
+
 /** Agenda o follow-up da reunião do card (uma vez por data de reunião). Devolve o que fez, ou null. */
 export async function agendarPosReuniao(lead: KommoLead): Promise<string | null> {
   if (!posReuniaoVale(lead.id) || lead.pipeline_id !== PIPELINES.closer || !ETAPAS.includes(lead.status_id)) return null
@@ -84,6 +91,22 @@ export async function executarPosReuniao(job: Job): Promise<string> {
   if (lead.pipeline_id !== PIPELINES.closer || !ETAPAS.includes(lead.status_id)) return 'cancelado: o card saiu de Reunião agendada / Cliente decisão'
   if (leadTags(lead).some(t => t.toLowerCase() === CRM_MAP.tags.cliente)) return 'cancelado: já é cliente'
   if (await escreveuDesde(lead, Number(job.token))) return 'cancelado: o cliente já escreveu depois da reunião'
+  // a reunião aconteceu? Se ela foi apagada ou desmarcada na agenda da Dra., o "Ontem você esteve em reunião" não sai (Dra., 29/10)
+  if (await agendaConectada()) {
+    const t = Number(job.token) * 1000
+    let naAgenda: boolean
+    try {
+      naAgenda = reuniaoNaAgenda(await ocupados(new Date(t), new Date(t + 30 * 60_000)), Number(job.token))
+    } catch (e) {
+      await logExec({ tipo: 'erro', leadId: lead.id, nome: lead.name, detalhe: `pós-reunião não enviado: não deu para conferir a agenda (${(e instanceof Error ? e.message : String(e)).slice(0, 160)})` })
+      return 'não enviado: agenda indisponível para conferir a reunião'
+    }
+    if (!naAgenda) {
+      await addLeadNote(lead.id, 'Anna: o follow-up pós-reunião NÃO foi enviado, porque a reunião não está mais na agenda da Dra. (foi apagada ou desmarcada).')
+      await logExec({ tipo: 'pulou', leadId: lead.id, nome: lead.name, tools: ['pós-reunião'], detalhe: 'não enviado: a reunião não está mais na agenda' })
+      return 'cancelado: a reunião não está mais na agenda'
+    }
+  }
   const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
   const detalhe = await enviarModelo(lead.id, 'perguntaReuniao', { primeiroNome: nome || undefined })
   await redis.set(k('posreuniao', 'enviado', lead.id), job.token, { ex: 30 * 86400 })

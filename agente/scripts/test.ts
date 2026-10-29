@@ -548,6 +548,16 @@ async function main() {
     eq('fora do Closer: não mexe', P.destinoPosReuniao({ pipeline_id: PIPELINES.sdr, status_id: STATUS.de5a10 }, reuniao, 'oi', depois), null)
   }
 
+  {
+    const P = await import('../lib/pos-reuniao')
+    const r = Math.floor(new Date('2026-10-27T15:00:00-03:00').getTime() / 1000)
+    eq('pós-reunião só sai se a reunião continua na agenda', [
+      P.reuniaoNaAgenda([{ inicio: r * 1000, fim: r * 1000 + 1800_000 }], r),
+      P.reuniaoNaAgenda([], r),
+      P.reuniaoNaAgenda([{ inicio: r * 1000 + 3600_000, fim: r * 1000 + 5400_000 }], r),
+    ], [true, false, false])
+  }
+
   console.log('\n— Memória dos atendimentos (cards do mesmo telefone)')
   {
     const M = await import('../lib/memoria')
