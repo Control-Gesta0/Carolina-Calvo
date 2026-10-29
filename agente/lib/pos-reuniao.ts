@@ -88,6 +88,11 @@ export async function executarPosReuniao(job: Job): Promise<string> {
   const lead = await getLead(job.leadId)
   if (!posReuniaoVale(lead.id)) return 'pós-reunião desligado'
   if (String(reuniaoDoCard(lead)) !== job.token) return 'cancelado: a reunião mudou'
+  if (lead.pipeline_id === PIPELINES.closer && lead.status_id === STATUS.naoCompareceu) {
+    await addLeadNote(lead.id, 'Anna: o follow-up pós-reunião NÃO foi enviado, porque o card está em Não compareceu.')
+    await logExec({ tipo: 'pulou', leadId: lead.id, nome: lead.name, tools: ['pós-reunião'], detalhe: 'não enviado: o cliente não compareceu' })
+    return 'cancelado: o cliente não compareceu'
+  }
   if (lead.pipeline_id !== PIPELINES.closer || !ETAPAS.includes(lead.status_id)) return 'cancelado: o card saiu de Reunião agendada / Cliente decisão'
   if (leadTags(lead).some(t => t.toLowerCase() === CRM_MAP.tags.cliente)) return 'cancelado: já é cliente'
   if (await escreveuDesde(lead, Number(job.token))) return 'cancelado: o cliente já escreveu depois da reunião'
