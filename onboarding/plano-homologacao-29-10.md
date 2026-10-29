@@ -23,6 +23,25 @@ A Anna continua pausada para leads reais. Tudo abaixo roda só nos cards de test
 - **03/11 (ter):** relatório complementar de evidências e a lista dos robôs antigos para a Dra.
 - **Homologação:** a combinar depois do relatório complementar, dependendo da aprovação do modelo v2 pela Meta.
 
+## Roteiro do reteste no (41) (depois do reset)
+
+| Passo | Eduardo manda | A Anna deve |
+|---|---|---|
+| 1 | `Oi` | Mandar a 1ª pergunta nova ("Eduardo, boa tarde!", opções 1️⃣ 2️⃣ 3️⃣) |
+| 2 | `3` | Pedir os três valores |
+| 3 | `Bruta 20 mil, líquido 16 mil e tenho débito em conta` | **Não** registrar desconto zero: perguntar o valor do desconto |
+| 4 | `Vou olhar no extrato e te mando depois` | Mandar o "Ok, aguardo…" |
+| 5 | `O desconto em conta é 7 mil` | Fazer a pergunta do cheque especial e do cartão |
+| 6 | `Uso o cheque especial e tenho cartão com limite` | Mandar "…Seria um alívio importante para você, concorda?" |
+| 7 | `Sim` | Mandar "…Retorno em alguns minutos." e, 30 min depois, oferecer os horários (renda acima de 15 mil) |
+| 8 | **Não responder mais** | Régua de agendamento: 2h, 24h e 48h depois da oferta, uma vez cada |
+
+## Testes sem resposta do lead (feitos pelo Claude)
+
+- **Já fez reunião:** card novo para o mesmo telefone do (41), com a memória em teste. A Anna não manda nada, põe tarefa e nota para a equipe.
+- **Memória com valores:** depois do F4 de 02/11, card novo para o (11), que já informou valores. A Anna cita os valores e pergunta se a situação melhorou, piorou ou continua igual.
+- **Renda até 15 mil:** no (11), depois do F4 de 02/11: renda bruta abaixo de 15 mil, sem oferta de reunião.
+
 ## O que precisa do Eduardo
 
 1. OK para voltar o card 29046218 ao SDR e zerar o estado da Anna nele.
