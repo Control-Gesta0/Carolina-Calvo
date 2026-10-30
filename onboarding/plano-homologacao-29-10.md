@@ -23,11 +23,13 @@ A Anna continua pausada para leads reais. Tudo abaixo roda só nos cards de test
 - **03/11 (ter):** relatório complementar de evidências e a lista dos robôs antigos para a Dra.
 - **Homologação:** a combinar depois do relatório complementar, dependendo da aprovação do modelo v2 pela Meta.
 
-## Roteiro do reteste no (41) (depois do reset)
+## Roteiro do reteste da qualificação no +55 11 96486-6458 (depois da saudação)
+
+O (41) 98802-5120 saiu dos testes em 30/10. O reteste passa para o número novo, que continua a conversa depois de receber a saudação.
 
 | Passo | Eduardo manda | A Anna deve |
 |---|---|---|
-| 1 | `Oi` | Mandar a 1ª pergunta nova ("Eduardo, boa tarde!", opções 1️⃣ 2️⃣ 3️⃣) |
+| 1 | (recebe a saudação do robô, com as opções 1️⃣ 2️⃣ 3️⃣) | — |
 | 2 | `3` | Pedir os três valores |
 | 3 | `Bruta 20 mil, líquido 16 mil e tenho débito em conta` | **Não** registrar desconto zero: perguntar o valor do desconto |
 | 4 | `Vou olhar no extrato e te mando depois` | Mandar o "Ok, aguardo…" |
@@ -59,3 +61,6 @@ A Anna continua pausada para leads reais. Tudo abaixo roda só nos cards de test
 | 29/10 15:01 | Robô antigo 52156 no (41) | ⚠️ Mandou de novo "Ontem você esteve em reunião", 24h depois de o card entrar em Cliente decisão (vai para a decisão da Dra.) |
 | 29/10 17:18 | 1ª mensagem: lead de formulário novo para +55 11 96486-6458 (card 29078930), robô de saudação 54604 | ❌ O robô do Kommo não enviou, nem com o card devolvido à etapa às 17:32. A Anna avisou a equipe às 17:50 com nota no card. Diagnóstico pela tela do Kommo pendente. |
 | 30/10 07:05 | Follow 3 do (11) | ✅ Uma saída só no WhatsApp (07:05:06). Saiu às 07:05, e não às 07:00, porque o relógio da Anna roda a cada 5 minutos. |
+| 30/10 10:10 | Pós-reunião com o card em Closer › Não compareceu | ✅ Não enviou; nota no card "o card está em Não compareceu" |
+| 30/10 10:05 | Lead que já fez reunião (card novo para o telefone do (41), com a memória em teste) | ✅ Nenhuma mensagem; tarefa e nota para a equipe com o histórico do telefone |
+| 30/10 10:15 | Encerramento do (41) | Cards 29046218 e 29083586 em Venda perdida; as 3 reuniões de teste apagadas da agenda da Dra. |
