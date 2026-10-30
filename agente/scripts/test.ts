@@ -573,6 +573,7 @@ async function main() {
     eq('memória: só cita o que está registrado', [M.valoresTexto(m1.valores!), M.valoresTexto({ quando: 'x', rendaBruta: 12000 })],
       ['renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500', 'renda bruta de R$ 12.000'])
     eq('memória: quem já fez reunião não é qualificado de novo', M.montarMemoria(99, [c(11, '2026-08-01T10:00:00-03:00', PIPELINES.sdr, STATUS.perdido, ['JÁ FEZ REUNIÃO'])], agora).bloqueio?.startsWith('já fez reunião'), true)
+    eq('memória: card no Closer bloqueia com frase completa', M.montarMemoria(99, [c(14, '2026-10-01T10:00:00-03:00', PIPELINES.closer, STATUS.clienteDecisao)], agora).bloqueio?.startsWith('está no Closer (pós-reunião)'), true)
     eq('memória: cliente (Gestão operacional) também não', M.montarMemoria(99, [c(12, '2025-03-01T10:00:00-03:00', PIPELINES.gestao, 107743695)], agora).bloqueio?.startsWith('já é cliente'), true)
     eq('memória: atendimento antigo sem reunião não bloqueia e sem valor não vira memória', [M.montarMemoria(99, [c(13, '2025-11-01T10:00:00-03:00', PIPELINES.sdr, STATUS.perdido)], agora).bloqueio, M.montarMemoria(99, [c(13, '2025-11-01T10:00:00-03:00', PIPELINES.sdr, STATUS.perdido)], agora).valores], [null, null])
     eq('memória: mês de outro ano leva o ano', M.mesExtenso(Math.floor(new Date('2025-11-01T10:00:00-03:00').getTime() / 1000), agora), 'novembro de 2025')

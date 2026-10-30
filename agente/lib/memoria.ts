@@ -72,7 +72,9 @@ export function montarMemoria(atualId: number, cards: CardDoTelefone[], agora = 
   } : null
   const cli = sits.find(x => x.s.cliente)
   const reu = sits.find(x => x.s.reuniao)
-  const bloqueio = cli ? `já é cliente do escritório (card ${cli.c.id})` : reu ? `${reu.s.texto} (card ${reu.c.id}, ${mesExtenso(reu.c.created_at, agora)})` : null
+  // frase com verbo: "este lead já fez reunião…", "…tem reunião marcada…", "…está no Closer (pós-reunião)…"
+  const frase = (t: string) => t.startsWith('já ') ? t : t === 'reunião marcada' ? 'tem reunião marcada' : `está ${t}`
+  const bloqueio = cli ? `já é cliente do escritório (card ${cli.c.id})` : reu ? `${frase(reu.s.texto)} (card ${reu.c.id}, ${mesExtenso(reu.c.created_at, agora)})` : null
   return { cards: sits.map(x => ({ id: x.c.id, criado: x.c.created_at, situacao: x.s.texto })), valores, bloqueio }
 }
 
