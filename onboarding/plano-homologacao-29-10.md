@@ -49,3 +49,13 @@ A Anna continua pausada para leads reais. Tudo abaixo roda só nos cards de test
 3. OK para criar e apagar as reuniões de teste na agenda da Dra.
 4. Rodar a exportação das conversas de set/out no Cowork (`prompt-cowork-conversas-set-out.md`).
 5. Avisar quando o Guilherme tiver o modelo v2 aprovado e o robô de saudação pronto.
+
+## Resultados registrados
+
+| Quando | Teste | Resultado |
+|---|---|---|
+| 29/10 16:15 | Pós-reunião com a reunião apagada da agenda (card do (41)) | ✅ Não enviou; nota no card "a reunião não está mais na agenda da Dra." |
+| 29/10 16:25 | Pós-reunião com a reunião mantida na agenda | ✅ Enviou "Pergunta reunião" (saída registrada no WhatsApp às 16:25:04) |
+| 29/10 15:01 | Robô antigo 52156 no (41) | ⚠️ Mandou de novo "Ontem você esteve em reunião", 24h depois de o card entrar em Cliente decisão (vai para a decisão da Dra.) |
+| 29/10 17:18 | 1ª mensagem: lead de formulário novo para +55 11 96486-6458 (card 29078930), robô de saudação 54604 | ❌ O robô do Kommo não enviou, nem com o card devolvido à etapa às 17:32. A Anna avisou a equipe às 17:50 com nota no card. Diagnóstico pela tela do Kommo pendente. |
+| 30/10 07:05 | Follow 3 do (11) | ✅ Uma saída só no WhatsApp (07:05:06). Saiu às 07:05, e não às 07:00, porque o relógio da Anna roda a cada 5 minutos. |
