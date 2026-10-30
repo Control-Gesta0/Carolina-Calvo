@@ -70,7 +70,7 @@ PARTE 2 · ROBÔ DE SAUDAÇÃO (só com o modelo APROVADO)
 Se o modelo ainda não estiver aprovado, NÃO faça esta parte: anote "aguardando aprovação" e vá para a Parte 3.
 
 a. Crie um Salesbot novo chamado: Anna · Saudação (primeiro contato)
-   - Um único bloco "Enviar mensagem" pelo WhatsApp, com o MODELO "Anna - Primeiro contato v2".
+   - Um único bloco "Enviar mensagem" pelo WhatsApp, com o MODELO "Anna - Primeiro contato v2" e a opção "Forçar mensagem" MARCADA. Sem ela, o Kommo não envia para quem nunca conversou com o escritório (descoberto no teste de 30/10).
    - Não edite o texto do modelo. Se editar, ele vira mensagem comum e não chega a quem nunca conversou com o escritório.
    - Sem outros blocos, esperas, tags ou mudanças de etapa.
 b. No funil SDR, abra a automação (Digital Pipeline) da etapa "Contato inicial" e adicione UMA automação nova:

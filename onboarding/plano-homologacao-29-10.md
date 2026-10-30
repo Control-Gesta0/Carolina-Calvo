@@ -64,3 +64,4 @@ O (41) 98802-5120 saiu dos testes em 30/10. O reteste passa para o número novo,
 | 30/10 10:10 | Pós-reunião com o card em Closer › Não compareceu | ✅ Não enviou; nota no card "o card está em Não compareceu" |
 | 30/10 10:05 | Lead que já fez reunião (card novo para o telefone do (41), com a memória em teste) | ✅ Nenhuma mensagem; tarefa e nota para a equipe com o histórico do telefone |
 | 30/10 10:15 | Encerramento do (41) | Cards 29046218 e 29083586 em Venda perdida; as 3 reuniões de teste apagadas da agenda da Dra. |
+| 30/10 10:29 | 1ª mensagem para +55 11 96486-6458, depois de marcar "Forçar mensagem" no robô de saudação | ✅ Saudação v2 saiu às 10:29:04 ("Olá, Guilherme!…"); a Anna confirmou e começou a régua (Follow 1 às 12:29 se não houver resposta) |
