@@ -19,6 +19,8 @@ import { leituraMemoria, valoresTexto } from '../memoria'
 
 /** O lead vai ver os valores e mandar depois ("vou olhar o contracheque", "te mando mais tarde"). Puro. */
 const RX_DEPOIS = /\b(depois|mais tarde|amanh[aã]|daqui a pouco|j[aá] te (mando|passo|envio)|assim que)\b|vou (ver|verificar|olhar|conferir|pegar|procurar|consultar)|preciso (ver|verificar|olhar|conferir|pegar|procurar|consultar)|n[aã]o (sei|lembro) (de cabe[cç]a|agora|no momento)|n[aã]o tenho (aqui|agora|em m[aã]os)/i
+/** Só uma confirmação ("combinado", "ok", "tá bom"…), sem mais nada. Puro. */
+export const RX_OK = /^\s*(combinado|ok(ay)?|t[aá]( bom| certo)?|certo|beleza|blz|pode deixar|sim|perfeito|fechado|show|claro|👍+|obrigad[oa]|vou mandar|mando sim)[\s.!,]*(obrigad[oa])?[\s.!]*$/i
 export const vaiMandarDepois = (texto: string) => RX_DEPOIS.test(texto || '') && !/\?/.test(texto || '')
 
 /** Só acima disto a Anna oferece reunião (regra da Dra., 15/10/2026: renda bruta acima de R$ 15 mil). */
@@ -90,7 +92,7 @@ export const OBJETIVO: Record<string, string> = {
   pergunta1: 'se apresentar e perguntar o que a pessoa quer saber: se é possível suspender por até 6 meses os descontos bancários e o pagamento das dívidas, reestruturar as dívidas com juros revisados, ou as duas coisas',
   pergunta2: 'pedir os três valores da análise inicial: a renda bruta mensal, quanto recebe líquido depois dos descontos do contracheque e quanto o banco desconta direto da conta corrente por mês',
   q2_falta: 'agradecer o que a pessoa já informou e pedir só o que falta',
-  aguardo_valores: 'dizer que aguarda os valores, que sem eles não dá para avaliar a dimensão do problema nem continuar o atendimento, e que só com eles é possível verificar a liminar de suspensão por 6 meses e a diminuição da dívida',
+  aguardo_valores: 'dizer que aguarda o retorno, que os valores são essenciais para avaliar a suspensão judicial dos descontos por até 6 meses e a redução das dívidas com a revisão dos juros, que quanto antes vierem mais cedo a análise avança, e perguntar se está combinado',
   pergunta_limite: 'perguntar se a pessoa usa o limite do cheque especial e se tem cartão de crédito ativo com limite disponível',
   mensagem3: 'mostrar que, sem esses descontos na conta corrente e recebendo o salário líquido inteiro, seria um alívio financeiro, sem citar o valor, e perguntar se a pessoa concorda',
   mensagem3_sem_desconto: 'mostrar que, reduzindo os descontos e sobrando mais do salário, seria um alívio financeiro, e perguntar se a pessoa concorda',
@@ -283,8 +285,13 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       }
       const recebeuValor = Object.keys(campos).length > 0
       // Dra., 27/10: "vou ver e depois te mando" → a mensagem dela sobre a importância dos valores (a régua segue)
+      // a mensagem do "aguardo" termina em "Combinado?": um "combinado"/"ok" não pede resposta (a régua segue)
+      const ultimaAnna = [...ctx.conversa].reverse().find(m => m.dir === 'out')?.text || ''
+      if (!recebeuValor && ultimaAnna.includes('Aguardo seu retorno') && RX_OK.test(ctx.textoTurno)) {
+        return { acao: 'q2: o lead confirmou que manda os valores depois; aguardando', leitura }
+      }
       if (!recebeuValor && vaiMandarDepois(ctx.textoTurno)) {
-        const enviado = await falar(ctx, deps, TEXTOS.aguardoValores, 'q2', { id: 'aguardo_valores', obrigatorio: ['LIMINAR DE SUSPENSÃO'] })
+        const enviado = await falar(ctx, deps, TEXTOS.aguardoValores, 'q2', { id: 'aguardo_valores', obrigatorio: ['SUSPENDER'] })
         return { acao: 'q2: o lead vai mandar os valores depois', enviado, leitura }
       }
       if (!recebeuValor) {

@@ -631,6 +631,14 @@ async function main() {
     w.leituras.push(L({ intencao: 'outro' }))
     await fluxo.turno(ctx(w, seg9, 'vou ver no contracheque e depois te mando'), deps)
     eq('vai mandar depois → mensagem da Dra., continua na 2ª pergunta e a régua recomeça', [w.enviados[0], w.state.etapa, w.reguas[w.reguas.length - 1]], [TEXTOS.aguardoValores, 'q2', 'qualificacao'])
+    eq('"combinado", "ok" e "tá bom" são só confirmação', ['Combinado', 'ok!', 'tá bom', 'Combinado, obrigado', 'combinado, ganho 12 mil'].map(t => fluxo.RX_OK.test(t)), [true, true, true, true, false])
+    const m2 = mundo(seg9)
+    m2.w.state = { etapa: 'q2', objetivo: 1 }
+    m2.w.leituras.push(L({ intencao: 'outro' }))
+    const c2 = ctx(m2.w, seg9, 'Combinado')
+    c2.conversa = [{ id: 'a', dir: 'out', text: TEXTOS.aguardoValores, ts: seg9.getTime() - 60_000 }, { id: 'b', dir: 'in', text: 'Combinado', ts: seg9.getTime() }]
+    await fluxo.turno(c2, m2.deps)
+    eq('depois do "aguardo", um "combinado" não gera mensagem e segue na 2ª pergunta', [m2.w.enviados.length, m2.w.state.etapa], [0, 'q2'])
   }
 
   console.log('\n— Lembrete confere a reunião na agenda')

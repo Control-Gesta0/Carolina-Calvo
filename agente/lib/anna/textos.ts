@@ -35,11 +35,12 @@ export const TEXTOS_PADRAO = {
     'Com essas informações, conseguimos fazer uma *análise inicial do comprometimento da sua renda* e verificar quais medidas jurídicas podem ajudar você a *recuperar seu fôlego financeiro*.\n\n' +
     '*Pode me informar esses três valores?*',
 
-  /** [DRA] o lead diz que vai ver os valores e manda depois (Dra., 27/10) */
+  /** [DRA] o lead diz que vai ver os valores e manda depois (Dra., 27/10; texto novo de 30/10) */
   aguardo_valores:
-    'Ok, aguardo.\n\n' +
-    'Sem esses valores, *não consigo avaliar a dimensão do problema nem dar continuidade ao seu atendimento.*\n\n' +
-    'Somente com essas informações é possível verificar a possibilidade da *LIMINAR DE SUSPENSÃO por 6 MESES* e *DIMINUIÇÃO no valor da dívida*.',
+    'Sem problemas! Aguardo seu retorno.\n\n' +
+    '*Esses valores são essenciais* para avaliarmos a possibilidade de *SUSPENDER judicialmente os descontos por até 6 MESES e REDUZIR suas dívidas com a revisão dos juros*.\n\n' +
+    '*Quanto antes recebermos as informações, mais cedo poderemos avançar na análise do seu caso.*\n\n' +
+    'Combinado?',
 
   /** [DRA] 3ª mensagem (cheque especial e cartão), texto da Dra. de 28/10 */
   pergunta_limite:
