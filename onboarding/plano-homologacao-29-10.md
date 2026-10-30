@@ -65,3 +65,5 @@ O (41) 98802-5120 saiu dos testes em 30/10. O reteste passa para o número novo,
 | 30/10 10:05 | Lead que já fez reunião (card novo para o telefone do (41), com a memória em teste) | ✅ Nenhuma mensagem; tarefa e nota para a equipe com o histórico do telefone |
 | 30/10 10:15 | Encerramento do (41) | Cards 29046218 e 29083586 em Venda perdida; as 3 reuniões de teste apagadas da agenda da Dra. |
 | 30/10 10:29 | 1ª mensagem para +55 11 96486-6458, depois de marcar "Forçar mensagem" no robô de saudação | ✅ Saudação v2 saiu às 10:29:04 ("Olá, Guilherme!…"); a Anna confirmou e começou a régua (Follow 1 às 12:29 se não houver resposta) |
+| 30/10 10:32–10:35 | Reteste da qualificação no 96486-6458 | ✅ Desconto "débito em conta" sem valor não virou zero; "Ok, aguardo"; pergunta do cheque especial e cartão; encaminhamento com desconto R$ 7.000 e card em ACIMA DE 15 MIL |
+| 30/10 10:52 | Texto novo do "aguardo" (Dra.) | Aplicado (commit e2a99c5). Ver no WhatsApp na segunda, 02/11, depois do follow-up de 48h: `reset` do 96486-6458 e refazer até "vou olhar no extrato", respondendo "Combinado" depois |
