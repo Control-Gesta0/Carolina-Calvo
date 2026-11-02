@@ -72,3 +72,4 @@ O (41) 98802-5120 saiu dos testes em 30/10. O reteste passa para o número novo,
 | 30/10 13:15 | Follow-up de agendamento de 2h | ✅ Uma saída só (13:15:04): "Ainda não tive sua confirmação sobre o horário…" Próximos: 31/10 e 01/11 por volta das 11:10 |
 | 31/10 11:15 | Follow-up de agendamento de 24h (96486-6458) | ✅ Uma saída só (11:15:05): "Quem continua *adiando esse tipo de decisão*…" |
 | 01/11 11:15 | Follow-up de agendamento de 48h, o último | ✅ Uma saída só (11:15:04): "Vou encerrar por aqui…". O card ficou em ACIMA DE 15 MIL, sem ir para Venda perdida (regra da Dra.) |
+| 02/11 07:10 | Follow 4 do (11), o último da régua de qualificação | ✅ Uma saída só (07:10:03): "Como não tive seu retorno, vou *encerrar seu atendimento*…". Régua completa: F1 27/10 07:00 · F2 28/10 07:00 (duplicado antes da trava) · F3 30/10 07:05 · F4 02/11 07:10 |
