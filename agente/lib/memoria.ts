@@ -65,7 +65,7 @@ export function montarMemoria(atualId: number, cards: CardDoTelefone[], agora = 
   const sits = anteriores.map(c => ({ c, s: situacaoDoCard(c) }))
   const comValor = anteriores.find(c => num(c, CRM_MAP.campos.rendaBruta) != null)
   const valores: ValoresAnteriores | null = comValor ? {
-    quando: mesExtenso(comValor.updated_at || comValor.created_at, agora),
+    quando: mesExtenso(comValor.created_at, agora), // quando o atendimento começou: robôs e tags mexem no updated_at depois
     rendaBruta: num(comValor, CRM_MAP.campos.rendaBruta),
     rendaLiquida: num(comValor, CRM_MAP.campos.rendaLiquida),
     descontoConta: num(comValor, CRM_MAP.campos.descontoConta),
