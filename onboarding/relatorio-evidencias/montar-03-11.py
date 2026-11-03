@@ -165,13 +165,13 @@ ul {{ margin:1mm 0 2mm 5mm; padding-left:3mm; }} li {{ margin:.7mm 0; }} .pequen
 <h2>5. Textos</h2>
 <ul>
 <li><b>Aplicado em 30/10:</b> o seu texto novo para quem vai mandar os valores depois ("Sem problemas! Aguardo seu retorno… Combinado?").</li>
-<li><b>Aguardando a sua confirmação:</b> a versão do texto da oferta de horário. Recebemos duas versões em 29/10.</li>
+<li><b>Aplicado em 03/11:</b> o seu texto da oferta de horário ("A Dra. Carolina Calvo analisou seu caso e considerou <i>delicado</i>… <b>Posso confirmar para você?</b>"). O dia e a hora entram sozinhos: "HOJE às 15:00" e "único horário que consegui para hoje", ou "AMANHÃ…" e "para amanhã".</li>
 <li><b>Para a sua aprovação:</b> a frase da memória, usada no teste de 03/11: "Ótimo! Vi aqui que você já falou com a gente em outubro e, naquela ocasião, informou renda bruta de R$ 20.000, líquido de R$ 16.000 e desconto em conta de R$ 7.000. De lá para cá, a sua situação melhorou, piorou ou continua igual?"</li>
 </ul>
 
 <h2>6. O que falta para a homologação</h2>
 <ul>
-<li><b>A confirmação do texto da oferta de horário</b> e a aprovação da frase da memória (seção 5).</li>
+<li><b>A aprovação da frase da memória</b> (seção 5).</li>
 <li><b>Treino com as conversas de setembro e outubro:</b> falta a exportação das conversas. O resultado vai para a sua aprovação antes de entrar na Anna.</li>
 </ul>
 <p>Com a sua aprovação, desligamos os robôs antigos, testamos com um card de teste e combinamos a data da homologação.</p>
