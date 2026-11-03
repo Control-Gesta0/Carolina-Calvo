@@ -98,6 +98,7 @@ async function main() {
   eq('qualificação: FOLLOW 2 = +21h do FOLLOW 1', h(new Date(F.horaDaEtapa('qualificacao', 1, t0, t0 + 2 * 3600_000))), '13/10 9:00')
   eq('qualificação: FOLLOW 3 = +48h', h(new Date(F.horaDaEtapa('qualificacao', 2, t0, A.deBrt(2026, 9, 13, 9, 0).getTime()))), '15/10 9:00')
   eq('qualificação: FINAL = +72h', h(new Date(F.horaDaEtapa('qualificacao', 3, t0, A.deBrt(2026, 9, 15, 9, 0).getTime()))), '18/10 9:00')
+  eq('agendamento: 1ª etapa = 1h depois da oferta (Dra., 03/11)', h(new Date(F.horaDaEtapa('agendamento', 0, t0))), '12/10 11:00')
   eq('agendamento: 2ª etapa = 24h da oferta', h(new Date(F.horaDaEtapa('agendamento', 1, t0, t0 + 2 * 3600_000))), '13/10 10:00')
   eq('agendamento: final = 48h da oferta', h(new Date(F.horaDaEtapa('agendamento', 2, t0, t0 + 24 * 3600_000))), '14/10 10:00')
   eq('FOLLOW 1 de lead que falou às 19h sai às 7h', h(new Date(F.horaDaEtapa('qualificacao', 0, A.deBrt(2026, 9, 12, 19, 0).getTime()))), '13/10 7:00')
@@ -215,7 +216,7 @@ async function main() {
     const { CONFIG_REGUAS } = await import('../lib/followup')
     const R2 = CONFIG_REGUAS.reguas
     eq('réguas terminam sem mover o card', [R2.qualificacao.ao_terminar, R2.agendamento.ao_terminar], [undefined, undefined])
-    eq('2h depois da oferta: o texto da equipe, sem mudar uma palavra', R2.agendamento.etapas[0].texto_livre,
+    eq('1h depois da oferta: o texto da equipe, sem mudar uma palavra', R2.agendamento.etapas[0].texto_livre,
       'Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?')
   }
 

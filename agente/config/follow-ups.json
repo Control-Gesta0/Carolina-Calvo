@@ -58,7 +58,7 @@
       "ao_terminar_obs": "Decisao da Dra. (15/10/2026): depois do ultimo follow-up a sequencia so encerra. O card fica no SDR, na coluna da renda; se o lead voltar a escrever, a Anna retoma."
     },
     "agendamento": {
-      "inicio": "2h depois de uma oferta de horario sem confirmacao",
+      "inicio": "1h depois de uma oferta de horario sem confirmacao (Dra., 03/11/2026; antes 2h)",
       "etapas": [
         {
           "nome": "FOLLOW 1",
@@ -67,7 +67,7 @@
           "modelo": "FUP horário reunião",
           "template_id": 46734,
           "depois_de": "oferta de horario",
-          "horas": 2
+          "horas": 1
         },
         {
           "nome": "FOLLOW 2",
