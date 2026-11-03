@@ -68,11 +68,13 @@ export const TEXTOS_PADRAO = {
     'Vou encaminhar suas informações para a *Dra. Carolina Calvo avaliar quais medidas jurídicas podem ajudar a aliviar o comprometimento da sua renda*.\n\n' +
     '*Retorno em alguns minutos.*',
 
-  /** [CG] 5ª mensagem: mesma oferta da Dra., sem afirmar uma análise que não aconteceu */
+  /** [DRA] 5ª mensagem: oferta de horário, texto da Dra. confirmado em 03/11. {quando} = "HOJE às 15:00" etc.; {dia} = "para hoje" etc. */
   mensagem5:
-    'Já passei o seu caso para a Dra. Carolina Calvo.\n\n' +
-    'Pelo que você me contou, a sua situação é delicada. Por isso, o primeiro atendimento é ON LINE: nessa reunião ela vai explicar a possibilidade de obter judicialmente a SUSPENSÃO dos descontos bancários por até 6 MESES, além da *REVISÃO DE JUROS e reestruturação das suas dívidas*.\n\n' +
-    'Ela pode atender você *{quando}*, ON LINE. Posso agendar?',
+    'A Dra. Carolina Calvo analisou seu caso e considerou *delicado*.\n\n' +
+    'Por isso ela abriu um espaço na agenda *{quando}, ON LINE, para o primeiro atendimento*.\n\n' +
+    'Nessa conversa, ela vai explicar a *possibilidade* de obter judicialmente a *suspensão dos descontos bancários por até 6 meses*, além da *revisão dos juros* e da *reestruturação das suas dívidas*.\n\n' +
+    'Cada dia que passa é *mais um dia com os descontos saindo da sua renda*, e esse é o *único horário que consegui {dia}*.\n\n' +
+    '*Posso confirmar para você?*',
 
   /** [CG] nova oferta depois que o lead escolheu manhã ou tarde */
   nova_oferta: 'Ela pode atender você *{quando}*, ON LINE. Posso agendar?',
@@ -128,6 +130,12 @@ export const texto = (id: TextoId): string => vigentes.getStore()?.[id] ?? TEXTO
 /** Troca {variavel} pelo valor; variável sem valor fica como está (o validarTexto barra variável desconhecida). */
 export const preencher = (t: string, v: Record<string, string>) => t.replace(/\{([a-z_]+)\}/g, (m, k: string) => v[k] ?? m)
 
+/** "HOJE às 15:00" → "para hoje"; "AMANHÃ às 11:00" → "para amanhã"; "na quinta-feira (15/10) às 15:00" → "para quinta-feira (15/10)". Puro. */
+export function diaDaOferta(quando: string): string {
+  const dia = quando.split(' às ')[0].replace(/^(na|no) /, '').trim()
+  return `para ${dia === 'HOJE' ? 'hoje' : dia === 'AMANHÃ' ? 'amanhã' : dia}`
+}
+
 /** "Maria, bom dia!" / "Boa tarde!" pela hora de Brasília (Dra., 28/10) */
 export function saudacao(nome?: string, agora = new Date()): string {
   const h = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }).format(agora)) % 24
@@ -143,7 +151,7 @@ export const TEXTOS = {
   memoriaConfirma: (quando: string, valores: string) => preencher(texto('memoria_confirma'), { quando, valores }),
   mensagem3: (descontoConta: number | null) => (descontoConta && descontoConta > 0 ? texto('mensagem3') : texto('mensagem3_sem_desconto')),
   get mensagem4() { return texto('mensagem4') },
-  mensagem5: (quando: string) => preencher(texto('mensagem5'), { quando }),
+  mensagem5: (quando: string) => preencher(texto('mensagem5'), { quando, dia: diaDaOferta(quando) }),
   novaOferta: (quando: string) => preencher(texto('nova_oferta'), { quando }),
   horarioOcupado: (quando: string) => preencher(texto('horario_ocupado'), { quando }),
   get manhaOuTarde() { return texto('manha_ou_tarde') },

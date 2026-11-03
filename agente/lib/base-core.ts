@@ -28,7 +28,7 @@ export const ITENS = [
   { id: 'mensagem3', grupo: 'roteiro', titulo: '3ª mensagem (com o desconto em conta)', ajuda: 'Quando o banco desconta algum valor da conta corrente. Sem citar o valor (pedido da Dra. de 16/10).', comPergunta: true },
   { id: 'mensagem3_sem_desconto', grupo: 'roteiro', titulo: '3ª mensagem (sem desconto em conta)', ajuda: 'Quando o banco não desconta nada da conta corrente.', comPergunta: true },
   { id: 'mensagem4', grupo: 'roteiro', titulo: '4ª mensagem (encaminhamento para a Dra.)', ajuda: 'Renda bruta acima de R$ 15 mil. Depois dela vem a pausa de 30 minutos.', semPergunta: true },
-  { id: 'mensagem5', grupo: 'roteiro', titulo: '5ª mensagem (primeiro horário)', ajuda: 'Sai 30 minutos depois da 4ª, com o primeiro horário livre da agenda. {quando} vira "HOJE às 15:00", "AMANHÃ às 11:00" ou "na quinta-feira (15/10) às 15:00".', exige: ['{quando}'], comPergunta: true },
+  { id: 'mensagem5', grupo: 'roteiro', titulo: '5ª mensagem (primeiro horário)', ajuda: 'Sai 30 minutos depois da 4ª, com o primeiro horário livre da agenda. {quando} vira "HOJE às 15:00", "AMANHÃ às 11:00" ou "na quinta-feira (15/10) às 15:00", e {dia} vira "para hoje", "para amanhã" ou "para quinta-feira (15/10)" (texto da Dra. de 03/11).', exige: ['{quando}'], comPergunta: true },
   { id: 'nova_oferta', grupo: 'agenda', titulo: 'Nova oferta de horário', ajuda: 'Depois que o lead diz se prefere manhã ou tarde. {quando} é o novo horário.', exige: ['{quando}'], comPergunta: true },
   { id: 'horario_ocupado', grupo: 'agenda', titulo: 'Horário que acabou de ser ocupado', ajuda: 'Quando o lead aceita, mas o horário foi preenchido entre a oferta e o "sim". {quando} é o próximo horário.', exige: ['{quando}'], comPergunta: true },
   { id: 'manha_ou_tarde', grupo: 'agenda', titulo: 'Pergunta de manhã ou tarde', ajuda: 'Quando o lead não pode no horário oferecido (regra da Dra.).', comPergunta: true },
@@ -130,7 +130,7 @@ export function validarTexto(id: string, texto: string): string[] {
   if (!instrucao) {
     const m = meta(id as ItemId)
     for (const v of m.exige || []) if (t.split(v).length - 1 !== 1) out.push(`O texto precisa ter ${v} uma vez (é onde entra o valor certo de cada lead).`)
-    const permitidas = new Set(['{saudacao}', '{desconto}', '{quando}', '{link}', '{valores}'].filter(v => (m.exige as string[] | undefined)?.includes(v) || (id === 'pergunta1' && v === '{saudacao}')))
+    const permitidas = new Set(['{saudacao}', '{desconto}', '{quando}', '{link}', '{valores}', '{dia}'].filter(v => (m.exige as string[] | undefined)?.includes(v) || (id === 'pergunta1' && v === '{saudacao}') || (id === 'mensagem5' && v === '{dia}')))
     for (const v of t.match(/\{[a-z_]+\}/g) || []) if (!permitidas.has(v)) out.push(`${v} não existe neste texto (não vai virar nada para o lead).`)
     if (m.semPergunta && /\?/.test(t)) out.push('Este texto não pode ter pergunta: depois dele a Anna para ou a equipe assume.')
     if (m.comPergunta && !/\?/.test(t)) out.push('Este texto precisa terminar em pergunta: é o que leva o lead ao próximo passo.')

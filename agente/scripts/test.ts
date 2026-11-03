@@ -30,7 +30,7 @@ async function main() {
   const { parseLeadWebhook } = await import('../api/lead')
   const { renderizar } = await import('../lib/modelos')
   const { primeiroNome } = await import('../lib/anna/producao')
-  const { TEXTOS } = await import('../lib/anna/textos')
+  const { TEXTOS, diaDaOferta } = await import('../lib/anna/textos')
   const fluxo = await import('../lib/anna/fluxo')
 
   const regras = (t: string) => [...new Set(checkReply(t).map(v => v.regra))]
@@ -277,8 +277,8 @@ async function main() {
     eq('5ª mensagem (texto da Dra.)', w.enviados[5], TEXTOS.mensagem4)
     eq('pausa de 30 min agendada', w.msg5, [agora.getTime() + 30 * 60_000])
     const r5 = await fluxo.quintaMensagem(ctx(w, new Date(agora.getTime() + 30 * 60_000), ''), deps, 'tok')
-    eq('mensagem da oferta: HOJE 15:00, em negrito', w.enviados[6].endsWith('Ela pode atender você *HOJE às 15:00*, ON LINE. Posso agendar?'), true)
-    eq('a oferta não afirma análise da Dra.', /analisou/.test(w.enviados[6]), false)
+    eq('mensagem da oferta (texto da Dra. de 03/11): HOJE 15:00 em negrito e "para hoje"', [w.enviados[6].includes('*HOJE às 15:00, ON LINE, para o primeiro atendimento*'), w.enviados[6].includes('*único horário que consegui para hoje*'), w.enviados[6].endsWith('*Posso confirmar para você?*')], [true, true, true])
+    eq('dia da oferta: hoje, amanhã e dia da semana', ['HOJE às 15:00', 'AMANHÃ às 11:00', 'na quinta-feira (06/11) às 10:00', 'no sábado (08/11) às 09:00'].map(diaDaOferta), ['para hoje', 'para amanhã', 'para quinta-feira (06/11)', 'para sábado (08/11)'])
     eq('régua de agendamento começa na oferta', w.reguas[w.reguas.length - 1], 'agendamento')
     void r5
     w.leituras.push(L({ intencao: 'aceita_horario' }))

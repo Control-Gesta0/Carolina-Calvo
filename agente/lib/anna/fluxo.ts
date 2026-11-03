@@ -97,7 +97,7 @@ export const OBJETIVO: Record<string, string> = {
   mensagem3: 'mostrar que, sem esses descontos na conta corrente e recebendo o salário líquido inteiro, seria um alívio financeiro, sem citar o valor, e perguntar se a pessoa concorda',
   mensagem3_sem_desconto: 'mostrar que, reduzindo os descontos e sobrando mais do salário, seria um alívio financeiro, e perguntar se a pessoa concorda',
   mensagem4: 'dizer que a situação é delicada, que vai encaminhar a conversa para a Dra. Carolina analisar e que volta a falar em alguns minutos',
-  mensagem5: 'contar que já passou o caso para a Dra. Carolina; explicar que o primeiro atendimento é on-line e que nele a Dra. explica a possibilidade de pedir na Justiça a suspensão dos descontos por até 6 meses, além da revisão de juros e da reestruturação das dívidas; oferecer o horário e perguntar se pode agendar',
+  mensagem5: 'dizer que a Dra. Carolina analisou o caso e o considerou delicado; que abriu um espaço na agenda no horário oferecido, on-line, para o primeiro atendimento; que nele vai explicar a possibilidade de obter judicialmente a suspensão dos descontos por até 6 meses, a revisão dos juros e a reestruturação das dívidas; que cada dia é mais um dia com descontos e esse é o único horário; perguntar se pode confirmar',
   nova_oferta: 'oferecer o horário, on-line, e perguntar se pode agendar',
   horario_ocupado: 'avisar que o horário anterior acabou de ser preenchido, oferecer o novo horário, on-line, e perguntar se pode agendar',
   manha_ou_tarde: 'dizer que não tem problema e perguntar se a pessoa prefere de manhã ou à tarde',
