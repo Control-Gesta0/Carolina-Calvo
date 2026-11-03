@@ -43,3 +43,13 @@ Estes robôs movem cards para ATÉ 5 MIL ou 5 A 10 MIL e precisam de um destino 
 - regra de Venda ganha/perdida do SDR que leva para 5 A 10 MIL (30933818)
 - regra de Venda perdida do Closer que leva para 5 A 10 MIL (30933832)
 - 15160 Fluxo Superendividamento - Vídeo ("Luíza")
+
+## Feito em 03/11/2026
+
+| O quê | Resultado |
+|---|---|
+| Decisões do Eduardo | Cards com sinal de renda vão para a coluna da renda. Os 182 ambíguos vão para Desqualificado. Robôs que mandavam para as colunas excluídas passam a mandar para Contato inicial; os que classificam pela faixa salarial ("Luíza", Robo inicial), para Desqualificado. |
+| Movimentação | 5.339 cards movidos pela integração entre 17:59 e 18:01: 4.467 para Desqualificado, 532 para 10 A 15 MIL e 340 para ACIMA DE 15 MIL. 1 card tinha sido excluído no Kommo antes da movimentação. A coluna de origem de cada card está em `reorganizacao-sdr-03-11-backup.json`, para desfazer se for preciso. |
+| Mensagens e tarefas | Nenhuma tarefa criada. As mensagens dos cards movidos nesse horário foram trocadas com o próprio lead antes ou durante a conversa, sem relação com a movimentação. |
+| Coluna ICMS | Excluída (estava vazia e sem robôs). |
+| ATÉ 5 MIL e 5 A 10 MIL | Vazias. Saem depois de os robôs serem redirecionados: `prompt-cowork-reorganizacao-sdr.md`. |
