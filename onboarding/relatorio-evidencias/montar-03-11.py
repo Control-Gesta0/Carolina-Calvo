@@ -166,6 +166,7 @@ ul {{ margin:1mm 0 2mm 5mm; padding-left:3mm; }} li {{ margin:.7mm 0; }} .pequen
 <ul>
 <li><b>Aplicado em 30/10:</b> o seu texto novo para quem vai mandar os valores depois ("Sem problemas! Aguardo seu retorno… Combinado?").</li>
 <li><b>Aplicado em 03/11:</b> o seu texto da oferta de horário ("A Dra. Carolina Calvo analisou seu caso e considerou <i>delicado</i>… <b>Posso confirmar para você?</b>"). O dia e a hora entram sozinhos: "HOJE às 15:00" e "único horário que consegui para hoje", ou "AMANHÃ…" e "para amanhã".</li>
+<li><b>Aplicado em 03/11:</b> o lembrete da oferta de horário ("Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?") passou a sair <b>1 hora</b> depois da oferta, e não mais 2 horas. Ele sai uma vez só e não sai se o lead já respondeu.</li>
 <li><b>Para a sua aprovação:</b> a frase da memória, usada no teste de 03/11: "Ótimo! Vi aqui que você já falou com a gente em outubro e, naquela ocasião, informou renda bruta de R$ 20.000, líquido de R$ 16.000 e desconto em conta de R$ 7.000. De lá para cá, a sua situação melhorou, piorou ou continua igual?"</li>
 </ul>
 
