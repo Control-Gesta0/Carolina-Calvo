@@ -5,7 +5,7 @@ import html
 e = html.escape
 
 def tag(s):
-    return {'ok': '<span class="tag ok">comprovado</span>', 'decisao': '<span class="tag parcial">aguarda a sua decisão</span>',
+    return {'ok': '<span class="tag ok">comprovado</span>', 'ativacao': '<span class="tag parcial">na entrada em produção</span>',
             'pend': '<span class="tag pend">pendente</span>'}[s]
 
 PONTOS = [
@@ -19,14 +19,14 @@ PONTOS = [
      'Antes de enviar, a Anna confere a agenda e a etapa do card. Os três casos foram testados (seção 2.3).'),
     ('4. Reteste das correções', 'ok',
      '"Débito em conta" sem valor: a Anna perguntou o valor e não registrou zero (30/10, 10:33). Duplicidade: nenhum envio repetido depois da correção (pontos 2 e 3).'),
-    ('5. Robôs antigos', 'decisao',
-     'O levantamento foi concluído e nenhum robô foi alterado. A lista, com uma proposta para cada robô, está na seção 4.'),
+    ('5. Robôs antigos', 'ativacao',
+     'A revisão foi concluída e nenhum robô foi alterado até agora. Na entrada em produção, os robôs antigos serão desligados e as automações passam a rodar na Anna. Isso será testado com um card de teste antes da produção (seção 4).'),
     ('6. Demais regras do processo comercial', 'ok',
      'Renda acima de 15 mil e até 15 mil, memória dos atendimentos anteriores, lead que já fez reunião e follow-up da oferta sem resposta: todos testados (seção 2). '
      'A proteção dos cards do Closer foi testada em 23/10: um robô antigo moveu o card para o SDR, e a Anna o devolveu ao Closer às 15:10. '
      'O treinamento com as conversas de setembro e outubro está pendente (seção 6).'),
     ('7. Homologação', 'pend',
-     'Os testes estão concluídos. Faltam as suas decisões da seção 6.'),
+     'Os testes estão concluídos. Faltam os itens da seção 6.'),
 ]
 pontos = ''.join(f"<tr><td><b>{e(t)}</b><br><span class='pequeno'>{e(d)}</span></td><td style='width:22%'>{tag(s)}</td></tr>" for t, s, d in PONTOS)
 
@@ -94,12 +94,12 @@ FALHAS = [
 falhas = ''.join(f"<tr><td style='white-space:nowrap'>{d}</td><td>{e(o)}</td><td>{e(c)}</td></tr>" for d, o, c in FALHAS)
 
 ROBOS = [
-    ('SDR RETORNO IMEDIATO', 'Quando o lead responde, leva o card do Closer para SDR › 5 A 10 MIL', 'Tirar das etapas do Closer. A resposta depois da reunião já vai para Retorno imediato, com tarefa.'),
-    ('Follow Cliente decisão', '24 h depois da entrada em Cliente decisão, manda "Pergunta reunião"', 'Desligar quando o pós-reunião da Anna for ligado. Hoje os dois enviam a mesma pergunta.'),
-    ('SDR- Alterar etapa plan-Rtrnimed.', 'Quando o lead responde ou abre conversa nova, move o card para 5 A 10 MIL', 'Tirar das etapas 10 A 15 MIL, Não quer continuar, Outros assuntos e Desqualificado.'),
-    ('Fluxo Superendividamento - Vídeo ("Luíza")', 'Quando um lead encerrado volta a escrever, manda o questionário antigo (12 mensagens)', 'Desligar nessa etapa.'),
-    ('horário de funcionamento', 'Continua rodando em 166 conversas e manda o aviso de horário quando o lead escreve fora do expediente', 'Encerrar essas conversas e deixar o robô desligado.'),
-    ('Robô de saudação da etapa Contato inicial (criado para os testes)', 'Manda a saudação quando o card entra na etapa', 'Tirar, porque a saudação passou a ser disparada pela Anna. Sem isso, ela sai duas vezes.'),
+    ('SDR RETORNO IMEDIATO', 'Quando o lead responde, leva o card do Closer para SDR › 5 A 10 MIL', 'Desligado. A resposta depois da reunião já vai para Retorno imediato, com tarefa.'),
+    ('Follow Cliente decisão', '24 h depois da entrada em Cliente decisão, manda "Pergunta reunião"', 'Desligado. O pós-reunião da Anna substitui.'),
+    ('SDR- Alterar etapa plan-Rtrnimed.', 'Quando o lead responde ou abre conversa nova, move o card para 5 A 10 MIL', 'Desligado.'),
+    ('Fluxo Superendividamento - Vídeo ("Luíza")', 'Quando um lead encerrado volta a escrever, manda o questionário antigo (12 mensagens)', 'Desligado. A memória da Anna atende quem volta.'),
+    ('horário de funcionamento', 'Continua rodando em 166 conversas e manda o aviso de horário quando o lead escreve fora do expediente', 'Conversas encerradas e robô desligado.'),
+    ('Robô de saudação da etapa Contato inicial (criado para os testes)', 'Manda a saudação quando o card entra na etapa', 'Desligado. A saudação é disparada pela Anna.'),
 ]
 robos = ''.join(f"<tr><td><b>{i}.</b> {e(n)}</td><td>{e(f)}</td><td>{e(p)}</td></tr>" for i, (n, f, p) in enumerate(ROBOS, 1))
 
@@ -128,7 +128,7 @@ ul {{ margin:1mm 0 2mm 5mm; padding-left:3mm; }} li {{ margin:.7mm 0; }} .pequen
 <div class="box"><b>Durante todos os testes:</b>
 <ul>
 <li>A Anna ficou pausada para os leads reais e só atendeu os números de teste.</li>
-<li>Nenhum robô antigo foi alterado. Eles mudam só depois da sua decisão (seção 4).</li>
+<li>Nenhum robô antigo do Kommo foi alterado.</li>
 <li>A entrada em produção continua dependendo da sua aprovação expressa.</li>
 </ul></div>
 
@@ -158,9 +158,9 @@ ul {{ margin:1mm 0 2mm 5mm; padding-left:3mm; }} li {{ margin:.7mm 0; }} .pequen
 <h2>3. Falhas encontradas nos testes e corrigidas</h2>
 <table><tr><th>Data</th><th>O que aconteceu</th><th>Correção</th></tr>{falhas}</table>
 
-<h2>4. Robôs antigos: proposta para a sua decisão</h2>
-<p class="pequeno">Estes são os robôs do Kommo que interferem no atendimento da Anna. Os demais (lembretes de 2 h, 1 h e 15 min, mudança automática para Cliente decisão, Não compareceu, Campanha) podem continuar como estão. Nada será alterado sem a sua aprovação. Cada mudança aprovada será testada com um card de teste antes da entrada em produção.</p>
-<table><tr><th>Robô</th><th>O que faz hoje</th><th>Proposta</th></tr>{robos}</table>
+<h2>4. Robôs antigos: desligados na entrada em produção</h2>
+<p class="pequeno">Na entrada em produção, os robôs antigos do Kommo serão desligados, e as automações passam a rodar na Anna. Antes disso, conferimos que tudo o que eles fazem está coberto pela Anna e testamos com um card de teste. Estes são os que hoje interferem no atendimento:</p>
+<table><tr><th>Robô</th><th>O que faz hoje</th><th>Na entrada em produção</th></tr>{robos}</table>
 
 <h2>5. Textos</h2>
 <ul>
@@ -171,11 +171,10 @@ ul {{ margin:1mm 0 2mm 5mm; padding-left:3mm; }} li {{ margin:.7mm 0; }} .pequen
 
 <h2>6. O que falta para a homologação</h2>
 <ul>
-<li><b>A sua decisão sobre os robôs antigos</b> (seção 4).</li>
 <li><b>A confirmação do texto da oferta de horário</b> e a aprovação da frase da memória (seção 5).</li>
 <li><b>Treino com as conversas de setembro e outubro:</b> falta a exportação das conversas. O resultado vai para a sua aprovação antes de entrar na Anna.</li>
 </ul>
-<p>Com as suas decisões, fazemos as mudanças aprovadas no Kommo, testamos com um card de teste e combinamos a data da homologação.</p>
+<p>Com a sua aprovação, desligamos os robôs antigos, testamos com um card de teste e combinamos a data da homologação.</p>
 
 <div style='page-break-inside:avoid'><h2>Anexo</h2>
 {anexos}</div>
