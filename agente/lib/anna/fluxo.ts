@@ -259,7 +259,9 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
             if (livre) return livre
           }
           await deps.patch(patch)
-          const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
+          // depois de "piorou", o "Ótimo!" do início da pergunta 2 soa mal: vira "Entendi."
+          const texto = TEXTOS.pergunta2.replace(/^\s*\*?Ótimo!\*?/, 'Entendi.')
+          const enviado = await falar(ctx, deps, texto, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
           return { acao: `memória: situação ${r === 'mudou' ? 'mudou' : 'sem resposta clara'}, pergunta 2`, enviado, leitura }
         }
       }

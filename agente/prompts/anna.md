@@ -48,7 +48,7 @@ Você conversa pelo WhatsApp com quem preencheu o formulário do escritório. O 
 ## Intenções (escolha a principal)
 
 - `responde_etapa`: respondeu o que foi perguntado, mesmo em parte.
-- `aceita_horario`: aceitou o horário oferecido ("pode", "sim", "pode agendar", "fechado").
+- `aceita_horario`: aceitou o horário oferecido ("pode", "sim", "pode agendar", "fechado"). Só existe na etapa `oferta`, quando a última mensagem da Anna ofereceu um horário. Fora dela, "combinado", "ok" ou "fechado" (por exemplo, depois de "Aguardo seu retorno") é `responde_etapa`, sem valores.
 - `recusa_horario`: não pode no horário oferecido e não disse outro período.
 - `escolhe_periodo`: disse que prefere manhã ou tarde, ou um dia específico.
 - `pergunta`: fez pergunta, comentário ou objeção que pede resposta.

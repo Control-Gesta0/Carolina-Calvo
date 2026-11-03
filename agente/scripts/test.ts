@@ -599,7 +599,7 @@ async function main() {
     b.w.leituras.push(L({ opcao: 2 }), L({ intencao: 'responde_etapa' }))
     await fluxo.turno(ctx(b.w, seg9, '2'), b.deps)
     await fluxo.turno(ctx(b.w, seg9, 'piorou, agora desconta mais'), b.deps)
-    eq('memória: "piorou" pede os valores de hoje (2ª pergunta)', [b.w.state.etapa, b.w.state.rendaBruta, b.w.enviados[1]], ['q2', undefined, TEXTOS.pergunta2])
+    eq('memória: "piorou" pede os valores de hoje (2ª pergunta)', [b.w.state.etapa, b.w.state.rendaBruta, b.w.enviados[1]], ['q2', undefined, TEXTOS.pergunta2.replace(/^Ótimo!/, 'Entendi.')])
     const d = mundo(seg9)
     d.deps.memoria = deps.memoria
     d.w.state = { etapa: 'q1' }
@@ -639,6 +639,11 @@ async function main() {
     c2.conversa = [{ id: 'a', dir: 'out', text: TEXTOS.aguardoValores, ts: seg9.getTime() - 60_000 }, { id: 'b', dir: 'in', text: 'Combinado', ts: seg9.getTime() }]
     await fluxo.turno(c2, m2.deps)
     eq('depois do "aguardo", um "combinado" não gera mensagem e segue na 2ª pergunta', [m2.w.enviados.length, m2.w.state.etapa], [0, 'q2'])
+    const m3 = mundo(seg9)
+    m3.w.state = { etapa: 'q2', objetivo: 3, memoriaPendente: true, memoria: { quando: 'outubro', rendaBruta: 20000, rendaLiquida: 16000, descontoConta: 7000 } }
+    m3.w.leituras.push(L({ intencao: 'outro' }))
+    await fluxo.turno(ctx(m3.w, seg9, 'Piorou, minha renda mudou'), m3.deps)
+    eq('memória: depois de "piorou" a pergunta 2 começa com "Entendi.", não "Ótimo!"', [m3.w.enviados[0]?.startsWith('Entendi.'), m3.w.enviados[0]?.includes('Ótimo')], [true, false])
   }
 
   console.log('\n— Lembrete confere a reunião na agenda')
