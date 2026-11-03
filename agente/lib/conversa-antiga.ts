@@ -15,6 +15,8 @@ import { patchState } from './state'
  */
 
 export interface Conversa { id: number; entity_type?: string; entity_id?: number; status?: string }
+/** A API devolve a conversa com o número em talk_id (não em id). */
+type ConversaApi = Omit<Conversa, 'id'> & { id?: number; talk_id?: number }
 
 /** Puro: as conversas abertas presas em outro card do SDR. */
 export function conversasParaFechar(conversas: Conversa[], novoId: number, cardsSdr: Set<number>): Conversa[] {
@@ -33,7 +35,10 @@ export async function soltarConversaAntiga(lead: KommoLead): Promise<string[]> {
   }
   if (!ids.size) return []
   const conversas: Conversa[] = []
-  for (const id of ids) { const t = await kommoGet<Conversa>(`/api/v4/talks/${id}`).catch(() => null); if (t) conversas.push(t) }
+  for (const id of ids) {
+    const t = await kommoGet<ConversaApi>(`/api/v4/talks/${id}`).catch(() => null)
+    if (t) conversas.push({ ...t, id: t.talk_id ?? t.id ?? id })
+  }
   const outros = [...new Set(conversas.map(t => t.entity_id).filter((x): x is number => !!x && x !== lead.id))]
   const cardsSdr = new Set<number>()
   for (const id of outros) { const l = await kommoGet<KommoLead>(`/api/v4/leads/${id}`).catch(() => null); if (l?.pipeline_id === PIPELINES.sdr) cardsSdr.add(id) }
