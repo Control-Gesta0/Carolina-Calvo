@@ -82,8 +82,8 @@ async function main() {
   eq('próximo dia útil de sexta', A.proximoDiaUtil('2026-10-16'), '2026-10-19')
 
   console.log('\n— Coluna por renda')
-  eq('5.000 → ATÉ 5 MIL', colunaPorRenda(5000), STATUS.ate5)
-  eq('9.999 → 5 A 10 MIL', colunaPorRenda(9999), STATUS.de5a10)
+  eq('5.000 → DESQUALIFICADO (Dra., 03/11)', colunaPorRenda(5000), STATUS.desqualificado)
+  eq('9.999 → DESQUALIFICADO', colunaPorRenda(9999), STATUS.desqualificado)
   eq('10.000 → 10 A 15 MIL', colunaPorRenda(10000), STATUS.de10a15)
   eq('15.000 → 10 A 15 MIL', colunaPorRenda(15000), STATUS.de10a15)
   eq('15.001 → ACIMA DE 15 MIL', colunaPorRenda(15001), STATUS.acima15)

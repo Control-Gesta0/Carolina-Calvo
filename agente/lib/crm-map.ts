@@ -17,6 +17,8 @@ export const STATUS = {
   agendarReuniao: 109942607,
   outrosAssuntos: 75768039,
   naoQuerContinuar: 76490255,
+  /** SDR › Desqualificado: renda bruta abaixo de R$ 10 mil confirmada pelo lead (Dra., 03/11/2026) */
+  desqualificado: 75401467,
   reuniaoAgendada: 75401491, // funil Closer
   clienteDecisao: 75538167, // funil Closer
   /** Closer › Retorno imediato: criada em 22/10/2026 (pedido da Dra.), logo depois de Cliente decisão */
@@ -120,10 +122,14 @@ export const CRM_MAP = {
 
 export type ChaveModelo = keyof typeof CRM_MAP.modelos
 
-/** Coluna do SDR pela renda bruta (R$/mês). */
+/**
+ * Coluna do SDR pela renda bruta (R$/mês) que o PRÓPRIO lead confirmou na conversa (Dra., 03/11/2026):
+ * abaixo de 10 mil → Desqualificado (o escritório não atende comercialmente; as colunas ATÉ 5 MIL e
+ * 5 A 10 MIL deixaram de existir) · 10 a 15 mil → 10 A 15 MIL · acima de 15 mil → ACIMA DE 15 MIL.
+ * A faixa do formulário nunca move o card sozinha.
+ */
 export function colunaPorRenda(renda: number): number {
-  if (renda <= 5000) return STATUS.ate5
-  if (renda < 10000) return STATUS.de5a10
+  if (renda < 10000) return STATUS.desqualificado
   if (renda <= 15000) return STATUS.de10a15
   return STATUS.acima15
 }

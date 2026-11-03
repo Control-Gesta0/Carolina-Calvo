@@ -63,7 +63,7 @@ const K = (id: string) => k('teste', id)
 const NOME = 'Maria Teste'
 
 const COLUNA: Record<number, string> = {
-  [STATUS.ate5]: 'SDR › ATÉ 5 MIL', [STATUS.de5a10]: 'SDR › 5 A 10 MIL', [STATUS.de10a15]: 'SDR › 10 A 15 MIL',
+  [STATUS.desqualificado]: 'SDR › DESQUALIFICADO', [STATUS.de10a15]: 'SDR › 10 A 15 MIL',
   [STATUS.acima15]: 'SDR › ACIMA DE 15 MIL', [STATUS.naoQuerContinuar]: 'SDR › NÃO QUER CONTINUAR', [STATUS.reuniaoAgendada]: 'Closer › REUNIÃO AGENDADA',
 }
 const CAMPO: Record<number, string> = Object.fromEntries(Object.entries(CRM_MAP.campos).map(([nome, id]) => [id, nome]))

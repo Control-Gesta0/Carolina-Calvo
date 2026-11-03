@@ -33,7 +33,7 @@ async function execucoes() {
 }
 
 /** Etapas onde a Anna mexe: colunas de renda e "Não quer continuar" no SDR, Reunião agendada no Closer. */
-const ETAPAS_DA_ANNA = new Set<number>([STATUS.ate5, STATUS.de5a10, STATUS.de10a15, STATUS.acima15, STATUS.naoQuerContinuar, STATUS.reuniaoAgendada])
+const ETAPAS_DA_ANNA = new Set<number>([STATUS.desqualificado, STATUS.de10a15, STATUS.acima15, STATUS.naoQuerContinuar, STATUS.reuniaoAgendada])
 const FUNIS = [{ id: PIPELINES.sdr, nome: 'SDR' }, { id: PIPELINES.closer, nome: 'Closer' }]
 
 async function live(): Promise<LiveData> {
