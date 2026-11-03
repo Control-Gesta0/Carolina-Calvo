@@ -646,6 +646,18 @@ async function main() {
     eq('memória: depois de "piorou" a pergunta 2 começa com "Entendi.", não "Ótimo!"', [m3.w.enviados[0]?.startsWith('Entendi.'), m3.w.enviados[0]?.includes('Ótimo')], [true, false])
   }
 
+  console.log('\n— Lead que volta: conversa presa no card antigo')
+  {
+    const { conversasParaFechar } = await import('../lib/conversa-antiga')
+    const conversas = [
+      { id: 1, entity_type: 'lead', entity_id: 10, status: 'opened' }, // card antigo do SDR: fecha
+      { id: 2, entity_type: 'lead', entity_id: 10, status: 'closed' }, // já fechada
+      { id: 3, entity_type: 'lead', entity_id: 99, status: 'opened' }, // o card novo
+      { id: 4, entity_type: 'lead', entity_id: 20, status: 'opened' }, // card fora do SDR (cliente): não mexe
+    ]
+    eq('fecha só a conversa aberta presa em outro card do SDR', conversasParaFechar(conversas, 99, new Set([10])).map(t => t.id), [1])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')

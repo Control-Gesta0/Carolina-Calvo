@@ -8,6 +8,7 @@ import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
 import { logExec, marcarWebhook } from '../lib/execlog'
 import { iniciarRegua } from '../lib/followup'
 import { memoriaNoInicio } from '../lib/memoria'
+import { soltarConversaAntiga } from '../lib/conversa-antiga'
 import { esperarSaudacao } from '../lib/saudacao'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
 import { addLeadTags, getLead, getMainContactName, updateLeadFields } from '../lib/kommo'
@@ -94,6 +95,8 @@ async function tratar(ev: Evento): Promise<void> {
       await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, detalhe: historico })
       return
     }
+    // lead que volta: a conversa do WhatsApp presa no card antigo é fechada, para a resposta cair neste card
+    await soltarConversaAntiga(lead).catch(e => logExec({ tipo: 'erro', leadId: ev.id, nome: lead.name, detalhe: `não deu para fechar a conversa do card antigo: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}` }))
 
     // lead de formulário com PRIMEIRO_CONTATO=kommo: a saudação sai do robô do Kommo (abre a conversa); a Anna espera
     if (CONFIG.primeiroContatoKommo && ehLeadDeFormularioSE(lead)) {

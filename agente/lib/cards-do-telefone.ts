@@ -27,15 +27,20 @@ export async function telefonesDoContatoId(contatoId: number): Promise<string[]>
   return telefonesDoContato(await kommoGet<Contato>(`/api/v4/contacts/${contatoId}`))
 }
 
-export async function cardsDoTelefone(telefones: Array<string | null | undefined>): Promise<CardDoTelefone[]> {
+/** Todos os contatos com o mesmo telefone (com os ids dos cards de cada um). */
+export async function contatosDoTelefone(telefones: Array<string | null | undefined>): Promise<Contato[]> {
   const chaves = [...new Set(telefones.map(chaveTelefone).filter((c): c is string => !!c))]
-  const ids = new Set<number>()
+  const achados = new Map<number, Contato>()
   for (const chave of chaves) {
     const d = await kommoGet<{ _embedded?: { contacts?: Contato[] } }>(`/api/v4/contacts?query=${chave.slice(-8)}&with=leads&limit=50`)
-    for (const c of d?._embedded?.contacts || []) {
-      if (telefonesDoContato(c).some(t => chaveTelefone(t) === chave)) for (const l of c._embedded?.leads || []) ids.add(l.id)
-    }
+    for (const c of d?._embedded?.contacts || []) if (telefonesDoContato(c).some(t => chaveTelefone(t) === chave)) achados.set(c.id, c)
   }
+  return [...achados.values()]
+}
+
+export async function cardsDoTelefone(telefones: Array<string | null | undefined>): Promise<CardDoTelefone[]> {
+  const ids = new Set<number>()
+  for (const c of await contatosDoTelefone(telefones)) for (const l of c._embedded?.leads || []) ids.add(l.id)
   const lista = [...ids]
   const cards: CardDoTelefone[] = []
   for (let i = 0; i < lista.length; i += 50) {

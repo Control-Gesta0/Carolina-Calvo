@@ -34,6 +34,7 @@ async function kommo<T>(method: string, path: string, body?: unknown, opts?: { r
 }
 
 export const kommoGet = <T>(path: string) => kommo<T>('GET', path)
+export const kommoPost = <T>(path: string, body: unknown) => kommo<T>('POST', path, body)
 
 export interface KommoFieldValue { field_id: number; values: Array<{ value?: unknown; enum_id?: number }> }
 
