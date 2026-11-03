@@ -55,7 +55,10 @@ export const CONFIG = {
   protegeCloser: process.env.PROTEGE_CLOSER !== 'false',
   protegeCloserSoTeste: process.env.PROTEGE_CLOSER === 'teste',
   /** PRIMEIRO_CONTATO=kommo: lead de formulário recebe a saudação de um robô do Kommo (abre a conversa) e a Anna espera (lib/saudacao.ts) */
-  primeiroContatoKommo: process.env.PRIMEIRO_CONTATO === 'kommo',
+  /** PRIMEIRO_CONTATO=anna: a própria Anna dispara o robô da saudação (Salesbot com "Forçar mensagem") quando o card está
+   *  pronto: tag, primeiro nome e conversa antiga resolvidos. O robô da etapa disparava sem esperar o nome (teste de 03/11). */
+  primeiroContatoKommo: process.env.PRIMEIRO_CONTATO === 'kommo' || process.env.PRIMEIRO_CONTATO === 'anna',
+  primeiroContatoAnnaDispara: process.env.PRIMEIRO_CONTATO === 'anna',
   /** TESTE_TEMPO_REAL=true: os cards de teste usam os tempos reais (a pausa de 30 min não vira 1 min) */
   testeTempoReal: process.env.TESTE_TEMPO_REAL === 'true',
   /** memória dos atendimentos anteriores do mesmo telefone (lib/memoria.ts). MEMORIA=true: todos · teste: só TEST_LEAD_IDS */

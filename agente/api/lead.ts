@@ -11,7 +11,7 @@ import { memoriaNoInicio } from '../lib/memoria'
 import { soltarConversaAntiga } from '../lib/conversa-antiga'
 import { esperarSaudacao } from '../lib/saudacao'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
-import { addLeadTags, getLead, getMainContactName, updateLeadFields } from '../lib/kommo'
+import { addLeadTags, getLead, getMainContactName, runSalesbot, updateLeadFields } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
 import { clearState, getState, patchState } from '../lib/state'
@@ -104,6 +104,12 @@ async function tratar(ev: Evento): Promise<void> {
       const nomeSaudacao = primeiroNome(await getMainContactName(lead).catch(() => ''))
       await updateLeadFields(ev.id, [{ field_id: CRM_MAP.campos.primeiroNome, values: [{ value: nomeSaudacao || 'tudo bem' }] }])
       await esperarSaudacao(ev.id)
+      if (CONFIG.primeiroContatoAnnaDispara) {
+        // o card já tem a tag, o nome e a conversa antiga resolvida: agora a saudação sai, sem depender do robô da etapa
+        await runSalesbot(CRM_MAP.modelos.primeiroContato.botId, ev.id)
+        await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: `primeiro contato: robô da saudação (${CRM_MAP.modelos.primeiroContato.botId}) disparado pela Anna; conferindo a saída` })
+        return
+      }
       await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: 'primeiro contato: aguardando a saudação do robô do Kommo' })
       return
     }
