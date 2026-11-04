@@ -10,6 +10,7 @@ import { iniciarRegua } from '../lib/followup'
 import { memoriaNoInicio } from '../lib/memoria'
 import { soltarConversaAntiga } from '../lib/conversa-antiga'
 import { esperarSaudacao } from '../lib/saudacao'
+import { saudacaoDaHora } from '../lib/plantao'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
 import { addLeadTags, getLead, getMainContactName, runSalesbot, updateLeadFields } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
@@ -103,11 +104,14 @@ async function tratar(ev: Evento): Promise<void> {
       // o modelo começa com "Olá, {primeiro nome}": o campo fica pronto antes do robô (que espera 1 min) disparar
       const nomeSaudacao = primeiroNome(await getMainContactName(lead).catch(() => ''))
       await updateLeadFields(ev.id, [{ field_id: CRM_MAP.campos.primeiroNome, values: [{ value: nomeSaudacao || 'tudo bem' }] }])
-      await esperarSaudacao(ev.id)
+      // plantão ligado: o robô (e o modelo) do expediente ou do plantão, pela hora de Brasília
+      const daHora = CONFIG.primeiroContatoAnnaDispara ? saudacaoDaHora(new Date()) : null
+      await esperarSaudacao(ev.id, Date.now(), daHora?.templateId)
       if (CONFIG.primeiroContatoAnnaDispara) {
         // o card já tem a tag, o nome e a conversa antiga resolvida: agora a saudação sai, sem depender do robô da etapa
-        await runSalesbot(CRM_MAP.modelos.primeiroContato.botId, ev.id)
-        await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: `primeiro contato: robô da saudação (${CRM_MAP.modelos.primeiroContato.botId}) disparado pela Anna; conferindo a saída` })
+        const botId = daHora?.botId ?? CRM_MAP.modelos.primeiroContato.botId
+        await runSalesbot(botId, ev.id)
+        await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: `primeiro contato: robô da saudação (${botId}) disparado pela Anna; conferindo a saída` })
         return
       }
       await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: 'primeiro contato: aguardando a saudação do robô do Kommo' })

@@ -32,6 +32,8 @@ export interface LeadState {
   memoriaPendente?: boolean
   /** PRIMEIRO_CONTATO=kommo: ms em que a Anna passou a esperar a saudação do robô do Kommo (some quando ela sai) */
   saudacaoKommo?: number
+  /** modelo da saudação enviada (expediente ou plantão); sem valor = o primeiro contato padrão */
+  saudacaoModelo?: number
   /** token do job da 5ª mensagem (pausa de 30 min); trocar o token cancela o job */
   msg5Token?: string
   finalizado?: { motivo: string; em: string; resumo?: string }

@@ -1,3 +1,5 @@
+import { CONFIG } from '../config'
+import { apresentacao } from '../plantao'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 /**
@@ -144,7 +146,8 @@ export function saudacao(nome?: string, agora = new Date()): string {
 }
 
 export const TEXTOS = {
-  pergunta1: (nome?: string, agora = new Date()) => preencher(texto('pergunta1'), { saudacao: saudacao(nome, agora) }),
+  // plantão ligado: "Maria, boa noite! Aqui é a Anna, da equipe de plantão…" (Dra., 04/11)
+  pergunta1: (nome?: string, agora = new Date()) => preencher(texto('pergunta1'), { saudacao: CONFIG.plantao ? `${saudacao(nome, agora)} ${apresentacao(agora)}` : saudacao(nome, agora) }),
   get pergunta2() { return texto('pergunta2') },
   get perguntaLimite() { return texto('pergunta_limite') },
   get aguardoValores() { return texto('aguardo_valores') },

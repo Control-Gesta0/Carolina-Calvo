@@ -647,6 +647,17 @@ async function main() {
     eq('memória: depois de "piorou" a pergunta 2 começa com "Entendi.", não "Ótimo!"', [m3.w.enviados[0]?.startsWith('Entendi.'), m3.w.enviados[0]?.includes('Ótimo')], [true, false])
   }
 
+  console.log('\n— Plantão (Dra., 04/11)')
+  {
+    const PL = await import('../lib/plantao')
+    const brt = (s: string) => new Date(`${s}-03:00`)
+    eq('expediente: seg a sex das 9h às 16h59; plantão no resto', [
+      '2026-11-04T08:59:00', '2026-11-04T09:00:00', '2026-11-04T16:59:00', '2026-11-04T17:00:00', '2026-11-04T21:59:00', '2026-11-07T10:00:00', '2026-11-08T15:00:00', '2026-11-05T03:00:00',
+    ].map(t => PL.emPlantao(brt(t))), [true, false, false, true, true, true, true, true])
+    eq('apresentação do plantão e do expediente', [PL.apresentacao(brt('2026-11-04T18:00:00')), PL.apresentacao(brt('2026-11-04T10:00:00'))], [PL.APRESENTACAO.plantao, PL.APRESENTACAO.expediente])
+    eq('robô de saudação: "bot:modelo"', [PL.lerSaudacao('54700:52500'), PL.lerSaudacao(''), PL.lerSaudacao('54700')], [{ botId: 54700, templateId: 52500 }, null, null])
+  }
+
   console.log('\n— Lead que volta: conversa presa no card antigo')
   {
     const { conversasParaFechar } = await import('../lib/conversa-antiga')

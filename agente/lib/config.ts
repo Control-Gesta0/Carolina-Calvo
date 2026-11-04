@@ -59,6 +59,8 @@ export const CONFIG = {
    *  pronto: tag, primeiro nome e conversa antiga resolvidos. O robô da etapa disparava sem esperar o nome (teste de 03/11). */
   primeiroContatoKommo: process.env.PRIMEIRO_CONTATO === 'kommo' || process.env.PRIMEIRO_CONTATO === 'anna',
   primeiroContatoAnnaDispara: process.env.PRIMEIRO_CONTATO === 'anna',
+  /** PLANTAO=true: fora do expediente a Anna se apresenta como equipe de plantão (lib/plantao.ts) */
+  plantao: process.env.PLANTAO === 'true',
   /** TESTE_TEMPO_REAL=true: os cards de teste usam os tempos reais (a pausa de 30 min não vira 1 min) */
   testeTempoReal: process.env.TESTE_TEMPO_REAL === 'true',
   /** memória dos atendimentos anteriores do mesmo telefone (lib/memoria.ts). MEMORIA=true: todos · teste: só TEST_LEAD_IDS */

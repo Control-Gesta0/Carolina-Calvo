@@ -18,8 +18,8 @@ import { getState, patchState } from './state'
 const ESPERAS_MIN = [5, 30]
 
 /** Lead de formulário entrou: a Anna espera a saudação do robô do Kommo. */
-export async function esperarSaudacao(leadId: number, agora = Date.now()): Promise<void> {
-  await patchState(leadId, { etapa: 'q1', inicioEm: agora - 1000, saudacaoKommo: agora })
+export async function esperarSaudacao(leadId: number, agora = Date.now(), modelo?: number): Promise<void> {
+  await patchState(leadId, { etapa: 'q1', inicioEm: agora - 1000, saudacaoKommo: agora, saudacaoModelo: modelo })
   await agendarJob({ tipo: 'saudacao', leadId, quando: agora + ESPERAS_MIN[0] * 60_000, token: String(agora), dados: { tentativa: 0 } })
 }
 
@@ -44,7 +44,7 @@ export async function verificarSaudacao(job: Job): Promise<string> {
   const d = c ? await kommoGet<{ _embedded?: { events?: unknown[] } }>(`/api/v4/events?filter[entity]=contact&filter[entity_id]=${c.id}&filter[type]=outgoing_chat_message&filter[created_at][from]=${desde}&limit=1`) : null
   if ((d?._embedded?.events || []).length) {
     const nome = String(fieldValue(lead, CRM_MAP.campos.primeiroNome) || '')
-    const modelo = await getTemplateText(CRM_MAP.modelos.primeiroContato.templateId).catch(() => '')
+    const modelo = await getTemplateText(st.saudacaoModelo || CRM_MAP.modelos.primeiroContato.templateId).catch(() => '')
     const texto = modelo.replace(/\{\{lead\.cf\.\d+\}\}/g, nome).trim() || '[saudação do robô do Kommo]'
     await confirmarSaudacao(job.leadId, texto, 'histórico do Kommo')
     return 'saudação do Kommo confirmada'
