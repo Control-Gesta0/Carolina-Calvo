@@ -23,6 +23,18 @@ export function emPlantao(d: Date): boolean {
 
 export const apresentacao = (d: Date) => (emPlantao(d) ? APRESENTACAO.plantao : APRESENTACAO.expediente)
 
+/** Aviso no fim do atendimento feito fora do horário (Dra., 04/11): a Anna atende normal e avisa no fim. */
+export const AVISO_FORA_DO_HORARIO = 'Estamos fora do horário comercial. A equipe da Dra. Carolina Calvo dá continuidade ao seu atendimento a partir das 9h do próximo dia útil.'
+
+/** Puro: entre 22h e 3h59 (Brasília), fora até do plantão. */
+export function foraDoHorario(d: Date): boolean {
+  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }).format(d)) % 24
+  return h >= 22 || h < 4
+}
+
+/** Puro: a mensagem que encerra o atendimento da Anna, com o aviso quando é fora do horário. */
+export const comAvisoFora = (texto: string, d: Date, ligado: boolean) => (ligado && foraDoHorario(d) ? `${texto}\n\n${AVISO_FORA_DO_HORARIO}` : texto)
+
 /** "54700:52500" → { botId, templateId }. Puro. */
 export function lerSaudacao(v?: string): { botId: number; templateId: number } | null {
   const [b, t] = String(v || '').split(':').map(Number)

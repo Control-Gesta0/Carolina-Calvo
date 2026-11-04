@@ -1,5 +1,5 @@
 import { CONFIG } from '../config'
-import { apresentacao } from '../plantao'
+import { apresentacao, comAvisoFora } from '../plantao'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 /**
@@ -159,9 +159,10 @@ export const TEXTOS = {
   horarioOcupado: (quando: string) => preencher(texto('horario_ocupado'), { quando }),
   get manhaOuTarde() { return texto('manha_ou_tarde') },
   agendado: (quando: string, link: string) => preencher(texto('agendado'), { quando, link }),
-  get semReuniao() { return texto('sem_reuniao') },
-  get passaHumano() { return texto('passa_humano') },
-  get semAgenda() { return texto('sem_agenda') },
+  // encerramentos que passam para a equipe: entre 22h e 4h, com o aviso de fora do horário (Dra., 04/11)
+  get semReuniao() { return comAvisoFora(texto('sem_reuniao'), new Date(), CONFIG.plantao) },
+  get passaHumano() { return comAvisoFora(texto('passa_humano'), new Date(), CONFIG.plantao) },
+  get semAgenda() { return comAvisoFora(texto('sem_agenda'), new Date(), CONFIG.plantao) },
   get desistiu() { return texto('desistiu') },
   get possuiAdvogado() { return texto('possui_advogado') },
 }

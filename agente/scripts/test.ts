@@ -655,6 +655,8 @@ async function main() {
       '2026-11-04T08:59:00', '2026-11-04T09:00:00', '2026-11-04T16:59:00', '2026-11-04T17:00:00', '2026-11-04T21:59:00', '2026-11-07T10:00:00', '2026-11-08T15:00:00', '2026-11-05T03:00:00',
     ].map(t => PL.emPlantao(brt(t))), [true, false, false, true, true, true, true, true])
     eq('apresentação do plantão e do expediente', [PL.apresentacao(brt('2026-11-04T18:00:00')), PL.apresentacao(brt('2026-11-04T10:00:00'))], [PL.APRESENTACAO.plantao, PL.APRESENTACAO.expediente])
+    eq('fora do horário: só entre 22h e 3h59', ['2026-11-04T21:59:00', '2026-11-04T22:00:00', '2026-11-05T03:59:00', '2026-11-05T04:00:00'].map(t => PL.foraDoHorario(brt(t))), [false, true, true, false])
+    eq('aviso no fim do atendimento só fora do horário e com o plantão ligado', [PL.comAvisoFora('Fim.', brt('2026-11-04T23:00:00'), true), PL.comAvisoFora('Fim.', brt('2026-11-04T20:00:00'), true), PL.comAvisoFora('Fim.', brt('2026-11-04T23:00:00'), false)], [`Fim.\n\n${PL.AVISO_FORA_DO_HORARIO}`, 'Fim.', 'Fim.'])
     eq('robô de saudação: "bot:modelo"', [PL.lerSaudacao('54700:52500'), PL.lerSaudacao(''), PL.lerSaudacao('54700')], [{ botId: 54700, templateId: 52500 }, null, null])
   }
 
