@@ -52,4 +52,4 @@ Estes robôs movem cards para ATÉ 5 MIL ou 5 A 10 MIL e precisam de um destino 
 | Movimentação | 5.339 cards movidos pela integração entre 17:59 e 18:01: 4.467 para Desqualificado, 532 para 10 A 15 MIL e 340 para ACIMA DE 15 MIL. 1 card tinha sido excluído no Kommo antes da movimentação. A coluna de origem de cada card está em `reorganizacao-sdr-03-11-backup.json`, para desfazer se for preciso. |
 | Mensagens e tarefas | Nenhuma tarefa criada. As mensagens dos cards movidos nesse horário foram trocadas com o próprio lead antes ou durante a conversa, sem relação com a movimentação. |
 | Coluna ICMS | Excluída (estava vazia e sem robôs). |
-| ATÉ 5 MIL e 5 A 10 MIL | Vazias. Saem depois de os robôs serem redirecionados: `prompt-cowork-reorganizacao-sdr.md`. |
+| ATÉ 5 MIL e 5 A 10 MIL | Excluídas em 04/11 pela integração, a pedido do Eduardo, antes do redirecionamento dos robôs. Antes da exclusão, o card 29008502 (já fez reunião) foi devolvido para Closer › Retorno imediato: o robô SDR RETORNO IMEDIATO o tinha levado para 5 A 10 MIL às 09:33, quando o lead respondeu. |
