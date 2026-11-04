@@ -164,7 +164,10 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
       max_completion_tokens: 700,
       messages,
       response_format: { type: 'json_schema', json_schema: { name: 'leitura', strict: true, schema: SCHEMA as unknown as Record<string, unknown> } },
-    })
+      // o prompt fixo vem primeiro e fica no cache da OpenAI por 24 h: entre conversas espaçadas a entrada sai a 1/10 do preço
+      prompt_cache_key: 'anna-interprete',
+      prompt_cache_retention: '24h',
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming)
     addUsage(usage, r.usage)
     return JSON.parse(r.choices[0]?.message?.content || '{}') as Leitura
   }
