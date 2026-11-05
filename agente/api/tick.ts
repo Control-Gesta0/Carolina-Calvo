@@ -183,6 +183,14 @@ async function executar(job: Job): Promise<string> {
       await addLeadNote(leadId, 'Anna: follow-up enviado (texto da equipe sobre a confirmação do horário).')
       return 'texto'
     },
+    async aposPrimeiroFollow() {
+      // Dra., 05/11: recebeu o 1º follow-up sem responder → AGUARDANDO QUALIFICAÇÃO (só sai de Contato inicial;
+      // quem já está numa coluna de renda fica onde está). A renda informada depois leva para a coluna certa.
+      const lead = await getLead(leadId)
+      if (lead.pipeline_id !== PIPELINES.sdr || lead.status_id !== STATUS.contatoInicial) return
+      await updateLeadStatus(leadId, STATUS.aguardandoQualificacao, PIPELINES.sdr)
+      await addLeadNote(leadId, 'Anna: o lead recebeu o 1º follow-up sem responder. Card movido para AGUARDANDO QUALIFICAÇÃO.')
+    },
     async encerrar(pipelineId, statusId) {
       const lead = await getLead(leadId)
       if (CRM_MAP.pipelinesProibidos.includes(lead.pipeline_id) || CRM_MAP.etapasProtegidas.includes(lead.status_id)) return

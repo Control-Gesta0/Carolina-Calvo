@@ -76,6 +76,8 @@ export async function executarFu(
     /** devolve como saiu: 'texto' ou 'modelo' (fora da janela de 24h) */
     enviarTexto(texto: string, modeloForaDaJanela: ChaveModelo): Promise<'texto' | 'modelo'>
     encerrar(pipelineId: number, statusId: number): Promise<void>
+    /** depois do 1º follow-up da qualificação: o card sai de Contato inicial para AGUARDANDO QUALIFICAÇÃO */
+    aposPrimeiroFollow?(): Promise<void>
   },
 ): Promise<string> {
   const fu = await getFu(job.leadId)
@@ -97,6 +99,7 @@ export async function executarFu(
   // cada etapa de uma régua sai uma vez só, mesmo com tarefa repetida na fila (28/10: Follow 2 duplicado no teste)
   if ((await redis.set(k('fu-etapa', job.leadId, fu.token, idx), '1', { nx: true, ex: TTL })) !== 'OK') return `etapa ${idx} da régua ${fu.regua} já enviada: duplicata ignorada`
   const comoSaiu = etapa.texto_livre ? await acoes.enviarTexto(etapa.texto_livre, modelo) : (await acoes.enviar(modelo), 'modelo')
+  if (fu.regua === 'qualificacao' && idx === 0 && acoes.aposPrimeiroFollow) await acoes.aposPrimeiroFollow().catch(() => undefined)
   const agora = Date.now()
   const prox = idx + 1
   if (cfg.etapas[prox]) {

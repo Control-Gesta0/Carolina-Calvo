@@ -19,6 +19,8 @@ export const STATUS = {
   naoQuerContinuar: 76490255,
   /** SDR › Desqualificado: renda bruta abaixo de R$ 10 mil confirmada pelo lead (Dra., 03/11/2026) */
   desqualificado: 75401467,
+  /** SDR › AGUARDANDO QUALIFICAÇÃO: recebeu o 1º follow-up e ainda não informou a renda (Dra., 05/11/2026) */
+  aguardandoQualificacao: 113789335,
   reuniaoAgendada: 75401491, // funil Closer
   clienteDecisao: 75538167, // funil Closer
   /** Closer › Retorno imediato: criada em 22/10/2026 (pedido da Dra.), logo depois de Cliente decisão */

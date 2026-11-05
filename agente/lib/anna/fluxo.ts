@@ -21,6 +21,8 @@ import { leituraMemoria, valoresTexto } from '../memoria'
 const RX_DEPOIS = /\b(depois|mais tarde|amanh[aã]|daqui a pouco|j[aá] te (mando|passo|envio)|assim que)\b|vou (ver|verificar|olhar|conferir|pegar|procurar|consultar)|preciso (ver|verificar|olhar|conferir|pegar|procurar|consultar)|n[aã]o (sei|lembro) (de cabe[cç]a|agora|no momento)|n[aã]o tenho (aqui|agora|em m[aã]os)/i
 /** Só uma confirmação ("combinado", "ok", "tá bom"…), sem mais nada. Puro. */
 export const RX_OK = /^\s*(combinado|ok(ay)?|t[aá]( bom| certo)?|certo|beleza|blz|pode deixar|sim|perfeito|fechado|show|claro|👍+|obrigad[oa]|vou mandar|mando sim)[\s.!,]*(obrigad[oa])?[\s.!]*$/i
+/** Só um cumprimento ou resposta genérica ("oi", "sim", "bom dia", "tudo bem?"). Puro. */
+export const RX_GENERICO = /^\s*(oi+|ol[aá]|opa|e a[ií]|sim|ok(ay)?|certo|claro|pode ser|quero|tenho interesse|bom dia|boa tarde|boa noite|tudo bem\??|tudo bom\??|oi,? tudo bem\??|ol[aá],? (bom dia|boa tarde|boa noite))[\s.!,]*$/i
 export const vaiMandarDepois = (texto: string) => RX_DEPOIS.test(texto || '') && !/\?/.test(texto || '')
 
 /** Só acima disto a Anna oferece reunião (regra da Dra., 15/10/2026: renda bruta acima de R$ 15 mil). */
@@ -235,6 +237,12 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
         await deps.patch({ etapa: 'q2' })
         return { acao: `opção ${leitura.opcao}: pergunta 2`, enviado, leitura }
+      }
+      // Dra., 05/11: o lead volta com "oi", "sim", "bom dia"… → reapresenta a 1ª pergunta inteira, sem presumir nada
+      const ultimaAnna = [...ctx.conversa].reverse().find(m => m.dir === 'out')?.text || ''
+      if (RX_GENERICO.test(ctx.textoTurno) && !ultimaAnna.includes('Imagine poder respirar')) {
+        const enviado = await falar(ctx, deps, TEXTOS.pergunta1(ctx.primeiroNome, ctx.agora), 'q1', { id: 'pergunta1', obrigatorio: ['1', '2', '3'] })
+        return { acao: 'q1: resposta genérica, reapresentou a 1ª pergunta', enviado, leitura }
       }
       const livre = await responderLivre()
       if (livre) return livre

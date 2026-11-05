@@ -722,6 +722,19 @@ async function main() {
     eq('memória: depois de "piorou" a pergunta 2 começa com "Entendi.", não "Ótimo!"', [m3.w.enviados[0]?.startsWith('Entendi.'), m3.w.enviados[0]?.includes('Ótimo')], [true, false])
   }
 
+  console.log('\n— AGUARDANDO QUALIFICAÇÃO (Dra., 05/11)')
+  {
+    eq('respostas genéricas', ['oi', 'Bom dia!', 'sim', 'tudo bem?', 'quero saber mais sobre o 2', '3'].map(t => fluxo.RX_GENERICO.test(t)), [true, true, true, true, false, false])
+    const m = mundo(seg9)
+    m.w.state = { etapa: 'q1' }
+    m.w.leituras.push(L({ intencao: 'outro' }))
+    const c = ctx(m.w, seg9, 'oi')
+    c.conversa = [{ id: 'a', dir: 'out', text: 'Muitas pessoas acreditam que precisam continuar suportando esses descontos… *Se ainda tiver interesse, basta responder esta mensagem*.', ts: 1 }, { id: 'b', dir: 'in', text: 'oi', ts: 2 }]
+    await fluxo.turno(c, m.deps)
+    eq('"oi" depois de um follow-up → reapresenta a 1ª pergunta inteira, sem mudar de coluna', [m.w.enviados[0], m.w.state.etapa, m.w.movido.length], [TEXTOS.pergunta1('Maria', seg9), 'q1', 0])
+    eq('coluna nova no mapa', STATUS.aguardandoQualificacao, 113789335)
+  }
+
   console.log('\n— Plantão (Dra., 04/11)')
   {
     const PL = await import('../lib/plantao')
