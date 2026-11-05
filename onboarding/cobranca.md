@@ -76,7 +76,7 @@ Módulo construído em 14/10/2026. O código está em `agente/lib/asaas.ts`, `ag
    - 30/11 (feriado do DF).
 4. **Número:** a cobrança sai pelo WhatsApp oficial (+55 61 3246-7013), com modelos aprovados e custo por envio da Meta. Não sai pelo WhatsApp Lite.
 5. **Link:** é a página da fatura do Asaas, que tem boleto, Pix e cartão. O texto do dia do vencimento diz "Segue o boleto".
-6. **Textos escritos pela Control Gestão:** "Antes do vencimento" e "Pagamento confirmado" precisam do OK da Dra. Mudar o texto depois exige nova aprovação da Meta.
+6. **Textos escritos pela Control Gestão:** "Antes do vencimento" (51754) e "Pagamento confirmado" (51768) — **aprovados pela Dra. em 05/11/2026**, como estão. Mudar o texto depois exige nova aprovação da Meta.
 7. **Tag inadimplentes:** entra no D+1 e sai quando o cliente não tem mais parcela vencida.
 
 ## Onde ver
