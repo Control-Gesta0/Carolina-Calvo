@@ -85,7 +85,8 @@ export const TEXTOS_PADRAO = {
   horario_ocupado: 'Esse horário acabou de ser preenchido. Ela pode atender você *{quando}*, ON LINE. Posso agendar?',
 
   /** [CG] o lead não pode no horário oferecido (regra da Dra.: perguntar manhã ou tarde) */
-  manha_ou_tarde: 'Sem problema. Você prefere de manhã ou à tarde?',
+  /** [DRA] 2ª recusa (Dra., 05/11) */
+  manha_ou_tarde: 'Para facilitar seu agendamento, qual período costuma ser melhor para você: manhã ou tarde?',
 
   /** [DRA] confirmação, a partir do modelo "Agendado" (o link agora vai junto) */
   agendado:
@@ -115,7 +116,7 @@ export const TEXTOS_PADRAO = {
   pendente_q2: 'Pode me passar a sua renda bruta, o valor líquido e quanto o banco desconta da sua conta corrente?',
   pendente_limite: 'Você utiliza o limite do cheque especial e tem cartão de crédito com limite disponível?',
   pendente_q3: 'Concorda que, sem esses descontos, seria um alívio financeiro?',
-  pendente_preferencia: 'Você prefere de manhã ou à tarde?',
+  pendente_preferencia: 'Qual período costuma ser melhor para você: manhã ou tarde?',
 }
 
 export type TextoId = keyof typeof TEXTOS_PADRAO

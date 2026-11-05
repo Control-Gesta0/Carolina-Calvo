@@ -69,7 +69,7 @@ Você conversa pelo WhatsApp com quem preencheu o formulário do escritório. O 
 - `renda_bruta`, `renda_liquida`, `desconto_conta`: valores mensais em reais, como número. "12 mil" = 12000, "uns 4.500" = 4500. Se ele disser que o banco não desconta nada da conta, `desconto_conta` = 0. Se ele disser que TEM desconto ou débito em conta mas não disser o valor ("débito em conta", "tem desconto sim"), `desconto_conta` = null: nunca 0. Use só o que o lead escreveu nesta conversa; nunca deduza um valor do outro.
 - `periodo`: "manha" ou "tarde", só se ele disse qual período prefere ("de manhã", "à tarde", "depois do almoço"). Recusar um horário não é escolher período: nunca deduza o período a partir do horário que foi oferecido.
 - `data_preferida`: dia que ele pediu, no formato AAAA-MM-DD, calculado a partir da data de hoje que o sistema informa.
-- `hora_preferida`: hora que ele pediu, no formato HH:MM ("às 16h" = "16:00", "16h30" = "16:30"). Só preencha se ele disse uma hora; senão, null. Quando ele diz uma hora da tarde, `periodo` = "tarde"; da manhã, "manha".
+- `hora_preferida`: hora que ele pediu, no formato HH:MM ("às 16h" = "16:00", "16h30" = "16:30", "depois das 16h" = "16:00"). Só preencha se ele disse uma hora; senão, null. "Hoje", "amanhã" e dias da semana viram `data_preferida`. Se ele diz que hoje não pode ("hoje não dá, só de manhã"), `data_preferida` = o próximo dia útil. Quando ele diz uma hora da tarde, `periodo` = "tarde"; da manhã, "manha".
 
 ## Quando escrever `resposta`
 

@@ -73,17 +73,21 @@ async function main() {
   // Dra., 05/11 (2ª mensagem): o mesmo dia primeiro, com 30 min de antecedência
   const segAs = (h: number, m: number) => A.deBrt(2026, 9, 12, h, m)
   eq('lead de madrugada → 11:00 da mesma manhã', k(A.proximoSlot({ ...base, agora: segAs(3, 0), mesmoDia: true })), '2026-10-12T11:00')
-  eq('lead às 10:20 → 11:00 da própria manhã', k(A.proximoSlot({ ...base, agora: segAs(10, 20), mesmoDia: true })), '2026-10-12T11:00')
+  eq('oferta às 9:45 → 11:00 da própria manhã (1 h de antecedência)', k(A.proximoSlot({ ...base, agora: segAs(9, 45), mesmoDia: true })), '2026-10-12T11:00')
+  eq('oferta às 10:20 → 11:00 fica a menos de 1 h → 15:00 da própria tarde', k(A.proximoSlot({ ...base, agora: segAs(10, 20), mesmoDia: true })), '2026-10-12T15:00')
+  eq('oferta às 12:30 → 15:00 da mesma tarde', k(A.proximoSlot({ ...base, agora: segAs(12, 30), mesmoDia: true })), '2026-10-12T15:00')
+  eq('oferta às 18:00 → manhã do próximo dia útil (11:00)', k(A.proximoSlot({ ...base, agora: segAs(18, 0), mesmoDia: true })), '2026-10-13T11:00')
+  eq('oferta às 16:45 → nada com 1 h hoje → 11:00 do próximo dia útil', k(A.proximoSlot({ ...base, agora: segAs(16, 45), mesmoDia: true })), '2026-10-13T11:00')
   eq('lead às 10:45 → manhã já passou → 15:00 da própria tarde', k(A.proximoSlot({ ...base, agora: segAs(10, 45), mesmoDia: true })), '2026-10-12T15:00')
-  eq('lead às 15:10 → 16:00 do mesmo dia (15:30 fica a menos de 30 min)', k(A.proximoSlot({ ...base, agora: segAs(15, 10), mesmoDia: true })), '2026-10-12T16:00')
+  eq('oferta às 14:15 → 15:30 da mesma tarde (exemplo da Dra.: 15:00 fica a menos de 1 h)', k(A.proximoSlot({ ...base, agora: segAs(14, 15), mesmoDia: true })), '2026-10-12T15:30')
   eq('dia útil seguinte → 11:00 (Dra., 05/11)', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false })), '2026-10-13T11:00')
   eq('17:10 → 17:30 fica em cima, vai para amanhã', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 12, 17, 10), mesmoDia: true })), '2026-10-13T11:00')
   eq('sexta à noite → segunda', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 16, 20, 0), mesmoDia: true })), '2026-10-19T11:00')
   eq('reservado para outro lead é pulado', k(A.proximoSlot({ ...base, reservados: new Set(['2026-10-12T11:00']), agora: seg9, mesmoDia: true })), '2026-10-12T10:30')
   eq('ordem do dia: 11:00, 10:30, 10:00 e depois 15:00 a 17:30 (Dra., 05/11)', A.slotsDoDia('2026-10-13').map(x => x.chave.slice(11)), ['11:00', '10:30', '10:00', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'])
   eq('lead pede dia e hora livres → essa hora (Dra., 05/11)', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '16:00', periodo: 'tarde' })), '2026-10-15T16:00')
-  eq('hora pedida ocupada → segue a sequência do período nesse dia', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '16:00', periodo: 'tarde', reservados: new Set(['2026-10-15T16:00']) })), '2026-10-15T15:00')
-  eq('hora fora dos horários da Dra. → segue a sequência', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '19:00', periodo: 'tarde' })), '2026-10-15T15:00')
+  eq('hora pedida ocupada → o primeiro horário depois dela nesse dia', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '16:00', periodo: 'tarde', reservados: new Set(['2026-10-15T16:00']) })), '2026-10-15T16:30')
+  eq('depois das 19h não há horário da Dra. → segue a sequência no dia seguinte', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '19:00', periodo: 'tarde' })), '2026-10-16T15:00')
   eq('prefere manhã, a partir de amanhã → 11:00', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: true, periodo: 'manha', aPartirDoDia: '2026-10-13' })), '2026-10-13T11:00')
   eq('oferta hoje', A.quandoOferta(A.deBrt(2026, 9, 12, 17, 0), seg9), 'HOJE às 17:00')
   eq('oferta amanhã', A.quandoOferta(A.deBrt(2026, 9, 13, 15, 0), seg9), 'AMANHÃ às 15:00')
@@ -188,6 +192,18 @@ async function main() {
   type Ctx = import('../lib/anna/fluxo').Ctx
   function ctx(w: { state: LS }, agora: Date, texto: string): Ctx {
     return { agora, nomeContato: 'Maria Silva', primeiroNome: 'Maria', state: w.state, textoTurno: texto, conversa: [] }
+  }
+
+  {
+    const { dataDoTexto } = await import('../lib/anna/interprete')
+    const ter = new Date('2026-10-13T13:00:00Z'), sex = new Date('2026-10-16T13:00:00Z')
+    eq('"amanhã", "hoje não dá" e "hoje" viram data quando o modelo não preenche', [
+      dataDoTexto(L({ intencao: 'escolhe_periodo' }), 'oferta', 'só consigo amanhã de manhã', ter).data_preferida,
+      dataDoTexto(L({ intencao: 'escolhe_periodo' }), 'oferta', 'hoje não dá, só de manhã', sex).data_preferida,
+      dataDoTexto(L({ intencao: 'escolhe_periodo' }), 'preferencia', 'hoje depois das 16h', ter).data_preferida,
+      dataDoTexto(L({ intencao: 'escolhe_periodo', data_preferida: '2026-10-15' }), 'oferta', 'amanhã', ter).data_preferida,
+      dataDoTexto(L({ intencao: 'responde_etapa' }), 'q2', 'amanhã te mando', ter).data_preferida,
+    ], ['2026-10-14', '2026-10-19', '2026-10-13', '2026-10-15', null])
   }
 
   {
@@ -326,19 +342,66 @@ async function main() {
   }
 
   {
-    const agora = seg9
-    const { w, deps } = mundo(agora)
-    w.state = { etapa: 'oferta', rendaBruta: 12000, oferta: { chave: '2026-10-13T15:00', inicio: A.deBrt(2026, 9, 13, 15, 0).toISOString(), fim: A.deBrt(2026, 9, 13, 15, 30).toISOString(), em: agora.getTime() } }
-    w.leituras.push(L({ intencao: 'recusa_horario' }))
-    await fluxo.turno(ctx(w, agora, 'nesse horário não consigo'), deps)
-    eq('não pode → pergunta manhã ou tarde', [w.enviados[0], w.state.etapa], [TEXTOS.manhaOuTarde, 'preferencia'])
-    w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'manha' }))
-    await fluxo.turno(ctx(w, agora, 'de manhã'), deps)
-    eq('manhã → oferece 11:00 do dia seguinte ao recusado', w.enviados[1], TEXTOS.novaOferta('na quarta-feira (14/10) às 11:00'))
-    w.ocupar.add('2026-10-14T11:00')
-    w.leituras.push(L({ intencao: 'aceita_horario' }))
-    await fluxo.turno(ctx(w, agora, 'ok'), deps)
-    eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[2], TEXTOS.horarioOcupado('HOJE às 11:00'))
+    // Dra., 05/11: recusas, preferência do lead e a diferença entre oferta (1 h) e confirmação (30 min)
+    const of = (h: number, m: number, dia = 12) => ({ chave: `2026-10-${dia}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, inicio: A.deBrt(2026, 9, dia, h, m).toISOString(), fim: A.deBrt(2026, 9, dia, h, m + 30).toISOString(), em: seg9.getTime() })
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(11, 0) }
+      w.leituras.push(L({ intencao: 'recusa_horario' }))
+      await fluxo.turno(ctx(w, seg9, 'nesse horário não consigo'), deps)
+      eq('1ª recusa das 11:00 → uma alternativa no outro período do mesmo dia (15:00)', w.enviados[0], TEXTOS.novaOferta('HOJE às 15:00'))
+      w.leituras.push(L({ intencao: 'recusa_horario' }))
+      await fluxo.turno(ctx(w, seg9, 'também não dá'), deps)
+      eq('2ª recusa → pergunta o período, com o texto da Dra.', [w.enviados[1], w.state.etapa], ['Para facilitar seu agendamento, qual período costuma ser melhor para você: manhã ou tarde?', 'preferencia'])
+      w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'manha' }))
+      await fluxo.turno(ctx(w, seg9, 'de manhã'), deps)
+      eq('manhã → próximo horário da manhã, sem repetir o recusado (10:30)', w.enviados[2], TEXTOS.novaOferta('HOJE às 10:30'))
+      w.leituras.push(L({ intencao: 'recusa_horario' }))
+      await fluxo.turno(ctx(w, seg9, 'não posso'), deps)
+      eq('recusou de novo → não insiste: a equipe assume', [w.state.etapa, w.humano.length > 0], ['humano', true])
+    }
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(11, 0) }
+      w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'manha', data_preferida: '2026-10-13' }))
+      await fluxo.turno(ctx(w, seg9, 'só consigo amanhã de manhã'), deps)
+      eq('"só consigo amanhã de manhã" → manhã de amanhã, sem insistir na tarde de hoje', w.enviados[0], TEXTOS.novaOferta('AMANHÃ às 11:00'))
+    }
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(11, 0) }
+      w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'tarde', data_preferida: '2026-10-15', hora_preferida: '16:00' }))
+      await fluxo.turno(ctx(w, seg9, 'quinta-feira às 16h seria melhor'), deps)
+      eq('"quinta às 16h" → exatamente quinta às 16:00', w.enviados[0], TEXTOS.novaOferta('na quinta-feira (15/10) às 16:00'))
+    }
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(11, 0) }
+      w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'tarde', data_preferida: '2026-10-12', hora_preferida: '16:00' }))
+      await fluxo.turno(ctx(w, seg9, 'hoje só consigo depois das 16h'), deps)
+      eq('"hoje só depois das 16h" → hoje às 16:00', w.enviados[0], TEXTOS.novaOferta('HOJE às 16:00'))
+    }
+    {
+      const as = (h: number, m: number) => A.deBrt(2026, 9, 12, h, m)
+      const { w, deps } = mundo(as(14, 10))
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(15, 0) }
+      w.leituras.push(L({ intencao: 'aceita_horario' }))
+      await fluxo.turno(ctx(w, as(14, 10), 'pode sim'), deps)
+      eq('oferta das 15:00 aceita às 14:10 (faltam 50 min) → confirma', [w.eventos, w.state.etapa], [['2026-10-12T15:00'], 'agendado'])
+      const m2 = mundo(as(14, 45))
+      m2.w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(15, 0) }
+      m2.w.leituras.push(L({ intencao: 'aceita_horario' }))
+      await fluxo.turno(ctx(m2.w, as(14, 45), 'pode sim'), m2.deps)
+      eq('aceita às 14:45 (faltam 15 min) → não confirma, oferece outro com 1 h (16:00)', [m2.w.eventos.length, m2.w.enviados[0]], [0, TEXTOS.novaOferta('HOJE às 16:00')])
+    }
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(11, 0) }
+      w.ocupar.add('2026-10-12T11:00')
+      w.leituras.push(L({ intencao: 'aceita_horario' }))
+      await fluxo.turno(ctx(w, seg9, 'ok'), deps)
+      eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[0], TEXTOS.horarioOcupado('HOJE às 10:30'))
+    }
   }
 
   {

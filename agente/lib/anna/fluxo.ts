@@ -2,7 +2,7 @@ import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from '../crm-map'
 import type { Regua } from '../followup'
 import type { ChatMsg } from '../history'
 import type { Etapa, LeadState, Oferta } from '../state'
-import { AGENDA, diaIso, primeiraMaiuscula, proximoDiaUtil, quandoExtenso, quandoOferta, type Periodo, type Slot } from './agenda'
+import { AGENDA, periodoDoSlot, diaIso, primeiraMaiuscula, proximoDiaUtil, quandoExtenso, quandoOferta, type Periodo, type Slot } from './agenda'
 import { compor, ehPerguntaRobo, PENDENTE, type Entrada, type Leitura } from './interprete'
 import type { Redacao } from './redator'
 import { brl, TEXTOS } from './textos'
@@ -55,7 +55,7 @@ export interface Deps {
   cancelarRegua(): Promise<void>
   agenda: {
     disponivel(): boolean | Promise<boolean>
-    buscar(o: { periodo?: Periodo; aPartirDoDia?: string; mesmoDia: boolean; horaExata?: string }): Promise<Slot | null>
+    buscar(o: { periodo?: Periodo; aPartirDoDia?: string; mesmoDia: boolean; horaExata?: string; antecedenciaMin?: number; excluir?: string[] }): Promise<Slot | null>
     reservar(slot: Slot): Promise<void>
     /** confere de novo no Google e cria o evento com Meet; null = o horário foi ocupado */
     confirmar(slot: Slot, titulo: string, descricao: string): Promise<{ eventId: string; link: string } | null>
@@ -103,7 +103,7 @@ export const OBJETIVO: Record<string, string> = {
   mensagem5: 'dizer que a Dra. Carolina analisou o caso e o considerou delicado; que abriu um espaço na agenda no horário oferecido, on-line, para o primeiro atendimento; que nele vai explicar a possibilidade de obter judicialmente a suspensão dos descontos por até 6 meses, a revisão dos juros e a reestruturação das dívidas; que cada dia é mais um dia com descontos e esse é o único horário; perguntar se pode confirmar',
   nova_oferta: 'oferecer o horário, on-line, e perguntar se pode agendar',
   horario_ocupado: 'avisar que o horário anterior acabou de ser preenchido, oferecer o novo horário, on-line, e perguntar se pode agendar',
-  manha_ou_tarde: 'dizer que não tem problema e perguntar se a pessoa prefere de manhã ou à tarde',
+  manha_ou_tarde: 'para facilitar o agendamento, perguntar qual período costuma ser melhor para a pessoa: manhã ou tarde',
   oferta_pendente: 'retomar a oferta de horário e perguntar se pode agendar',
   sem_reuniao: 'agradecer as informações, dizer que o caso fica registrado para a equipe da Dra. Carolina avaliar o melhor caminho e que a pessoa pode escrever por aqui se tiver alguma dúvida',
   passa_humano: 'dizer que vai pedir para alguém da equipe da Dra. Carolina continuar o atendimento por aqui',
@@ -151,10 +151,10 @@ async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitu
   return { acao: `passou para humano: ${motivo}`, enviado, leitura, resumo }
 }
 
-async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string; horaExata?: string }, textoDe: (q: string) => string, id: string): Promise<Resultado> {
+async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string; horaExata?: string; antecedenciaMin?: number }, textoDe: (q: string) => string, id: string): Promise<Resultado> {
   if (!(await deps.agenda.disponivel())) return humano(ctx, deps, 'agenda indisponível', TEXTOS.semAgenda, undefined, 'sem_agenda')
   const mesmoDia = (ctx.state.rendaBruta ?? 0) >= AGENDA.rendaMesmoDia && !busca.aPartirDoDia
-  const slot = await deps.agenda.buscar({ ...busca, mesmoDia })
+  const slot = await deps.agenda.buscar({ ...busca, mesmoDia, excluir: ctx.state.recusados })
   if (!slot) return humano(ctx, deps, 'sem horário livre nos próximos dias', TEXTOS.semAgenda, undefined, 'sem_agenda')
   await deps.agenda.reservar(slot)
   const quando = quandoOferta(slot.inicio, ctx.agora)
@@ -180,7 +180,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   if (ehPerguntaRobo(ctx.textoTurno)) return humano(ctx, deps, 'perguntou se é robô', TEXTOS.passaHumano)
 
   // oferta vencida (o lead voltou depois do horário): não repete a data velha, busca um horário novo
-  const ofertaVencida = !!s.oferta && new Date(s.oferta.inicio).getTime() < ctx.agora.getTime() + 30 * 60_000
+  const ofertaVencida = !!s.oferta && new Date(s.oferta.inicio).getTime() < ctx.agora.getTime() + AGENDA.antecedenciaConfirmacaoMin * 60_000
   const quandoOfertado = s.oferta && !ofertaVencida ? quandoOferta(new Date(s.oferta.inicio), ctx.agora) : undefined
   const leitura = await deps.interpretar({
     etapa, pendente: PENDENTE[etapa](s, quandoOfertado), state: s, conversa: ctx.conversa, agora: ctx.agora, nomeContato: ctx.nomeContato,
@@ -358,8 +358,8 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     case 'preferencia': {
       if (etapa === 'oferta' && leitura.intencao === 'aceita_horario' && s.oferta) {
         const slot = slotDaOferta(s.oferta)
-        // oferta velha (o horário já passou ou está em cima): oferece o próximo
-        if (slot.inicio.getTime() < ctx.agora.getTime() + 30 * 60_000) return oferecer(ctx, deps, {}, TEXTOS.novaOferta, 'nova_oferta')
+        // aceite de um horário já oferecido vale até 30 min antes (Dra., 05/11); mais em cima que isso, oferece outro
+        if (slot.inicio.getTime() < ctx.agora.getTime() + AGENDA.antecedenciaConfirmacaoMin * 60_000) return oferecer(ctx, deps, {}, TEXTOS.novaOferta, 'nova_oferta')
         const nome = ctx.primeiroNome || ctx.nomeContato || 'lead'
         const ev = await deps.agenda.confirmar(slot, `Reunião on-line · ${nome} · superendividamento`, `Marcada pela Anna (WhatsApp).\n${resumoLead(s)}`)
         if (!ev) return oferecer(ctx, deps, {}, TEXTOS.horarioOcupado, 'horario_ocupado')
@@ -380,16 +380,33 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
         return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
       }
-      if (leitura.periodo || leitura.data_preferida) {
-        const refDia = s.oferta ? diaIso(new Date(s.oferta.inicio)) : diaIso(ctx.agora)
-        const aPartirDoDia = leitura.data_preferida && leitura.data_preferida > diaIso(ctx.agora) ? leitura.data_preferida : proximoDiaUtil(refDia)
-        const horaExata = leitura.data_preferida && leitura.hora_preferida && /^\d{2}:\d{2}$/.test(leitura.hora_preferida) ? leitura.hora_preferida : undefined
-        return oferecer(ctx, deps, { periodo: leitura.periodo || undefined, aPartirDoDia, horaExata }, TEXTOS.novaOferta, 'nova_oferta')
+      // Dra., 05/11: a preferência que o lead diz vale mais que a sequência; recusou sem dizer quando →
+      // 1ª vez, uma alternativa no outro período; 2ª vez, pergunta o período; depois disso, a equipe assume
+      const recusou = leitura.intencao === 'recusa_horario' || leitura.intencao === 'escolhe_periodo' || !!(leitura.periodo || leitura.data_preferida || leitura.hora_preferida)
+      const recusados = recusou && etapa === 'oferta' && s.oferta ? [...(s.recusados || []), s.oferta.chave] : (s.recusados || [])
+      if (recusados !== s.recusados) await deps.patch({ recusados })
+      const ctxR = { ...ctx, state: { ...s, recusados } }
+      const hoje = diaIso(ctx.agora)
+      const hora = leitura.hora_preferida && /^\d{2}:\d{2}$/.test(leitura.hora_preferida) ? leitura.hora_preferida : undefined
+      if (leitura.periodo || leitura.data_preferida || hora) {
+        const dia = leitura.data_preferida && leitura.data_preferida >= hoje ? leitura.data_preferida : hora ? hoje : undefined
+        // pedido do próprio lead com dia ou hora: mínimo de 30 min; só o período: a regra da oferta (1 h)
+        const antecedenciaMin = dia || hora ? AGENDA.antecedenciaConfirmacaoMin : undefined
+        return oferecer(ctxR, deps, { periodo: hora ? undefined : leitura.periodo || undefined, aPartirDoDia: dia, horaExata: hora, antecedenciaMin }, TEXTOS.novaOferta, 'nova_oferta')
       }
       if (leitura.intencao === 'recusa_horario' || (etapa === 'oferta' && leitura.intencao === 'escolhe_periodo')) {
-        await deps.patch({ etapa: 'preferencia', recusas: (s.recusas || 0) + 1 })
-        const enviado = await falar(ctx, deps, TEXTOS.manhaOuTarde, 'preferencia', { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
-        return { acao: 'não pode no horário: perguntou manhã ou tarde', enviado, leitura }
+        const n = (s.recusas || 0) + 1
+        await deps.patch({ recusas: n })
+        if (n === 1 && s.oferta) {
+          const recusado = slotDaOferta(s.oferta)
+          return oferecer(ctxR, deps, { periodo: periodoDoSlot(recusado) === 'manha' ? 'tarde' : 'manha', aPartirDoDia: diaIso(recusado.inicio) }, TEXTOS.novaOferta, 'nova_oferta')
+        }
+        if (n === 2) {
+          await deps.patch({ etapa: 'preferencia' })
+          const enviado = await falar(ctx, deps, TEXTOS.manhaOuTarde, 'preferencia', { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
+          return { acao: 'recusou de novo: perguntou o período', enviado, leitura }
+        }
+        return humano(ctx, deps, `recusou ${n - 1} horários oferecidos`, TEXTOS.semAgenda, leitura, 'sem_agenda')
       }
       if (etapa === 'oferta' && ofertaVencida && !leitura.resposta) return oferecer(ctx, deps, {}, TEXTOS.novaOferta, 'nova_oferta')
       const livre = await responderLivre()

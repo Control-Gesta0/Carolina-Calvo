@@ -1,4 +1,5 @@
 import { querContratar } from '../contratar'
+import { diaIso, proximoDiaUtil } from './agenda'
 import fs from 'fs'
 import path from 'path'
 import OpenAI from 'openai'
@@ -83,6 +84,20 @@ const RX_SEM_DESCONTO = /\b(n[aã]o|nada|nenhum|zero|sem)\b|\b0\b/i
 export function semDescontoSoSeDito(l: Leitura, textoLead: string): Leitura {
   if (l.desconto_conta === 0 && !RX_SEM_DESCONTO.test(textoLead)) return { ...l, desconto_conta: null }
   return l
+}
+
+/**
+ * "amanhã", "hoje não dá" e "hoje" na hora de marcar viram data no código: o modelo às vezes deixa
+ * data_preferida vazia (exame de 05/11). Só quando ele não preencheu. Puro.
+ */
+export function dataDoTexto(l: Leitura, etapa: Etapa, textoLead: string, agora: Date): Leitura {
+  if (l.data_preferida || (etapa !== 'oferta' && etapa !== 'preferencia')) return l
+  const t = textoLead.toLowerCase()
+  let dia: string | null = null
+  if (/\bamanh[aã](?![a-z])/.test(t)) dia = diaIso(new Date(agora.getTime() + 86400_000))
+  else if (/\bhoje\b[^.?!]{0,20}\bn[aã]o\b|\bn[aã]o\b[^.?!]{0,20}\bhoje\b/.test(t)) dia = proximoDiaUtil(diaIso(agora))
+  else if (/\bhoje\b/.test(t)) dia = diaIso(agora)
+  return dia ? { ...l, data_preferida: dia } : l
 }
 
 /** Mensagem final de uma resposta livre: a resposta do modelo + a pergunta pendente (do código). */
@@ -185,7 +200,7 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
     ]
     const iOut = e.conversa.map(m => m.dir).lastIndexOf('out')
     const textoLead = e.conversa.slice(iOut + 1).filter(m => m.dir === 'in').map(m => m.text).join('\n')
-    const leitura = semDescontoSoSeDito(contratarSoSeDito(periodoSoSeDito(await chamar(messages, usage), e.etapa, textoLead), textoLead), textoLead)
+    const leitura = dataDoTexto(semDescontoSoSeDito(contratarSoSeDito(periodoSoSeDito(await chamar(messages, usage), e.etapa, textoLead), textoLead), textoLead), e.etapa, textoLead, e.agora)
     const guard: string[] = []
     if (leitura.resposta) {
       let texto = semTravessao(leitura.resposta.trim())

@@ -26,6 +26,8 @@ export interface LeadState {
   oferta?: Oferta
   /** quantas vezes o lead recusou um horário oferecido */
   recusas?: number
+  /** horários que o lead recusou nesta conversa (não são oferecidos de novo) */
+  recusados?: string[]
   reuniao?: { eventId: string; inicio: string; link: string; criadaEm: string }
   /** memória (Ajuste 3): valores de um atendimento anterior do mesmo telefone, e se a Anna espera o "melhorou, piorou ou igual" */
   memoria?: { quando: string; rendaBruta?: number; rendaLiquida?: number; descontoConta?: number }

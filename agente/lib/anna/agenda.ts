@@ -15,8 +15,10 @@ export const AGENDA = {
   duracaoMin: 30,
   /** 0 = domingo … 6 = sábado */
   diasSemana: [1, 2, 3, 4, 5],
-  /** não oferece horário que começa antes de agora + isso: tempo para o lead ler e aceitar (Dra., 05/11: antes 60) */
-  antecedenciaMin: 30,
+  /** oferta espontânea da Anna: só horários a pelo menos 1 h (Dra., 05/11) */
+  antecedenciaMin: 60,
+  /** confirmar um horário já oferecido, ou um horário que o próprio lead pediu: mínimo absoluto de 30 min */
+  antecedenciaConfirmacaoMin: 30,
   horizonteDias: 14,
   /**
    * Reunião no mesmo dia a partir desta renda. Dra., 05/11/2026: a prioridade é a reunião no
@@ -78,31 +80,42 @@ export interface Busca {
   aPartirDoDia?: string
   /** pode oferecer horário hoje (prioridade) */
   mesmoDia: boolean
-  /** hora pedida pelo lead ("16:00"): se estiver livre nesse dia, é ela; senão segue a sequência */
+  /** hora pedida pelo lead ("16:00"): se estiver livre nesse dia, é ela; senão o 1º horário a partir dela nesse dia, e depois a sequência */
   horaExata?: string
+  /** antecedência mínima desta busca (padrão: a da oferta, 1 h) */
+  antecedenciaMin?: number
+  /** horários que o lead já recusou nesta conversa */
+  excluir?: string[]
 }
 
 export function proximoSlot(b: Busca): Slot | null {
   const hoje = diaIso(b.agora)
-  let dia = b.aPartirDoDia && b.aPartirDoDia > hoje ? b.aPartirDoDia : b.mesmoDia ? hoje : proximoDiaUtil(hoje)
-  const limite = b.agora.getTime() + AGENDA.antecedenciaMin * 60_000
-  const livre = (s: Slot) => s.inicio.getTime() >= limite && !b.reservados.has(s.chave) && !b.ocupados.some(o => o.inicio < s.fim.getTime() && o.fim > s.inicio.getTime())
-  // o lead pediu dia e hora (Dra., 05/11): se essa hora é um dos horários da Dra. e está livre, é ela
-  if (b.horaExata && b.aPartirDoDia) {
-    const pedido = slotsDoDia(b.aPartirDoDia).find(s => s.chave.endsWith(`T${b.horaExata}`))
-    if (pedido && AGENDA.diasSemana.includes(brt(pedido.inicio).semana) && livre(pedido)) return pedido
+  let dia = b.aPartirDoDia && b.aPartirDoDia >= hoje ? b.aPartirDoDia : b.mesmoDia ? hoje : proximoDiaUtil(hoje)
+  const limite = b.agora.getTime() + (b.antecedenciaMin ?? AGENDA.antecedenciaMin) * 60_000
+  const excluir = new Set(b.excluir || [])
+  const livre = (s: Slot) => s.inicio.getTime() >= limite && !b.reservados.has(s.chave) && !excluir.has(s.chave) && !b.ocupados.some(o => o.inicio < s.fim.getTime() && o.fim > s.inicio.getTime())
+  const primeiroDia = dia
+  // o lead pediu dia e hora (Dra., 05/11): a hora dele vale mais que a sequência. Exata, se for um dos
+  // horários da Dra. e estiver livre; senão o primeiro horário a partir dela naquele dia ("só depois das 16h")
+  if (b.horaExata) {
+    const doDia = slotsDoDia(primeiroDia).filter(s => s.chave.slice(11) >= b.horaExata!).sort((x, y) => x.inicio.getTime() - y.inicio.getTime())
+    const util = AGENDA.diasSemana.includes(brt(inicioDoDia(primeiroDia)).semana)
+    const exata = doDia.find(s => s.chave.endsWith(`T${b.horaExata}`))
+    if (util && exata && livre(exata)) return exata
+    const depois = util ? doDia.find(livre) : undefined
+    if (depois) return depois
   }
   for (let i = 0; i < AGENDA.horizonteDias; i++, dia = somaDias(dia, 1)) {
     if (!AGENDA.diasSemana.includes(brt(inicioDoDia(dia)).semana)) continue
-    for (const s of slotsDoDia(dia, b.periodo)) {
-      if (s.inicio.getTime() < limite) continue
-      if (b.reservados.has(s.chave)) continue
-      if (b.ocupados.some(o => o.inicio < s.fim.getTime() && o.fim > s.inicio.getTime())) continue
-      return s
-    }
+    // depois de uma hora pedida, o resto daquele dia já foi visto
+    if (b.horaExata && dia === primeiroDia) continue
+    for (const s of slotsDoDia(dia, b.periodo)) if (livre(s)) return s
   }
   return null
 }
+
+/** Puro: manhã ou tarde do horário. */
+export const periodoDoSlot = (s: Pick<Slot, 'chave'>): Periodo => (s.chave.slice(11) < '13:00' ? 'manha' : 'tarde')
 
 const SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']
 
