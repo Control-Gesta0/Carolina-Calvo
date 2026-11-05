@@ -122,6 +122,11 @@ export async function addLeadTask(leadId: number, text: string, o: { responsavel
   }])
 }
 
+/** Tarefa com data e duração (a reunião na agenda do Kommo, como a equipe faz: tipo "Reunião", 30 min). */
+export async function addLeadTaskAt(leadId: number, text: string, o: { responsavelId: number; tipo: number; quando: number; duracaoS: number }): Promise<void> {
+  await kommo('POST', '/api/v4/tasks', [{ text, entity_id: leadId, entity_type: 'leads', task_type_id: o.tipo, responsible_user_id: o.responsavelId, complete_till: o.quando, duration: o.duracaoS }])
+}
+
 const templateCache = new Map<number, string>()
 
 /** Texto de um modelo de chat (para o anti-eco reconhecer o envio do Salesbot). */

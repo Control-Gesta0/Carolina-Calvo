@@ -2,9 +2,9 @@
  * Agenda da Dra. Carolina — motor PURO (sem rede), testado em scripts/test.ts.
  *
  * Regra de 08/10/2026: oferecer UM horário por vez, preenchendo a agenda em
- * sequência para a Dra. fazer as reuniões seguidas. Em cada dia, primeiro a
- * tarde (15:00 → 17:30), depois a manhã do mais tarde para o mais cedo
- * (11:00 → 10:00: são os três horários da manhã, Dra., 16/10). Reuniões de 30 min, on-line.
+ * sequência para a Dra. fazer as reuniões seguidas. Ordem da Dra. de 05/11/2026,
+ * a partir do DIA ÚTIL SEGUINTE: manhã 11:00 → 10:30 → 10:00, depois tarde
+ * 15:00 → 17:30. Reuniões de 30 min, on-line.
  *
  * Horário de Brasília = UTC-3 fixo (o Brasil não tem horário de verão desde 2019).
  */
@@ -19,11 +19,10 @@ export const AGENDA = {
   antecedenciaMin: 60,
   horizonteDias: 14,
   /**
-   * Reunião no mesmo dia a partir desta renda. Desde 15/10/2026 a Anna só oferece
-   * reunião acima de R$ 15 mil (fluxo.ts), então na prática todo lead com oferta
-   * pode ter reunião no mesmo dia. Fica aqui caso a Dra. volte a ofertar abaixo disso.
+   * Reunião no mesmo dia a partir desta renda. Desde 05/11/2026 a Dra. prioriza o dia útil
+   * seguinte: nenhuma renda libera o mesmo dia. Fica aqui caso ela volte a querer.
    */
-  rendaMesmoDia: 13500,
+  rendaMesmoDia: Number.POSITIVE_INFINITY,
 }
 
 const OFFSET_MS = 3 * 3600_000
@@ -60,7 +59,7 @@ export function proximoDiaUtil(iso: string): string {
 
 export function slotsDoDia(iso: string, periodo?: Periodo): Slot[] {
   const [a, m, d] = iso.split('-').map(Number)
-  const horas = periodo ? AGENDA[periodo] : [...AGENDA.tarde, ...AGENDA.manha]
+  const horas = periodo ? AGENDA[periodo] : [...AGENDA.manha, ...AGENDA.tarde]
   return horas.map(h => {
     const [hh, mm] = h.split(':').map(Number)
     const inicio = deBrt(a, m - 1, d, hh, mm)
@@ -79,12 +78,20 @@ export interface Busca {
   aPartirDoDia?: string
   /** pode oferecer horário hoje (prioridade) */
   mesmoDia: boolean
+  /** hora pedida pelo lead ("16:00"): se estiver livre nesse dia, é ela; senão segue a sequência */
+  horaExata?: string
 }
 
 export function proximoSlot(b: Busca): Slot | null {
   const hoje = diaIso(b.agora)
   let dia = b.aPartirDoDia && b.aPartirDoDia > hoje ? b.aPartirDoDia : b.mesmoDia ? hoje : proximoDiaUtil(hoje)
   const limite = b.agora.getTime() + AGENDA.antecedenciaMin * 60_000
+  const livre = (s: Slot) => s.inicio.getTime() >= limite && !b.reservados.has(s.chave) && !b.ocupados.some(o => o.inicio < s.fim.getTime() && o.fim > s.inicio.getTime())
+  // o lead pediu dia e hora (Dra., 05/11): se essa hora é um dos horários da Dra. e está livre, é ela
+  if (b.horaExata && b.aPartirDoDia) {
+    const pedido = slotsDoDia(b.aPartirDoDia).find(s => s.chave.endsWith(`T${b.horaExata}`))
+    if (pedido && AGENDA.diasSemana.includes(brt(pedido.inicio).semana) && livre(pedido)) return pedido
+  }
   for (let i = 0; i < AGENDA.horizonteDias; i++, dia = somaDias(dia, 1)) {
     if (!AGENDA.diasSemana.includes(brt(inicioDoDia(dia)).semana)) continue
     for (const s of slotsDoDia(dia, b.periodo)) {

@@ -55,12 +55,14 @@ export interface Deps {
   cancelarRegua(): Promise<void>
   agenda: {
     disponivel(): boolean | Promise<boolean>
-    buscar(o: { periodo?: Periodo; aPartirDoDia?: string; mesmoDia: boolean }): Promise<Slot | null>
+    buscar(o: { periodo?: Periodo; aPartirDoDia?: string; mesmoDia: boolean; horaExata?: string }): Promise<Slot | null>
     reservar(slot: Slot): Promise<void>
     /** confere de novo no Google e cria o evento com Meet; null = o horário foi ocupado */
     confirmar(slot: Slot, titulo: string, descricao: string): Promise<{ eventId: string; link: string } | null>
   }
   agendarLembretes(inicio: Date, eventId: string): Promise<void>
+  /** a reunião também na agenda do Kommo (tarefa "Reunião" no horário), Dra., 05/11 */
+  tarefaReuniao?(inicio: Date, texto: string): Promise<void>
   /** valores de um atendimento anterior do mesmo telefone (memória); null = nada registrado ou memória desligada */
   memoria?(): Promise<LeadState['memoria'] | null>
   /** reescreve a mensagem do roteiro como conversa (redator.ts); sem ela, sai o texto pronto */
@@ -69,7 +71,8 @@ export interface Deps {
 
 export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string }
 
-const PAUSA_ANALISE_MS = 30 * 60_000
+/** encaminhamento → oferta: 15 minutos (Dra., 05/11; antes 30) */
+const PAUSA_ANALISE_MS = 15 * 60_000
 
 const reguaDaEtapa = (e: Etapa): Regua | null =>
   e === 'q1' || e === 'q2' || e === 'limite' || e === 'q3' ? 'qualificacao' : e === 'oferta' || e === 'preferencia' ? 'agendamento' : null
@@ -148,7 +151,7 @@ async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitu
   return { acao: `passou para humano: ${motivo}`, enviado, leitura, resumo }
 }
 
-async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string }, textoDe: (q: string) => string, id: string): Promise<Resultado> {
+async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aPartirDoDia?: string; horaExata?: string }, textoDe: (q: string) => string, id: string): Promise<Resultado> {
   if (!(await deps.agenda.disponivel())) return humano(ctx, deps, 'agenda indisponível', TEXTOS.semAgenda, undefined, 'sem_agenda')
   const mesmoDia = (ctx.state.rendaBruta ?? 0) >= AGENDA.rendaMesmoDia && !busca.aPartirDoDia
   const slot = await deps.agenda.buscar({ ...busca, mesmoDia })
@@ -160,7 +163,7 @@ async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aParti
   return { acao: `ofereceu ${slot.chave}`, enviado }
 }
 
-/** Job da pausa de 30 min: a 5ª mensagem com o primeiro horário da sequência. */
+/** Job da pausa de 15 min: a 5ª mensagem com o primeiro horário da sequência. */
 export async function quintaMensagem(ctx: Ctx, deps: Deps, token: string): Promise<Resultado> {
   if (ctx.state.etapa !== 'analise' || ctx.state.msg5Token !== token) return { acao: 'msg5 cancelada (etapa mudou)' }
   return oferecer(ctx, deps, {}, TEXTOS.mensagem5, 'mensagem5')
@@ -339,7 +342,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       await deps.nota(`Anna encaminhou o caso para a Dra. Carolina. ${resumoLead(s)}`)
       await deps.patch({ etapa: 'analise', msg5Token: token })
       await deps.agendarMsg5(token, ctx.agora.getTime() + PAUSA_ANALISE_MS)
-      return { acao: 'mensagem 4: pausa de 30 min', enviado, leitura }
+      return { acao: 'mensagem 4: pausa de 15 min', enviado, leitura }
     }
 
     case 'analise': {
@@ -348,7 +351,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         await deps.enviar(leitura.resposta)
         return { acao: 'respondeu durante a pausa', enviado: leitura.resposta, leitura }
       }
-      return { acao: 'silêncio: aguardando a pausa de 30 min', leitura }
+      return { acao: 'silêncio: aguardando a pausa de 15 min', leitura }
     }
 
     case 'oferta':
@@ -374,12 +377,14 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         await deps.enviar(texto)
         await deps.patch({ etapa: 'agendado', oferta: undefined, reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
         await deps.agendarLembretes(slot.inicio, ev.eventId)
+        await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
         return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
       }
       if (leitura.periodo || leitura.data_preferida) {
         const refDia = s.oferta ? diaIso(new Date(s.oferta.inicio)) : diaIso(ctx.agora)
         const aPartirDoDia = leitura.data_preferida && leitura.data_preferida > diaIso(ctx.agora) ? leitura.data_preferida : proximoDiaUtil(refDia)
-        return oferecer(ctx, deps, { periodo: leitura.periodo || undefined, aPartirDoDia }, TEXTOS.novaOferta, 'nova_oferta')
+        const horaExata = leitura.data_preferida && leitura.hora_preferida && /^\d{2}:\d{2}$/.test(leitura.hora_preferida) ? leitura.hora_preferida : undefined
+        return oferecer(ctx, deps, { periodo: leitura.periodo || undefined, aPartirDoDia, horaExata }, TEXTOS.novaOferta, 'nova_oferta')
       }
       if (leitura.intencao === 'recusa_horario' || (etapa === 'oferta' && leitura.intencao === 'escolhe_periodo')) {
         await deps.patch({ etapa: 'preferencia', recusas: (s.recusas || 0) + 1 })

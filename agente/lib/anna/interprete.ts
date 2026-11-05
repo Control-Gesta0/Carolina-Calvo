@@ -29,6 +29,8 @@ export interface Leitura {
   desconto_conta: number | null
   periodo: 'manha' | 'tarde' | null
   data_preferida: string | null
+  /** hora que o lead pediu ("16:00"), quando ele diz dia e hora (Dra., 05/11) */
+  hora_preferida: string | null
   resposta: string | null
   resumo: string
 }
@@ -90,7 +92,7 @@ const num = { type: ['number', 'null'] }
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['intencao', 'opcao', 'renda_bruta', 'renda_liquida', 'desconto_conta', 'periodo', 'data_preferida', 'resposta', 'resumo'],
+  required: ['intencao', 'opcao', 'renda_bruta', 'renda_liquida', 'desconto_conta', 'periodo', 'data_preferida', 'hora_preferida', 'resposta', 'resumo'],
   properties: {
     intencao: { type: 'string', enum: [...INTENCOES] },
     opcao: { type: ['integer', 'null'], enum: [1, 2, 3, null] },
@@ -99,6 +101,7 @@ const SCHEMA = {
     desconto_conta: num,
     periodo: { type: ['string', 'null'], enum: ['manha', 'tarde', null] },
     data_preferida: { type: ['string', 'null'], description: 'AAAA-MM-DD' },
+    hora_preferida: { type: ['string', 'null'], description: 'HH:MM, só se o lead disse uma hora' },
     resposta: { type: ['string', 'null'] },
     resumo: { type: 'string', description: 'uma frase para a equipe: o que o lead disse neste turno' },
   },

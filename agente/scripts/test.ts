@@ -65,15 +65,19 @@ async function main() {
   const seg9 = A.deBrt(2026, 9, 12, 9, 0) // segunda 12/10/2026 09:00
   const base = { ocupados: [] as Array<{ inicio: number; fim: number }>, reservados: new Set<string>() }
   const k = (s: ReturnType<typeof A.proximoSlot>) => s?.chave
-  eq('mesmo dia, agenda vazia → 15:00 de hoje', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: true })), '2026-10-12T15:00')
+  eq('mesmo dia (se liberado), agenda vazia → 11:00 de hoje: manhã primeiro (Dra., 05/11)', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: true })), '2026-10-12T11:00')
   const ocupado = (h1: number, m1: number, h2: number, m2: number) => ({ inicio: A.deBrt(2026, 9, 12, h1, m1).getTime(), fim: A.deBrt(2026, 9, 12, h2, m2).getTime() })
-  eq('15:00 e 15:30 ocupados → 16:00 (sequência)', k(A.proximoSlot({ ...base, ocupados: [ocupado(15, 0, 16, 0)], agora: seg9, mesmoDia: true })), '2026-10-12T16:00')
+  eq('manhã, 15:00 e 15:30 ocupados → 16:00 (sequência)', k(A.proximoSlot({ ...base, ocupados: [ocupado(10, 0, 11, 30), ocupado(15, 0, 16, 0)], agora: seg9, mesmoDia: true })), '2026-10-12T16:00')
   eq('tarde toda ocupada → 11:00 (manhã do mais tarde)', k(A.proximoSlot({ ...base, ocupados: [ocupado(15, 0, 18, 0)], agora: seg9, mesmoDia: true })), '2026-10-12T11:00')
   eq('tarde e 11:00 ocupados → 10:30', k(A.proximoSlot({ ...base, ocupados: [ocupado(15, 0, 18, 0), ocupado(11, 0, 11, 30)], agora: seg9, mesmoDia: true })), '2026-10-12T10:30')
-  eq('sem prioridade → próximo dia útil 15:00', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false })), '2026-10-13T15:00')
-  eq('17:10 → 17:30 fica em cima, vai para amanhã', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 12, 17, 10), mesmoDia: true })), '2026-10-13T15:00')
-  eq('sexta à noite → segunda', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 16, 20, 0), mesmoDia: true })), '2026-10-19T15:00')
-  eq('reservado para outro lead é pulado', k(A.proximoSlot({ ...base, reservados: new Set(['2026-10-12T15:00']), agora: seg9, mesmoDia: true })), '2026-10-12T15:30')
+  eq('dia útil seguinte → 11:00 (Dra., 05/11)', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false })), '2026-10-13T11:00')
+  eq('17:10 → 17:30 fica em cima, vai para amanhã', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 12, 17, 10), mesmoDia: true })), '2026-10-13T11:00')
+  eq('sexta à noite → segunda', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 16, 20, 0), mesmoDia: true })), '2026-10-19T11:00')
+  eq('reservado para outro lead é pulado', k(A.proximoSlot({ ...base, reservados: new Set(['2026-10-12T11:00']), agora: seg9, mesmoDia: true })), '2026-10-12T10:30')
+  eq('ordem do dia: 11:00, 10:30, 10:00 e depois 15:00 a 17:30 (Dra., 05/11)', A.slotsDoDia('2026-10-13').map(x => x.chave.slice(11)), ['11:00', '10:30', '10:00', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'])
+  eq('lead pede dia e hora livres → essa hora (Dra., 05/11)', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '16:00', periodo: 'tarde' })), '2026-10-15T16:00')
+  eq('hora pedida ocupada → segue a sequência do período nesse dia', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '16:00', periodo: 'tarde', reservados: new Set(['2026-10-15T16:00']) })), '2026-10-15T15:00')
+  eq('hora fora dos horários da Dra. → segue a sequência', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false, aPartirDoDia: '2026-10-15', horaExata: '19:00', periodo: 'tarde' })), '2026-10-15T15:00')
   eq('prefere manhã, a partir de amanhã → 11:00', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: true, periodo: 'manha', aPartirDoDia: '2026-10-13' })), '2026-10-13T11:00')
   eq('oferta hoje', A.quandoOferta(A.deBrt(2026, 9, 12, 17, 0), seg9), 'HOJE às 17:00')
   eq('oferta amanhã', A.quandoOferta(A.deBrt(2026, 9, 13, 15, 0), seg9), 'AMANHÃ às 15:00')
@@ -140,7 +144,7 @@ async function main() {
 
   console.log('\n— Roteiro da Anna (intérprete simulado)')
   type Leitura = import('../lib/anna/interprete').Leitura
-  const L = (p: Partial<Leitura>): Leitura => ({ intencao: 'responde_etapa', opcao: null, renda_bruta: null, renda_liquida: null, desconto_conta: null, periodo: null, data_preferida: null, resposta: null, resumo: 'teste', ...p })
+  const L = (p: Partial<Leitura>): Leitura => ({ intencao: 'responde_etapa', opcao: null, renda_bruta: null, renda_liquida: null, desconto_conta: null, periodo: null, data_preferida: null, hora_preferida: null, resposta: null, resumo: 'teste', ...p })
 
   function mundo(agora: Date, slotsLivres: string[] = []) {
     const w = {
@@ -169,6 +173,7 @@ async function main() {
         async confirmar(slot) { if (w.ocupar.has(slot.chave)) return null; w.eventos.push(slot.chave); return { eventId: `ev-${slot.chave}`, link: 'https://meet.google.com/abc' } },
       },
       async agendarLembretes() { w.lembretes++ },
+      async tarefaReuniao(inicio: Date) { (w as unknown as { reuniaoKommo: string }).reuniaoKommo = inicio.toISOString() },
     }
     void slotsLivres
     return { w, deps }
@@ -276,18 +281,19 @@ async function main() {
     w.leituras.push(L({}))
     await fluxo.turno(ctx(w, agora, 'concordo'), deps)
     eq('5ª mensagem (texto da Dra.)', w.enviados[5], TEXTOS.mensagem4)
-    eq('pausa de 30 min agendada', w.msg5, [agora.getTime() + 30 * 60_000])
-    const r5 = await fluxo.quintaMensagem(ctx(w, new Date(agora.getTime() + 30 * 60_000), ''), deps, 'tok')
-    eq('mensagem da oferta (texto da Dra. de 03/11): HOJE 15:00 em negrito e "para hoje"', [w.enviados[6].includes('*HOJE às 15:00, ON LINE, para o primeiro atendimento*'), w.enviados[6].includes('*único horário que consegui para hoje*'), w.enviados[6].endsWith('*Posso confirmar para você?*')], [true, true, true])
+    eq('pausa de 15 min agendada (Dra., 05/11)', w.msg5, [agora.getTime() + 15 * 60_000])
+    const r5 = await fluxo.quintaMensagem(ctx(w, new Date(agora.getTime() + 15 * 60_000), ''), deps, 'tok')
+    eq('oferta no dia útil seguinte, 11:00 (texto da Dra. de 03/11, regra de 05/11)', [w.enviados[6].includes('*AMANHÃ às 11:00, ON LINE, para o primeiro atendimento*'), w.enviados[6].includes('*único horário que consegui para amanhã*'), w.enviados[6].endsWith('*Posso confirmar para você?*')], [true, true, true])
     eq('dia da oferta: hoje, amanhã e dia da semana', ['HOJE às 15:00', 'AMANHÃ às 11:00', 'na quinta-feira (06/11) às 10:00', 'no sábado (08/11) às 09:00'].map(diaDaOferta), ['para hoje', 'para amanhã', 'para quinta-feira (06/11)', 'para sábado (08/11)'])
     eq('régua de agendamento começa na oferta', w.reguas[w.reguas.length - 1], 'agendamento')
     void r5
     w.leituras.push(L({ intencao: 'aceita_horario' }))
     await fluxo.turno(ctx(w, new Date(agora.getTime() + 40 * 60_000), 'pode sim'), deps)
-    eq('evento criado no horário oferecido', w.eventos, ['2026-10-12T15:00'])
+    eq('evento criado no horário oferecido', w.eventos, ['2026-10-13T11:00'])
+    eq('reunião também na agenda do Kommo, no mesmo horário (Dra., 05/11)', (w as unknown as { reuniaoKommo: string }).reuniaoKommo, A.deBrt(2026, 9, 13, 11, 0).toISOString())
     eq('lead vai para Closer › Reunião agendada', w.movido[w.movido.length - 1], STATUS.reuniaoAgendada)
-    eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 12, 18) / 1000, Date.UTC(2026, 9, 12, 18) / 1000])
-    eq('confirmação com link do Meet', w.enviados[7].includes('https://meet.google.com/abc') && w.enviados[7].startsWith('*Agendado!* *Segunda-feira, 12/10, às 15:00*'), true)
+    eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 13, 14) / 1000, Date.UTC(2026, 9, 13, 14) / 1000])
+    eq('confirmação com link do Meet', w.enviados[7].includes('https://meet.google.com/abc') && w.enviados[7].startsWith('*Agendado!* *Terça-feira, 13/10, às 11:00*'), true)
     eq('lembretes agendados', w.lembretes, 1)
     eq('etapa agendado', w.state.etapa, 'agendado')
   }
@@ -326,7 +332,7 @@ async function main() {
     w.ocupar.add('2026-10-14T11:00')
     w.leituras.push(L({ intencao: 'aceita_horario' }))
     await fluxo.turno(ctx(w, agora, 'ok'), deps)
-    eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[2], TEXTOS.horarioOcupado('AMANHÃ às 15:00'))
+    eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[2], TEXTOS.horarioOcupado('AMANHÃ às 11:00'))
   }
 
   {

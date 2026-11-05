@@ -4,7 +4,7 @@ import { emptyUsage, type Usage } from '../execlog'
 import { cancelarRegua, iniciarRegua } from '../followup'
 import { agendaConectada, criarReuniao, ocupados } from '../google'
 import { appendMessage, getHistory } from '../history'
-import { addLeadNote, addLeadTags, addLeadTask, getLead, getMainContactName, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from '../kommo'
+import { addLeadNote, addLeadTags, addLeadTask, addLeadTaskAt, getLead, getMainContactName, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from '../kommo'
 import { agendarJob, novoToken } from '../jobs'
 import { k, redis } from '../redis'
 import { getState, patchState, type LeadState } from '../state'
@@ -104,6 +104,7 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
     addTags: t => addLeadTags(leadId, t),
     nota: t => addLeadNote(leadId, t),
     tarefa: t => addLeadTask(leadId, t, CRM_MAP.tarefa),
+    tarefaReuniao: (inicio, t) => addLeadTaskAt(leadId, t, { ...CRM_MAP.tarefaReuniao, quando: Math.floor(inicio.getTime() / 1000) }),
     async passarParaHumano(motivo, resumo, prioritaria) {
       await cancelarRegua(leadId)
       await addLeadTags(leadId, [CONFIG.humanTag, CRM_MAP.tags.passouHumano])
@@ -111,7 +112,7 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       await addLeadTask(leadId, prioritaria ? `${motivo}. ${resumo}` : `Anna passou o atendimento: ${motivo}. ${resumo}`, prioritaria ? CRM_MAP.tarefaPrioritaria : CRM_MAP.tarefa)
     },
     async agendarMsg5(token, quando) {
-      // lead de teste (TEST_LEAD_IDS): a pausa de 30 min vira 1 min, salvo com TESTE_TEMPO_REAL=true
+      // lead de teste (TEST_LEAD_IDS): a pausa de 15 min vira 1 min, salvo com TESTE_TEMPO_REAL=true
       const q = CONFIG.testLeadIds.includes(leadId) && !CONFIG.testeTempoReal ? Math.min(quando, Date.now() + 60_000) : quando
       await agendarJob({ tipo: 'msg5', leadId, quando: q, token })
     },
