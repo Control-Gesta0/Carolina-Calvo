@@ -70,6 +70,12 @@ async function main() {
   eq('manhã, 15:00 e 15:30 ocupados → 16:00 (sequência)', k(A.proximoSlot({ ...base, ocupados: [ocupado(10, 0, 11, 30), ocupado(15, 0, 16, 0)], agora: seg9, mesmoDia: true })), '2026-10-12T16:00')
   eq('tarde toda ocupada → 11:00 (manhã do mais tarde)', k(A.proximoSlot({ ...base, ocupados: [ocupado(15, 0, 18, 0)], agora: seg9, mesmoDia: true })), '2026-10-12T11:00')
   eq('tarde e 11:00 ocupados → 10:30', k(A.proximoSlot({ ...base, ocupados: [ocupado(15, 0, 18, 0), ocupado(11, 0, 11, 30)], agora: seg9, mesmoDia: true })), '2026-10-12T10:30')
+  // Dra., 05/11 (2ª mensagem): o mesmo dia primeiro, com 30 min de antecedência
+  const segAs = (h: number, m: number) => A.deBrt(2026, 9, 12, h, m)
+  eq('lead de madrugada → 11:00 da mesma manhã', k(A.proximoSlot({ ...base, agora: segAs(3, 0), mesmoDia: true })), '2026-10-12T11:00')
+  eq('lead às 10:20 → 11:00 da própria manhã', k(A.proximoSlot({ ...base, agora: segAs(10, 20), mesmoDia: true })), '2026-10-12T11:00')
+  eq('lead às 10:45 → manhã já passou → 15:00 da própria tarde', k(A.proximoSlot({ ...base, agora: segAs(10, 45), mesmoDia: true })), '2026-10-12T15:00')
+  eq('lead às 15:10 → 16:00 do mesmo dia (15:30 fica a menos de 30 min)', k(A.proximoSlot({ ...base, agora: segAs(15, 10), mesmoDia: true })), '2026-10-12T16:00')
   eq('dia útil seguinte → 11:00 (Dra., 05/11)', k(A.proximoSlot({ ...base, agora: seg9, mesmoDia: false })), '2026-10-13T11:00')
   eq('17:10 → 17:30 fica em cima, vai para amanhã', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 12, 17, 10), mesmoDia: true })), '2026-10-13T11:00')
   eq('sexta à noite → segunda', k(A.proximoSlot({ ...base, agora: A.deBrt(2026, 9, 16, 20, 0), mesmoDia: true })), '2026-10-19T11:00')
@@ -283,17 +289,17 @@ async function main() {
     eq('5ª mensagem (texto da Dra.)', w.enviados[5], TEXTOS.mensagem4)
     eq('pausa de 15 min agendada (Dra., 05/11)', w.msg5, [agora.getTime() + 15 * 60_000])
     const r5 = await fluxo.quintaMensagem(ctx(w, new Date(agora.getTime() + 15 * 60_000), ''), deps, 'tok')
-    eq('oferta no dia útil seguinte, 11:00 (texto da Dra. de 03/11, regra de 05/11)', [w.enviados[6].includes('*AMANHÃ às 11:00, ON LINE, para o primeiro atendimento*'), w.enviados[6].includes('*único horário que consegui para amanhã*'), w.enviados[6].endsWith('*Posso confirmar para você?*')], [true, true, true])
+    eq('oferta no mesmo dia, 11:00 (texto da Dra. de 03/11, regra de 05/11)', [w.enviados[6].includes('*HOJE às 11:00, ON LINE, para o primeiro atendimento*'), w.enviados[6].includes('*único horário que consegui para hoje*'), w.enviados[6].endsWith('*Posso confirmar para você?*')], [true, true, true])
     eq('dia da oferta: hoje, amanhã e dia da semana', ['HOJE às 15:00', 'AMANHÃ às 11:00', 'na quinta-feira (06/11) às 10:00', 'no sábado (08/11) às 09:00'].map(diaDaOferta), ['para hoje', 'para amanhã', 'para quinta-feira (06/11)', 'para sábado (08/11)'])
     eq('régua de agendamento começa na oferta', w.reguas[w.reguas.length - 1], 'agendamento')
     void r5
     w.leituras.push(L({ intencao: 'aceita_horario' }))
     await fluxo.turno(ctx(w, new Date(agora.getTime() + 40 * 60_000), 'pode sim'), deps)
-    eq('evento criado no horário oferecido', w.eventos, ['2026-10-13T11:00'])
-    eq('reunião também na agenda do Kommo, no mesmo horário (Dra., 05/11)', (w as unknown as { reuniaoKommo: string }).reuniaoKommo, A.deBrt(2026, 9, 13, 11, 0).toISOString())
+    eq('evento criado no horário oferecido', w.eventos, ['2026-10-12T11:00'])
+    eq('reunião também na agenda do Kommo, no mesmo horário (Dra., 05/11)', (w as unknown as { reuniaoKommo: string }).reuniaoKommo, A.deBrt(2026, 9, 12, 11, 0).toISOString())
     eq('lead vai para Closer › Reunião agendada', w.movido[w.movido.length - 1], STATUS.reuniaoAgendada)
-    eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 13, 14) / 1000, Date.UTC(2026, 9, 13, 14) / 1000])
-    eq('confirmação com link do Meet', w.enviados[7].includes('https://meet.google.com/abc') && w.enviados[7].startsWith('*Agendado!* *Terça-feira, 13/10, às 11:00*'), true)
+    eq('campos Reunião e Agendamento iguais (lembretes e Cliente decisão do escritório)', [w.campos[CRM_MAP.campos.reuniao], w.campos[CRM_MAP.campos.agendamento]], [Date.UTC(2026, 9, 12, 14) / 1000, Date.UTC(2026, 9, 12, 14) / 1000])
+    eq('confirmação com link do Meet', w.enviados[7].includes('https://meet.google.com/abc') && w.enviados[7].startsWith('*Agendado!* *Segunda-feira, 12/10, às 11:00*'), true)
     eq('lembretes agendados', w.lembretes, 1)
     eq('etapa agendado', w.state.etapa, 'agendado')
   }
@@ -332,7 +338,7 @@ async function main() {
     w.ocupar.add('2026-10-14T11:00')
     w.leituras.push(L({ intencao: 'aceita_horario' }))
     await fluxo.turno(ctx(w, agora, 'ok'), deps)
-    eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[2], TEXTOS.horarioOcupado('AMANHÃ às 11:00'))
+    eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[2], TEXTOS.horarioOcupado('HOJE às 11:00'))
   }
 
   {

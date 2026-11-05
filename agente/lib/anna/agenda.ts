@@ -2,9 +2,9 @@
  * Agenda da Dra. Carolina — motor PURO (sem rede), testado em scripts/test.ts.
  *
  * Regra de 08/10/2026: oferecer UM horário por vez, preenchendo a agenda em
- * sequência para a Dra. fazer as reuniões seguidas. Ordem da Dra. de 05/11/2026,
- * a partir do DIA ÚTIL SEGUINTE: manhã 11:00 → 10:30 → 10:00, depois tarde
- * 15:00 → 17:30. Reuniões de 30 min, on-line.
+ * sequência para a Dra. fazer as reuniões seguidas. Ordem da Dra. de 05/11/2026:
+ * PRIMEIRO O MESMO DIA (manhã 11:00 → 10:30 → 10:00, depois tarde 15:00 → 17:30);
+ * só sem horário livre hoje vai para o dia útil seguinte. Reuniões de 30 min, on-line.
  *
  * Horário de Brasília = UTC-3 fixo (o Brasil não tem horário de verão desde 2019).
  */
@@ -15,14 +15,14 @@ export const AGENDA = {
   duracaoMin: 30,
   /** 0 = domingo … 6 = sábado */
   diasSemana: [1, 2, 3, 4, 5],
-  /** não oferece horário que começa antes de agora + isso */
-  antecedenciaMin: 60,
+  /** não oferece horário que começa antes de agora + isso: tempo para o lead ler e aceitar (Dra., 05/11: antes 60) */
+  antecedenciaMin: 30,
   horizonteDias: 14,
   /**
-   * Reunião no mesmo dia a partir desta renda. Desde 05/11/2026 a Dra. prioriza o dia útil
-   * seguinte: nenhuma renda libera o mesmo dia. Fica aqui caso ela volte a querer.
+   * Reunião no mesmo dia a partir desta renda. Dra., 05/11/2026: a prioridade é a reunião no
+   * próprio dia, para todo lead que recebe oferta (só acima de R$ 15 mil, fluxo.ts).
    */
-  rendaMesmoDia: Number.POSITIVE_INFINITY,
+  rendaMesmoDia: 0,
 }
 
 const OFFSET_MS = 3 * 3600_000
