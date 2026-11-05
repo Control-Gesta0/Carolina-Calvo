@@ -11,6 +11,7 @@ import { memoriaNoInicio } from '../lib/memoria'
 import { soltarConversaAntiga } from '../lib/conversa-antiga'
 import { esperarSaudacao } from '../lib/saudacao'
 import { saudacaoDaHora } from '../lib/plantao'
+import { etiquetaDoMes } from '../lib/etiqueta-mes'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
 import { addLeadTags, getLead, getMainContactName, runSalesbot, updateLeadFields } from '../lib/kommo'
 import { enviarModelo } from '../lib/modelos'
@@ -78,7 +79,9 @@ async function tratar(ev: Evento): Promise<void> {
 
     let lead = await getLead(ev.id)
     if (ev.tipo === 'add' && CONFIG.autoGateFormLeads && CONFIG.gateTag && ehLeadDeFormularioSE(lead)) {
-      await addLeadTags(ev.id, [CONFIG.gateTag])
+      // a etiqueta do mês entra junto (o relógio só a poria na volta seguinte, até 5 min depois)
+      const mes = CONFIG.etiquetaMesAtiva ? [etiquetaDoMes(new Date())] : []
+      await addLeadTags(ev.id, [CONFIG.gateTag, ...mes])
       lead = await getLead(ev.id)
     }
     if (bloqueio(lead) || lead.pipeline_id !== PIPELINES.sdr) return
