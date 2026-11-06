@@ -154,17 +154,8 @@ export async function getMainContactName(lead: KommoLead): Promise<string> {
 }
 
 /**
- * Quem mandou uma mensagem de saída: o id do usuário da equipe, 0 = robô/automação do Kommo, null = não achou.
- * O id do webhook de saída é o mesmo message.id do evento outgoing_chat_message do contato.
+ * Mensagem de saída que vem de um robô do Kommo, não da equipe. Pelo texto: no Kommo a mensagem
+ * da equipe e a do robô chegam com o mesmo autor (0). Hoje: o modelo "Lembrete Reunião" (48482),
+ * usado pelos lembretes de 2h, 1h e 15 min da reunião (Salesbots 52128, 52152, 52154). Puro.
  */
-export async function autorDaSaida(contatoId: number, mensagemId: string, tentativas = 3): Promise<number | null> {
-  const desde = Math.floor(Date.now() / 1000) - 600
-  for (let i = 0; i < tentativas; i++) {
-    const d = await kommo<{ _embedded?: { events?: Array<{ created_by?: number; value_after?: Array<{ message?: { id?: string } }> }> } }>('GET',
-      `/api/v4/events?filter[entity]=contact&filter[entity_id]=${contatoId}&filter[type]=outgoing_chat_message&filter[created_at][from]=${desde}&limit=20`).catch(() => null)
-    const e = (d?._embedded?.events || []).find(x => x.value_after?.[0]?.message?.id === mensagemId)
-    if (e) return Number(e.created_by ?? 0)
-    if (i < tentativas - 1) await sleep(2000)
-  }
-  return null
-}
+export const ehMensagemDeRoboKommo = (texto: string) => /Este [ée] um lembrete da \*?sua reuni[ãa]o agendada/i.test(texto || '')

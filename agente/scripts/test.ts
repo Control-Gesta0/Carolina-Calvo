@@ -650,6 +650,15 @@ async function main() {
     eq('modelo sem variável', W.casarModelo('Bom dia !', 'Bom dia !'), {})
   }
 
+  console.log('\n— Robô do Kommo x equipe (06/11)')
+  {
+    const K = await import('../lib/kommo')
+    eq('lembrete da reunião do Kommo é robô; texto da equipe não', [
+      K.ehMensagemDeRoboKommo('Olá, Sirlei Si Morais\n\nEste é um lembrete da *sua reunião agendada* com a Dra. Carolina Calvo.'),
+      K.ehMensagemDeRoboKommo('Oi Zacheu, a Dra. teve um imprevisto, podemos remarcar para 14:30?'),
+    ], [true, false])
+  }
+
   console.log('\n— Tempo de resposta (Dra., 06/11)')
   {
     const B = await import('../lib/buffer')
