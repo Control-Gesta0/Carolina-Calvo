@@ -159,7 +159,7 @@ async function main() {
   function mundo(agora: Date, slotsLivres: string[] = []) {
     const w = {
       state: {} as import('../lib/state').LeadState, enviados: [] as string[], campos: {} as Record<number, string | number>, movido: [] as number[],
-      tags: [] as string[], humano: [] as string[], tarefas: [] as string[], reguas: [] as string[], msg5: [] as number[], lembretes: 0, eventos: [] as string[],
+      tags: [] as string[], humano: [] as string[], tarefas: [] as string[], notas: [] as string[], reguas: [] as string[], msg5: [] as number[], lembretes: 0, eventos: [] as string[],
       leituras: [] as Leitura[], ocupar: new Set<string>(),
     }
     const deps: import('../lib/anna/fluxo').Deps = {
@@ -169,7 +169,7 @@ async function main() {
       async salvarCampos(v) { Object.assign(w.campos, v) },
       async mover(s) { w.movido.push(s) },
       async addTags(t) { w.tags.push(...t) },
-      async nota() { /* */ },
+      async nota(t: string) { w.notas.push(t) },
       async passarParaHumano(m) { w.humano.push(m); w.reguas.push('cancelada') },
       async tarefa(t) { w.tarefas.push(t) },
       async agendarMsg5(_tok, quando) { w.msg5.push(quando) },
@@ -331,7 +331,33 @@ async function main() {
     eq('sem desconto em conta → variante da mensagem do alívio', w.enviados[1], TEXTOS.mensagem3(0))
     w.leituras.push(L({}))
     await fluxo.turno(ctx(w, seg9, 'sim'), deps)
-    eq('renda até 15 mil → sem reunião, só a tag, sem tarefa', [w.state.etapa, w.enviados[2] === TEXTOS.semReuniao, w.tags.includes(CRM_MAP.tags.semReuniao), w.tarefas.length, w.msg5.length], ['sem_reuniao', true, true, 0, 0])
+    eq('renda abaixo de 10 mil → sem reunião, só a tag, sem tarefa', [w.state.etapa, w.enviados[2] === TEXTOS.semReuniao, w.tags.includes(CRM_MAP.tags.semReuniao), w.tarefas.length, w.msg5.length], ['sem_reuniao', true, true, 0, 0])
+  }
+
+  {
+    // Dra., 06/11 (caso Sirlei): o 1º pedido de presencial é respondido; a insistência vai para a equipe
+    const { w, deps } = mundo(seg9)
+    w.state = { etapa: 'q2', objetivo: 3 }
+    w.leituras.push(L({ intencao: 'pede_humano' }))
+    await fluxo.turno(ctx(w, seg9, 'Gostaria de agendar pessoalmente, é possível?'), deps)
+    eq('1º pedido de presencial → texto da Dra. sobre como funciona, sem valor e sem passar para a equipe', [w.state.etapa, w.humano.length, w.enviados[0] === TEXTOS.comoFunciona, /R\$/.test(w.enviados[0])], ['q2', 0, true, false])
+    w.leituras.push(L({ intencao: 'pede_humano' }))
+    await fluxo.turno({ ...ctx(w, seg9, 'Não, só aceito presencial'), conversa: [{ dir: 'out', text: TEXTOS.comoFunciona, ts: 0, id: 'x' }] as never }, deps)
+    eq('insiste no presencial depois da explicação → equipe', w.humano.length, 1)
+  }
+
+  {
+    // Dra., 06/11 (caso Tathiana): renda de 10 a 15 mil não é desqualificado; encerramento provisório + tarefa
+    const { w, deps } = mundo(seg9)
+    w.state = { etapa: 'q3', objetivo: 3, rendaBruta: 12000, rendaLiquida: 5000, descontoConta: 1500 }
+    w.leituras.push(L({ intencao: 'responde_etapa' }))
+    await fluxo.turno({ ...ctx(w, seg9, 'sim'), primeiroNome: 'Tathiana' }, deps)
+    eq('10 a 15 mil → mensagem de encaminhamento da Dra., com o nome', w.enviados[0].startsWith('Entendi, Tathiana. Obrigada pelas informações!\n\nVou encaminhar sua situação para a nossa equipe responsável.'), true)
+    eq('10 a 15 mil → tarefa para a equipe avaliar, sem oferta, aguardando avaliação', [w.tarefas.length, w.msg5.length, w.state.etapa, w.state.aguardaAvaliacao], [1, 0, 'sem_reuniao', true])
+    eq('sem nome → "Entendi. Obrigada pelas informações!"', TEXTOS.encaminha1015().startsWith('Entendi. Obrigada pelas informações!'), true)
+    w.leituras.push(L({ intencao: 'pergunta', resposta: 'Sua situação já foi encaminhada para a avaliação da equipe, e retornaremos por aqui assim que tivermos uma posição.' }))
+    await fluxo.turno(ctx(w, seg9, 'Vocês vão conseguir assumir meu caso? O banco está descontando tudo'), deps)
+    eq('lead pergunta se vão assumir → responde sem prometer e anota no card', [w.enviados[1].includes('encaminhada para a avaliação'), w.notas.some(n => n.includes('aguarda a avaliação'))], [true, true])
   }
 
   {
@@ -401,6 +427,25 @@ async function main() {
       w.leituras.push(L({ intencao: 'aceita_horario' }))
       await fluxo.turno(ctx(w, seg9, 'ok'), deps)
       eq('horário ocupado na hora do sim → oferece o próximo', w.enviados[0], TEXTOS.horarioOcupado('HOJE às 10:30'))
+    }
+    {
+      // Sirlei, 05/11: oferta das 11h, "tenho consulta às 10:30" → ofereceu 10:30; "deixa 11 mesmo, pode agendar às 11"
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(10, 30), recusados: ['2026-10-12T11:00'] }
+      w.leituras.push(L({ intencao: 'aceita_horario', hora_preferida: '11:00' }))
+      await fluxo.turno(ctx(w, seg9, 'Deixa 11 mesmo. Pode agendar às 11 horas'), deps)
+      eq('aceitou com outra hora → marca a hora que o lead disse (11:00), não a oferecida', [w.eventos, w.state.etapa], [['2026-10-12T11:00'], 'agendado'])
+      const m2 = mundo(seg9)
+      m2.w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(10, 30) }
+      m2.w.ocupar.add('2026-10-12T11:00')
+      m2.w.leituras.push(L({ intencao: 'aceita_horario', hora_preferida: '11:00' }))
+      await fluxo.turno(ctx(m2.w, seg9, 'pode ser às 11?'), m2.deps)
+      eq('hora pedida ocupada → não marca, oferece a mais próxima depois dela', [m2.w.eventos.length, m2.w.enviados[0]], [0, TEXTOS.novaOferta('HOJE às 15:00')])
+      const m3 = mundo(seg9)
+      m3.w.state = { etapa: 'oferta', rendaBruta: 20000, oferta: of(10, 30) }
+      m3.w.leituras.push(L({ intencao: 'aceita_horario', hora_preferida: '10:30' }))
+      await fluxo.turno(ctx(m3.w, seg9, 'pode ser às 10:30'), m3.deps)
+      eq('aceita repetindo a mesma hora → marca a oferecida', m3.w.eventos, ['2026-10-12T10:30'])
     }
   }
 
@@ -605,6 +650,13 @@ async function main() {
     eq('modelo sem variável', W.casarModelo('Bom dia !', 'Bom dia !'), {})
   }
 
+  console.log('\n— Tempo de resposta (Dra., 06/11)')
+  {
+    const B = await import('../lib/buffer')
+    eq('qualificação: de 60 a 90 s', [B.esperaDaResposta('q2', 0), B.esperaDaResposta('q1', 1), B.esperaDaResposta(undefined, 0.5)], [60_000, 90_000, 75_000])
+    eq('oferta e confirmação: buffer curto (10 s)', [B.esperaDaResposta('oferta', 0.9), B.esperaDaResposta('preferencia', 0.9), B.esperaDaResposta('agendado', 0.9)], [10_000, 10_000, 10_000])
+  }
+
   console.log('\n— Pós-reunião (23h depois, resposta → Retorno imediato)')
   {
     const P = await import('../lib/pos-reuniao')
@@ -622,6 +674,12 @@ async function main() {
       'Lead deseja contratar — retorno imediato')
     eq('antes da reunião: não mexe', P.destinoPosReuniao(closer(STATUS.reuniaoAgendada), reuniao, 'confirmado', reuniao * 1000 - 3600_000), null)
     eq('fora do Closer: não mexe', P.destinoPosReuniao({ pipeline_id: PIPELINES.sdr, status_id: STATUS.de5a10 }, reuniao, 'oi', depois), null)
+    eq('na hora da reunião (Sirlei, "Nossa"): não mexe', P.destinoPosReuniao(closer(STATUS.reuniaoAgendada), reuniao, 'Nossa', reuniao * 1000 + 25_000), null)
+    const t = (iso: string) => new Date(iso).getTime()
+    eq('follow-up atrasado no mesmo dia, antes das 20h: ainda sai', P.aindaNoDia(t('2026-11-06T10:00:00-03:00'), t('2026-11-06T13:30:00-03:00')), true)
+    eq('follow-up atrasado depois das 20h: não sai', P.aindaNoDia(t('2026-11-06T10:00:00-03:00'), t('2026-11-06T20:10:00-03:00')), false)
+    eq('follow-up de outro dia: não sai', P.aindaNoDia(t('2026-11-05T10:00:00-03:00'), t('2026-11-06T09:00:00-03:00')), false)
+    eq('durante a reunião (Zacheu, remarcando): não mexe', P.destinoPosReuniao(closer(STATUS.reuniaoAgendada), reuniao, 'Podemos sim. As 14:30', reuniao * 1000 + 29 * 60_000), null)
   }
 
   {
@@ -701,6 +759,7 @@ async function main() {
   }
 
   {
+    eq('"mando na segunda" é reconhecido (Miranda, 06/11)', ['Mandarei todas as informações na segunda-feira, pq conseguirei coleta-lãs de melhor forma.', 'te passo semana que vem', 'no fim de semana eu vejo'].map(fluxo.vaiMandarDepois), [true, true, true])
     eq('"vou ver e depois envio" é reconhecido', ['vou ver e depois te envio', 'preciso olhar o contracheque', 'não sei de cabeça, te mando mais tarde', 'ganho 12 mil', 'quanto custa?', 'e depois da reunião, quanto custa?'].map(fluxo.vaiMandarDepois), [true, true, true, false, false, false])
     const { w, deps } = mundo(seg9)
     w.state = { etapa: 'q2', objetivo: 1 }

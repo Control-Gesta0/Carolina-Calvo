@@ -85,6 +85,13 @@ export function cenarios(textos?: Textos): Cenario[] {
     { id: 'oferta-dia-e-hora', etapa: 'oferta', state: { oferta }, conversa: [['out', OFERTA], ['in', 'nesse horário não dá, pode ser na quinta às 16h?']], espera: { intencaoEm: ['escolhe_periodo', 'recusa_horario'], data_preferida: '2026-10-15', hora_preferida: '16:00' } },
     { id: 'oferta-hoje-depois-16h', etapa: 'oferta', state: { oferta }, conversa: [['out', OFERTA], ['in', 'hoje só consigo depois das 16h']], espera: { intencaoEm: ['escolhe_periodo', 'recusa_horario'], data_preferida: '2026-10-13', hora_preferida: '16:00' } },
     { id: 'oferta-amanha-manha', etapa: 'oferta', state: { oferta }, conversa: [['out', OFERTA], ['in', 'só consigo amanhã de manhã']], espera: { intencaoEm: ['escolhe_periodo', 'recusa_horario'], periodo: 'manha', data_preferida: '2026-10-14', hora_preferida: null } },
+    // o 1º pedido de presencial na qualificação sai com o texto da Dra. (código); aqui só a leitura
+    { id: 'q2-presencial-sirlei', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'Gostaria de agendar pessoalmente'], ['in', 'É possível?']], espera: { intencaoEm: ['pergunta', 'pede_humano'] } },
+    {
+      id: 'q2-primeira-paga', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'O primeiro atendimento é sempre pago?']], espera: { intencao: 'pergunta' }, comResposta: true,
+      criterios: [...RESPOSTA_BOA, 'Diz claramente que a primeira reunião on-line é gratuita, sem citar valor nem atendimento pago'],
+    },
+    { id: 'q2-manda-segunda', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'Mandarei todas as informações na segunda-feira, pq conseguirei coleta-las de melhor forma.']], espera: { intencaoEm: ['responde_etapa', 'outro', 'escolhe_periodo'], renda_bruta: null, renda_liquida: null, desconto_conta: null } },
     { id: 'pede-doutora', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'quero falar direto com a doutora, por favor']], espera: { intencao: 'pede_humano' } },
     { id: 'robo', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'isso aqui é um robô respondendo?']], espera: { intencao: 'pergunta_se_robo', resposta: null } },
     { id: 'advogado', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'eu já tenho advogado nesse processo contra o banco']], espera: { intencao: 'tem_advogado' } },

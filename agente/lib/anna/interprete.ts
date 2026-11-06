@@ -67,6 +67,11 @@ const SEM_PENDENTE: Partial<Record<Etapa, string>> = {
   humano: 'nenhuma',
 }
 
+/** Renda de R$ 10 a 15 mil (Dra., 06/11): o caso está com a equipe; a Anna responde sem prometer decisão. */
+const AGUARDA_AVALIACAO = 'nenhuma: o caso foi encaminhado para a equipe do escritório avaliar se pode atender, e a equipe vai dar o retorno por aqui. ' +
+  'Se o lead escrever algo que pede resposta (pergunta se o escritório vai assumir o caso, conta de novo o problema com o banco), use a intenção `outro` ou `pergunta` e responda com cordialidade que a situação dele já foi encaminhada para avaliação da equipe e que retornaremos por aqui assim que houver uma posição. ' +
+  'Nunca prometa que o escritório vai aceitar o caso, não antecipe estratégia nem resultado, não ofereça reunião e não repita a mensagem de encaminhamento palavra por palavra.'
+
 /** Recusou o horário oferecido sem dizer o período: o modelo às vezes deduz o período do horário (1 em 10). Não vale. */
 export function periodoSoSeDito(l: Leitura, etapa: Etapa, textoLead: string): Leitura {
   if (etapa === 'oferta' && l.intencao === 'recusa_horario' && l.periodo && !/manh[aã]|tarde|almo[cç]o|cedo|noite/i.test(textoLead)) return { ...l, periodo: null }
@@ -144,7 +149,7 @@ function contexto(e: Entrada): string {
     `Hoje: ${hoje} (${iso}), ${e.agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })} em Brasília`,
     `Nome no WhatsApp: ${e.nomeContato || '(desconhecido)'}`,
     `Etapa do roteiro: ${e.etapa}`,
-    `Pergunta pendente (o sistema emenda depois da sua resposta): ${e.pendente || SEM_PENDENTE[e.etapa] || 'nenhuma'}`,
+    `Pergunta pendente (o sistema emenda depois da sua resposta): ${e.pendente || (e.etapa === 'sem_reuniao' && s.aguardaAvaliacao ? AGUARDA_AVALIACAO : SEM_PENDENTE[e.etapa]) || 'nenhuma'}`,
     `Já informado: ${[
       s.objetivo ? `opção ${s.objetivo}` : '',
       s.rendaBruta != null ? `renda bruta ${s.rendaBruta}` : '',

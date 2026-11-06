@@ -99,6 +99,12 @@ export const TEXTOS_PADRAO = {
   /** [CG] renda bruta até R$ 15 mil: a Anna não oferece reunião nem cria tarefa (Dra., 15/10); o card fica na coluna da renda */
   sem_reuniao: 'Obrigada pelas informações. Vou deixar o seu caso registrado para a equipe da Dra. Carolina avaliar o melhor caminho. Se tiver alguma dúvida, é só me escrever por aqui.',
 
+  /** [Dra., 06/11] o lead pediu atendimento presencial: como funciona o atendimento (sem valores) */
+  como_funciona: 'Claro! Vou te explicar como funciona nosso atendimento.\n\nPrimeiro, fazemos uma avaliação on-line do seu caso para verificar se é uma situação em que nosso escritório pode te ajudar.\n\nSe o seu caso estiver dentro da nossa área de atuação, agendamos uma primeira reunião on-line com a Dra. Carolina Calvo, com duração aproximada de 30 minutos.\n\nNessa conversa, a Dra. Carolina vai explicar o que pode ser feito no seu caso e quais são as possibilidades de atuação.\n\n*Essa primeira reunião on-line é totalmente gratuita.*\n\nCaso você tenha interesse em contratar o escritório após essa conversa, podemos agendar um horário para que venha presencialmente.\n\nTudo bem para você?',
+
+  /** [Dra., 06/11] renda bruta de R$ 10 mil a R$ 15 mil: encerramento provisório; a equipe avalia e dá o retorno */
+  encaminha_10_15: 'Entendi, {nome}. Obrigada pelas informações!\n\nVou encaminhar sua situação para a nossa equipe responsável.\n\nAssim que tivermos uma posição, entraremos em contato com você por aqui, tudo bem?',
+
   /** [CG] passagem para humano (pediu pessoa, perguntou se é robô, remarcação, assunto de outra área) */
   passa_humano: 'Vou pedir para alguém da equipe da Dra. Carolina continuar o seu atendimento por aqui.',
 
@@ -162,6 +168,8 @@ export const TEXTOS = {
   agendado: (quando: string, link: string) => preencher(texto('agendado'), { quando, link }),
   // encerramentos que passam para a equipe: entre 22h e 4h, com o aviso de fora do horário (Dra., 04/11)
   get semReuniao() { return comAvisoFora(texto('sem_reuniao'), new Date(), CONFIG.plantao) },
+  get comoFunciona() { return texto('como_funciona') },
+  encaminha1015: (nome?: string) => comAvisoFora(nome ? preencher(texto('encaminha_10_15'), { nome }) : texto('encaminha_10_15').replace(', {nome}', ''), new Date(), CONFIG.plantao),
   get passaHumano() { return comAvisoFora(texto('passa_humano'), new Date(), CONFIG.plantao) },
   get semAgenda() { return comAvisoFora(texto('sem_agenda'), new Date(), CONFIG.plantao) },
   get desistiu() { return texto('desistiu') },

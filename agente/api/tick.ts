@@ -15,7 +15,7 @@ import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { varrerCloser } from '../lib/closer'
 import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
-import { executarPosReuniao } from '../lib/pos-reuniao'
+import { executarPosReuniao, varrerPosReuniao } from '../lib/pos-reuniao'
 import { verificarSaudacao } from '../lib/saudacao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
@@ -53,6 +53,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     feitos.push(...(await varrerCloser()).map(l => `closer ${l}`))
   } catch (e) {
     feitos.push(`closer: ERRO ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}`)
+  }
+  try {
+    feitos.push(...(await varrerPosReuniao()).map(l => `pós-reunião ${l}`))
+  } catch (e) {
+    feitos.push(`pós-reunião: ERRO ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}`)
   }
   if (CONFIG.etiquetaMesAtiva) {
     try {

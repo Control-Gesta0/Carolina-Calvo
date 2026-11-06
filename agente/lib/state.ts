@@ -28,6 +28,8 @@ export interface LeadState {
   recusas?: number
   /** horários que o lead recusou nesta conversa (não são oferecidos de novo) */
   recusados?: string[]
+  /** renda de R$ 10 a 15 mil: caso encaminhado para a equipe avaliar (Dra., 06/11) */
+  aguardaAvaliacao?: boolean
   reuniao?: { eventId: string; inicio: string; link: string; criadaEm: string }
   /** memória (Ajuste 3): valores de um atendimento anterior do mesmo telefone, e se a Anna espera o "melhorou, piorou ou igual" */
   memoria?: { quando: string; rendaBruta?: number; rendaLiquida?: number; descontoConta?: number }

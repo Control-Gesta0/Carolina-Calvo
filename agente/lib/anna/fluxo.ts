@@ -18,7 +18,7 @@ import { leituraMemoria, valoresTexto } from '../memoria'
  */
 
 /** O lead vai ver os valores e mandar depois ("vou olhar o contracheque", "te mando mais tarde"). Puro. */
-const RX_DEPOIS = /\b(depois|mais tarde|amanh[aã]|daqui a pouco|j[aá] te (mando|passo|envio)|assim que)\b|vou (ver|verificar|olhar|conferir|pegar|procurar|consultar)|preciso (ver|verificar|olhar|conferir|pegar|procurar|consultar)|n[aã]o (sei|lembro) (de cabe[cç]a|agora|no momento)|n[aã]o tenho (aqui|agora|em m[aã]os)/i
+const RX_DEPOIS = /\b(depois|mais tarde|amanh[aã]|daqui a pouco|j[aá] te (mando|passo|envio)|assim que|mandarei|enviarei|passarei|na (segunda|ter[cç]a|quarta|quinta|sexta)(-feira)?|no (s[aá]bado|domingo|fim de semana)|semana que vem|pr[oó]xima semana|outro dia)\b|vou (ver|verificar|olhar|conferir|pegar|procurar|consultar)|preciso (ver|verificar|olhar|conferir|pegar|procurar|consultar)|n[aã]o (sei|lembro) (de cabe[cç]a|agora|no momento)|n[aã]o tenho (aqui|agora|em m[aã]os)/i
 /** Só uma confirmação ("combinado", "ok", "tá bom"…), sem mais nada. Puro. */
 export const RX_OK = /^\s*(combinado|ok(ay)?|t[aá]( bom| certo)?|certo|beleza|blz|pode deixar|sim|perfeito|fechado|show|claro|👍+|obrigad[oa]|vou mandar|mando sim)[\s.!,]*(obrigad[oa])?[\s.!]*$/i
 /** Só um cumprimento ou resposta genérica ("oi", "sim", "bom dia", "tudo bem?"). Puro. */
@@ -27,6 +27,11 @@ export const vaiMandarDepois = (texto: string) => RX_DEPOIS.test(texto || '') &&
 
 /** Só acima disto a Anna oferece reunião (regra da Dra., 15/10/2026: renda bruta acima de R$ 15 mil). */
 export const RENDA_OFERTA_REUNIAO = 15000
+/** abaixo disso: Desqualificado (Dra., 03/11) */
+export const RENDA_MINIMA = 10000
+/** pedido de atendimento presencial */
+const ETAPAS_QUALIFICACAO = new Set<string>(['q1', 'q2', 'limite', 'q3'])
+const RX_PRESENCIAL = /presencial|pessoalmente|no escrit[oó]rio|ir a[ií] no|ir at[eé] o escrit/i
 
 export interface Ctx {
   agora: Date
@@ -116,7 +121,7 @@ export const OBJETIVO: Record<string, string> = {
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15'])
 
 interface Fala { id: string; obrigatorio?: string[] }
 
@@ -165,6 +170,30 @@ async function oferecer(ctx: Ctx, deps: Deps, busca: { periodo?: Periodo; aParti
   return { acao: `ofereceu ${slot.chave}`, enviado }
 }
 
+/** Marca a reunião no slot (o oferecido ou o que o lead pediu): agenda Google, campos, Closer, mensagem, lembretes e tarefa. */
+async function agendar(ctx: Ctx, deps: Deps, slot: Slot, leitura?: Leitura): Promise<Resultado> {
+  const s = ctx.state
+  const nome = ctx.primeiroNome || ctx.nomeContato || 'lead'
+  const ev = await deps.agenda.confirmar(slot, `Reunião on-line · ${nome} · superendividamento`, `Marcada pela Anna (WhatsApp).\n${resumoLead(s)}`)
+  if (!ev) return oferecer(ctx, deps, {}, TEXTOS.horarioOcupado, 'horario_ocupado')
+  const quando = primeiraMaiuscula(quandoExtenso(slot.inicio))
+  await deps.cancelarRegua()
+  await deps.salvarCampos({
+    [CRM_MAP.campos.reuniao]: Math.floor(slot.inicio.getTime() / 1000),
+    [CRM_MAP.campos.agendamento]: Math.floor(slot.inicio.getTime() / 1000),
+    [CRM_MAP.campos.horarioReuniao]: quandoExtenso(slot.inicio),
+    [CRM_MAP.campos.linkMeet]: ev.link,
+  })
+  await deps.mover(STATUS.reuniaoAgendada, PIPELINES.closer)
+  await deps.addTags([CRM_MAP.tags.agendou])
+  const texto = TEXTOS.agendado(quando, ev.link)
+  await deps.enviar(texto)
+  await deps.patch({ etapa: 'agendado', oferta: undefined, reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
+  await deps.agendarLembretes(slot.inicio, ev.eventId)
+  await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
+  return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
+}
+
 /** Job da pausa de 15 min: a 5ª mensagem com o primeiro horário da sequência. */
 export async function quintaMensagem(ctx: Ctx, deps: Deps, token: string): Promise<Resultado> {
   if (ctx.state.etapa !== 'analise' || ctx.state.msg5Token !== token) return { acao: 'msg5 cancelada (etapa mudou)' }
@@ -188,9 +217,22 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     etapa, pendente: PENDENTE[etapa](s, quandoOfertado), state: s, conversa: ctx.conversa, agora: ctx.agora, nomeContato: ctx.nomeContato,
   })
 
+  // pediu atendimento presencial na qualificação: o texto da Dra. sobre como funciona (Dra., 06/11, caso Sirlei).
+  // Só a insistência depois da explicação vai para a equipe (pede_humano)
+  const semValores = leitura.renda_bruta == null && leitura.renda_liquida == null && leitura.desconto_conta == null && !leitura.opcao
+  const jaExplicou = ctx.conversa.some(m => m.dir === 'out' && /presencial/i.test(m.text) && /gratuita/i.test(m.text))
+  if (ETAPAS_QUALIFICACAO.has(etapa) && semValores && RX_PRESENCIAL.test(ctx.textoTurno) && !jaExplicou) {
+    const enviado = await falar(ctx, deps, TEXTOS.comoFunciona, etapa, { id: 'como_funciona' })
+    return { acao: 'pediu presencial: explicou como funciona o atendimento', enviado, leitura }
+  }
+
   switch (leitura.intencao) {
     case 'pergunta_se_robo': return humano(ctx, deps, 'perguntou se é robô', TEXTOS.passaHumano, leitura)
-    case 'pede_humano': return humano(ctx, deps, 'pediu atendimento humano', TEXTOS.passaHumano, leitura)
+    case 'pede_humano': {
+      // fora da qualificação, o primeiro pedido de presencial é respondido pela resposta livre; só a insistência vai para a equipe
+      if (RX_PRESENCIAL.test(ctx.textoTurno) && !jaExplicou && leitura.resposta) { leitura.intencao = 'pergunta'; break }
+      return humano(ctx, deps, 'pediu atendimento humano', TEXTOS.passaHumano, leitura)
+    }
     case 'tem_advogado': return humano(ctx, deps, 'já tem advogado no caso', TEXTOS.possuiAdvogado, leitura, 'possui_advogado')
     case 'ja_e_cliente': return humano(ctx, deps, 'já é cliente', TEXTOS.passaHumano, leitura)
     case 'quer_contratar': {
@@ -338,6 +380,15 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         if (livre) return livre
       }
       await deps.cancelarRegua()
+      if (!((s.rendaBruta ?? 0) > RENDA_OFERTA_REUNIAO) && (s.rendaBruta ?? 0) >= RENDA_MINIMA) {
+        // Dra., 06/11: não é desqualificado; encerramento provisório, tarefa para a equipe avaliar e dar o retorno
+        const enviado = await dizer(ctx, deps, TEXTOS.encaminha1015(ctx.primeiroNome || undefined), { id: 'encaminha_10_15' })
+        await deps.addTags([CRM_MAP.tags.semReuniao])
+        await deps.nota(`Anna encaminhou o caso para a equipe avaliar (renda de R$ 10 a 15 mil). ${resumoLead(s)}`)
+        await deps.tarefa(`Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. ${resumoLead(s)}`)
+        await deps.patch({ etapa: 'sem_reuniao', aguardaAvaliacao: true })
+        return { acao: 'renda de 10 a 15 mil: encerramento provisório, tarefa para a equipe', enviado, leitura }
+      }
       if (!((s.rendaBruta ?? 0) > RENDA_OFERTA_REUNIAO)) {
         const enviado = await dizer(ctx, deps, TEXTOS.semReuniao, { id: 'sem_reuniao' })
         // Dra., 15/10: só a tag e o card na coluna da renda. Sem tarefa, sem mover, sem Venda perdida.
@@ -364,29 +415,24 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
 
     case 'oferta':
     case 'preferencia': {
+      const horaPedida = leitura.hora_preferida && /^\d{2}:\d{2}$/.test(leitura.hora_preferida) ? leitura.hora_preferida : undefined
+      // aceitou, mas com outra hora ("Deixa 11 mesmo, pode agendar às 11", Sirlei 05/11): vale a hora que ele disse
+      if (etapa === 'oferta' && leitura.intencao === 'aceita_horario' && s.oferta && horaPedida && horaPedida !== s.oferta.chave.slice(11, 16)) {
+        const dia = leitura.data_preferida && leitura.data_preferida >= diaIso(ctx.agora) ? leitura.data_preferida : s.oferta.chave.slice(0, 10)
+        const excluir = (s.recusados || []).filter(c => c !== `${dia}T${horaPedida}`)
+        const pedido = await deps.agenda.buscar({ aPartirDoDia: dia, horaExata: horaPedida, antecedenciaMin: AGENDA.antecedenciaConfirmacaoMin, mesmoDia: false, excluir })
+        if (pedido && pedido.chave === `${dia}T${horaPedida}`) {
+          await deps.agenda.reservar(pedido)
+          await deps.patch({ recusados: excluir })
+          return agendar(ctx, deps, pedido, leitura)
+        }
+        return oferecer({ ...ctx, state: { ...s, recusados: excluir } }, deps, { aPartirDoDia: dia, horaExata: horaPedida, antecedenciaMin: AGENDA.antecedenciaConfirmacaoMin }, TEXTOS.novaOferta, 'nova_oferta')
+      }
       if (etapa === 'oferta' && leitura.intencao === 'aceita_horario' && s.oferta) {
         const slot = slotDaOferta(s.oferta)
         // aceite de um horário já oferecido vale até 30 min antes (Dra., 05/11); mais em cima que isso, oferece outro
         if (slot.inicio.getTime() < ctx.agora.getTime() + AGENDA.antecedenciaConfirmacaoMin * 60_000) return oferecer(ctx, deps, {}, TEXTOS.novaOferta, 'nova_oferta')
-        const nome = ctx.primeiroNome || ctx.nomeContato || 'lead'
-        const ev = await deps.agenda.confirmar(slot, `Reunião on-line · ${nome} · superendividamento`, `Marcada pela Anna (WhatsApp).\n${resumoLead(s)}`)
-        if (!ev) return oferecer(ctx, deps, {}, TEXTOS.horarioOcupado, 'horario_ocupado')
-        const quando = primeiraMaiuscula(quandoExtenso(slot.inicio))
-        await deps.cancelarRegua()
-        await deps.salvarCampos({
-          [CRM_MAP.campos.reuniao]: Math.floor(slot.inicio.getTime() / 1000),
-          [CRM_MAP.campos.agendamento]: Math.floor(slot.inicio.getTime() / 1000),
-          [CRM_MAP.campos.horarioReuniao]: quandoExtenso(slot.inicio),
-          [CRM_MAP.campos.linkMeet]: ev.link,
-        })
-        await deps.mover(STATUS.reuniaoAgendada, PIPELINES.closer)
-        await deps.addTags([CRM_MAP.tags.agendou])
-        const texto = TEXTOS.agendado(quando, ev.link)
-        await deps.enviar(texto)
-        await deps.patch({ etapa: 'agendado', oferta: undefined, reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
-        await deps.agendarLembretes(slot.inicio, ev.eventId)
-        await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
-        return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
+        return agendar(ctx, deps, slot, leitura)
       }
       // Dra., 05/11: a preferência que o lead diz vale mais que a sequência; recusou sem dizer quando →
       // 1ª vez, uma alternativa no outro período; 2ª vez, pergunta o período; depois disso, a equipe assume
@@ -400,7 +446,9 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         const dia = leitura.data_preferida && leitura.data_preferida >= hoje ? leitura.data_preferida : hora ? hoje : undefined
         // pedido do próprio lead com dia ou hora: mínimo de 30 min; só o período: a regra da oferta (1 h)
         const antecedenciaMin = dia || hora ? AGENDA.antecedenciaConfirmacaoMin : undefined
-        return oferecer(ctxR, deps, { periodo: hora ? undefined : leitura.periodo || undefined, aPartirDoDia: dia, horaExata: hora, antecedenciaMin }, TEXTOS.novaOferta, 'nova_oferta')
+        // o lead pediu exatamente um horário que já tinha recusado ("deixa 11 mesmo"): ele volta a valer
+        const ctxP = dia && hora ? { ...ctxR, state: { ...ctxR.state, recusados: recusados.filter(c => c !== `${dia}T${hora}`) } } : ctxR
+        return oferecer(ctxP, deps, { periodo: hora ? undefined : leitura.periodo || undefined, aPartirDoDia: dia, horaExata: hora, antecedenciaMin }, TEXTOS.novaOferta, 'nova_oferta')
       }
       if (leitura.intencao === 'recusa_horario' || (etapa === 'oferta' && leitura.intencao === 'escolhe_periodo')) {
         const n = (s.recusas || 0) + 1
@@ -428,6 +476,10 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     case 'agendado':
     case 'sem_reuniao': {
       if (etapa === 'sem_reuniao' && leitura.intencao === 'pede_reuniao') return humano(ctx, deps, 'renda até 15 mil pediu reunião', TEXTOS.passaHumano, leitura)
+      // caso em avaliação (10 a 15 mil): o que o lead escreve fica no card para a equipe ver
+      if (etapa === 'sem_reuniao' && s.aguardaAvaliacao && ctx.textoTurno.trim().length > 15) {
+        await deps.nota(`Lead escreveu enquanto aguarda a avaliação da equipe: "${ctx.textoTurno.slice(0, 300)}"`)
+      }
       if (leitura.resposta) {
         await deps.enviar(leitura.resposta)
         return { acao: `${etapa}: respondeu`, enviado: leitura.resposta, leitura }

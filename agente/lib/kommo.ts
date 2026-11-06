@@ -13,15 +13,22 @@ async function kommo<T>(method: string, path: string, body?: unknown, opts?: { r
   const retries = opts?.retries ?? 3
   const retry5xx = opts?.retry5xx ?? true
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${CONFIG.kommoDomain}${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${CONFIG.kommoToken}`,
-        Accept: 'application/json',
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    })
+    let res: Response
+    try {
+      res = await fetch(`${CONFIG.kommoDomain}${path}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${CONFIG.kommoToken}`,
+          Accept: 'application/json',
+          ...(body ? { 'Content-Type': 'application/json' } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      })
+    } catch (e) {
+      // falha de rede ("fetch failed"): repete, menos no Salesbot (retry5xx:false), que pode ter rodado
+      if (retry5xx && attempt < retries) { await sleep(1000 * (attempt + 1)); continue }
+      throw e
+    }
     const text = await res.text()
     if (res.ok) return (text ? JSON.parse(text) : {}) as T
     const retryable = res.status === 429 || (retry5xx && res.status >= 500)
@@ -144,4 +151,20 @@ export async function getMainContactName(lead: KommoLead): Promise<string> {
   if (!c) return ''
   const contato = await kommo<{ name?: string }>('GET', `/api/v4/contacts/${c.id}`)
   return (contato.name || '').trim()
+}
+
+/**
+ * Quem mandou uma mensagem de saída: o id do usuário da equipe, 0 = robô/automação do Kommo, null = não achou.
+ * O id do webhook de saída é o mesmo message.id do evento outgoing_chat_message do contato.
+ */
+export async function autorDaSaida(contatoId: number, mensagemId: string, tentativas = 3): Promise<number | null> {
+  const desde = Math.floor(Date.now() / 1000) - 600
+  for (let i = 0; i < tentativas; i++) {
+    const d = await kommo<{ _embedded?: { events?: Array<{ created_by?: number; value_after?: Array<{ message?: { id?: string } }> }> } }>('GET',
+      `/api/v4/events?filter[entity]=contact&filter[entity_id]=${contatoId}&filter[type]=outgoing_chat_message&filter[created_at][from]=${desde}&limit=20`).catch(() => null)
+    const e = (d?._embedded?.events || []).find(x => x.value_after?.[0]?.message?.id === mensagemId)
+    if (e) return Number(e.created_by ?? 0)
+    if (i < tentativas - 1) await sleep(2000)
+  }
+  return null
 }

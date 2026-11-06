@@ -14,13 +14,28 @@ const LOCK_TTL = 180
 
 export interface Claim { proceed: boolean; reason: string; lockOwner?: string }
 
-export async function debounceAndClaim(leadId: number, webhookId: string): Promise<Claim> {
+/** Etapas em que a resposta pode sair logo (oferta e confirmação de horário: a agenda não pode esperar). */
+const RAPIDAS = new Set(['oferta', 'preferencia', 'agendado'])
+
+/**
+ * Quanto a Anna espera antes de responder (Dra., 06/11): na qualificação, de 60 a 90 s, contados da ÚLTIMA
+ * mensagem do lead (cada mensagem nova reinicia a espera e o turno lê todas juntas); na oferta e na
+ * confirmação do horário, o buffer curto. Puro (sorteio injetável para o teste).
+ */
+export function esperaDaResposta(etapa: string | undefined, sorteio = Math.random()): number {
+  if (etapa && RAPIDAS.has(etapa)) return CONFIG.debounceSeconds * 1000
+  const min = CONFIG.esperaQualificacaoS[0] * 1000
+  const max = CONFIG.esperaQualificacaoS[1] * 1000
+  return Math.round(min + (max - min) * sorteio)
+}
+
+export async function debounceAndClaim(leadId: number, webhookId: string, esperaMs = CONFIG.debounceSeconds * 1000): Promise<Claim> {
   const rl = await redis.incr(k('rl', leadId))
   if (rl === 1) await redis.expire(k('rl', leadId), 60)
   if (rl > 10) return { proceed: false, reason: 'rate limit (10/min) — possível loop de eco' }
 
   await redis.set(k('token', leadId), webhookId, { ex: 600 })
-  await sleep(CONFIG.debounceSeconds * 1000)
+  await sleep(esperaMs)
   if ((await redis.get<string>(k('token', leadId))) !== webhookId) return { proceed: false, reason: 'webhook mais novo assumiu' }
 
   const lockOwner = crypto.randomUUID()

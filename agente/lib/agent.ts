@@ -1,10 +1,11 @@
 import { CONFIG } from './config'
 import { CRM_MAP, PIPELINES } from './crm-map'
 import { devolverAoCloser, jaPassouPeloCloser, veioDoCloser } from './closer'
-import { adoptToken, currentToken, debounceAndClaim, releaseLock, renewLock } from './buffer'
+import { adoptToken, currentToken, debounceAndClaim, esperaDaResposta, releaseLock, renewLock } from './buffer'
 import { emptyUsage, logExec } from './execlog'
 import { alreadyAnswered, getHistory, humanSpokeRecently, lastInbound, markAnswered } from './history'
-import { getLead, leadTags, type KommoLead } from './kommo'
+import { addLeadNote, addLeadTask, getLead, leadTags, type KommoLead } from './kommo'
+import { k, redis } from './redis'
 import { turno } from './anna/fluxo'
 import { depsProducao, montarCtx, type Telemetria } from './anna/producao'
 import { clearState, getState } from './state'
@@ -65,7 +66,7 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
       console.log(`[anna] lead ${leadId} voltou com a tag de gate: novo ciclo`)
     }
 
-    const claim = await debounceAndClaim(leadId, webhookId)
+    const claim = await debounceAndClaim(leadId, webhookId, esperaDaResposta((await getState(leadId)).etapa))
     if (!claim.proceed) { console.log(`[debounce] lead ${leadId}: ${claim.reason}`); return }
     lockOwner = claim.lockOwner
     let myToken = webhookId
@@ -127,7 +128,19 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
     const msg = (e instanceof Error ? e.message : String(e)).slice(0, 300)
     console.error(`[anna] ERRO lead ${leadId} após ${Date.now() - t0}ms: ${msg}`, e)
     await logExec({ tipo: 'erro', leadId, nome, ms: Date.now() - t0, detalhe: msg })
+    // o lead ficou sem resposta: a equipe fica sabendo (uma vez por hora por card)
+    await avisarFalha(leadId).catch(() => undefined)
   } finally {
     await releaseLock(leadId, lockOwner)
   }
+}
+
+/** A Anna não conseguiu responder (erro técnico): nota + tarefa para a equipe, para o lead não ficar esperando. */
+async function avisarFalha(leadId: number): Promise<void> {
+  const h = await getHistory(leadId).catch(() => [])
+  const ultima = h[h.length - 1]
+  if (!ultima || ultima.dir !== 'in') return
+  if ((await redis.set(k('falha-aviso', leadId), '1', { nx: true, ex: 3600 })) !== 'OK') return
+  await addLeadNote(leadId, 'Anna: não consegui responder a última mensagem do lead por uma falha técnica. Peço que a equipe responda por aqui.')
+  await addLeadTask(leadId, `A Anna não conseguiu responder (falha técnica). Última mensagem do lead: "${String(ultima.text).slice(0, 200)}"`, CRM_MAP.tarefaPrioritaria)
 }

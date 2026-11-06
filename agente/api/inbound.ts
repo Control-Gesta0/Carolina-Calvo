@@ -8,7 +8,7 @@ import { cancelarRegua } from '../lib/followup'
 import { botRodandoRecente } from '../lib/modelos'
 import { appendMessage, getHistory, isEchoOfSent, markHumanSpoke, seenMessage } from '../lib/history'
 import { guardarUltimaMensagem } from '../lib/closer'
-import { addLeadNote, addLeadTags, getLead } from '../lib/kommo'
+import { addLeadNote, addLeadTags, autorDaSaida, getLead } from '../lib/kommo'
 import { mediaKind, mediaToText } from '../lib/media'
 import { isResetCommand, resetLead } from '../lib/reset'
 import { sendReply } from '../lib/transport'
@@ -146,7 +146,17 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
           await confirmarSaudacao(m.leadId, text, 'webhook de saída')
           continue
         }
-        // Saída que não é nossa = equipe (ou outra automação) falando: registra, recua e para a régua
+        // Saída de um robô do Kommo (ex.: lembretes de 2h, 1h e 15 min da reunião): não é a equipe.
+        // Fica no histórico, mas a Anna não sai do atendimento (casos Sirlei e Zacheu, 06/11)
+        const leadSaida = await getLead(m.leadId).catch(() => null)
+        const contatoSaida = leadSaida?._embedded?.contacts?.find(c => c.is_main) || leadSaida?._embedded?.contacts?.[0]
+        const autor = contatoSaida ? await autorDaSaida(contatoSaida.id, m.id) : null
+        if (autor === 0) {
+          await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'out', text, ts: Date.now() })
+          await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: `mensagem de um robô do Kommo (não é a equipe): "${text.slice(0, 80)}"` })
+          continue
+        }
+        // Saída que não é nossa = equipe falando: registra, recua e para a régua
         const antes = await getHistory(m.leadId).catch(() => [])
         // a Anna já estava atendendo? (o lead escreveu ou a Anna conseguiu mandar algo)
         const annaAtendia = antes.some(h => h.dir === 'in' || (h.dir === 'out' && !String(h.id).startsWith('kommo:')))

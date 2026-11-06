@@ -40,6 +40,8 @@ export const CONFIG = {
   /** relógio (/api/tick): QStash manda Authorization: Bearer <CRON_SECRET> */
   cronSecret: process.env.CRON_SECRET || '',
   debounceSeconds: Number(process.env.DEBOUNCE_SECONDS || 10),
+  /** espera antes de responder na qualificação, em segundos [mín, máx] (Dra., 06/11: 1 min a 1 min 30 s). ESPERA_QUALIFICACAO=60,90 */
+  esperaQualificacaoS: ((process.env.ESPERA_QUALIFICACAO || '60,90').split(',').map(Number).filter(n => n >= 0).concat([60, 90]).slice(0, 2)) as [number, number],
 
   // Gate: só atende quem tem a tag. Vazio = atende todos (só no fim da rampagem).
   gateTag: (process.env.GATE_TAG || 'ia').toLowerCase(),

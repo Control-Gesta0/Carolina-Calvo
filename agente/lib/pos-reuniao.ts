@@ -9,6 +9,7 @@ import { enviarModelo } from './modelos'
 import { primeiroNome } from './anna/producao'
 import { agendaConectada, ocupados } from './google'
 import { k, redis } from './redis'
+import { humanSpokeRecently } from './history'
 
 /**
  * PÓS-REUNIÃO (Dra., 15 e 22/10/2026), para QUALQUER reunião, marcada pela Anna ou pela equipe:
@@ -22,6 +23,7 @@ import { k, redis } from './redis'
  */
 
 export const HORAS_DEPOIS = 23
+export const DURACAO_REUNIAO_MS = 30 * 60_000
 const H = 3600_000
 
 /** Etapas em que o follow-up ainda faz sentido: a reunião está marcada ou o cliente está decidindo. */
@@ -51,7 +53,9 @@ export function destinoPosReuniao(lead: Pick<KommoLead, 'pipeline_id' | 'status_
   if (lead.status_id === STATUS.clienteDecisao) {
     return { statusId: STATUS.retornoImediato, tarefa: contratar ? 'Lead deseja contratar — retorno imediato' : 'Lead respondeu em Cliente decisão — retorno imediato' }
   }
-  if (lead.status_id === STATUS.reuniaoAgendada && reuniaoSeg && reuniaoSeg * 1000 < agoraMs) {
+  // Reunião agendada: só depois do FIM da reunião (30 min). Na hora marcada o lead escreve para entrar
+  // ou remarcar ("Nossa", "Podemos às 14:30"): isso não é resposta pós-reunião (Sirlei e Zacheu, 06/11)
+  if (lead.status_id === STATUS.reuniaoAgendada && reuniaoSeg && reuniaoSeg * 1000 + DURACAO_REUNIAO_MS < agoraMs) {
     return { statusId: STATUS.retornoImediato, tarefa: contratar ? 'Lead deseja contratar — retorno imediato' : 'Lead respondeu depois da reunião — retorno imediato' }
   }
   return null
@@ -69,7 +73,8 @@ export async function agendarPosReuniao(lead: KommoLead): Promise<string | null>
   const reuniao = reuniaoDoCard(lead)
   if (!reuniao) return null
   const quando = horaDoFollowup(reuniao)
-  if (quando < Date.now() - H) return null
+  // passou da hora: ainda sai se for o mesmo dia (o texto fala de "ontem") e antes das 20h; senão, não sai mais
+  if (quando < Date.now() - H && !aindaNoDia(quando, Date.now())) return null
   if ((await redis.set(k('posreuniao', lead.id, reuniao), '1', { nx: true, ex: 30 * 86400 })) !== 'OK') return null
   await agendarJob({ tipo: 'posreuniao', leadId: lead.id, quando, token: String(reuniao) })
   return `follow-up pós-reunião agendado para ${new Date(quando).toISOString()}`
@@ -125,6 +130,8 @@ export async function respostaPosReuniao(lead: KommoLead, texto: string): Promis
   if (!posReuniaoVale(lead.id)) return null
   const d = destinoPosReuniao(lead, reuniaoDoCard(lead), texto, Date.now())
   if (!d) return null
+  // a equipe está conversando com o lead (escreveu nas últimas 6h): quem cuida é ela, o card não sai do lugar
+  if (await humanSpokeRecently(lead.id)) return null
   // um movimento por mensagem, mesmo com webhook repetido
   if ((await redis.set(k('posreuniao', 'resp', lead.id, lead.status_id), '1', { nx: true, ex: 600 })) !== 'OK') return null
   await updateLeadStatus(lead.id, d.statusId, PIPELINES.closer)
@@ -132,4 +139,30 @@ export async function respostaPosReuniao(lead: KommoLead, texto: string): Promis
   await addLeadNote(lead.id, 'O cliente respondeu depois da reunião: card movido para Retorno imediato, com tarefa prioritária. Nenhuma mensagem foi enviada a ele.')
   await logExec({ tipo: 'closer', leadId: lead.id, nome: lead.name, tools: ['pós-reunião: resposta → Retorno imediato', `tarefa: ${d.tarefa}`], detalhe: texto.slice(0, 160) })
   return d.tarefa
+}
+
+/** Puro: `agora` ainda é o mesmo dia de `quando` em Brasília, antes das 20h? */
+export function aindaNoDia(quando: number, agora: number): boolean {
+  const dia = (t: number) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  const hora = Number(new Date(agora).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23' }))
+  return dia(quando) === dia(agora) && hora < 20
+}
+
+/**
+ * Relógio, uma vez por hora: reunião no Closer sem o follow-up agendado (marcada antes de a Anna entrar,
+ * ou cujo card não gerou evento) ganha o agendamento. Idempotente: uma vez por data de reunião.
+ */
+export async function varrerPosReuniao(): Promise<string[]> {
+  if (CONFIG.posReuniao === 'off') return []
+  if ((await redis.set(k('posreuniao', 'varredura'), '1', { nx: true, ex: 3300 })) !== 'OK') return []
+  const feitos: string[] = []
+  for (const st of ETAPAS) {
+    const d = await kommoGet<{ _embedded?: { leads?: KommoLead[] } }>(
+      `/api/v4/leads?filter[statuses][0][pipeline_id]=${PIPELINES.closer}&filter[statuses][0][status_id]=${st}&limit=250&order[updated_at]=desc`).catch(() => null)
+    for (const lead of d?._embedded?.leads || []) {
+      const r = await agendarPosReuniao(lead).catch(() => null)
+      if (r) feitos.push(`${lead.id}: ${r}`)
+    }
+  }
+  return feitos
 }
