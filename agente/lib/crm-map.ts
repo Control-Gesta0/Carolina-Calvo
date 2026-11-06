@@ -137,3 +137,18 @@ export function colunaPorRenda(renda: number): number {
   if (renda <= 15000) return STATUS.de10a15
   return STATUS.acima15
 }
+
+/** Etiqueta que a equipe põe quando a saudação dá "Erro" no WhatsApp (Dra., 05/11). */
+export const TAG_NAO_ENTREGUE = 'nao-entregue'
+
+/**
+ * Coluna pela faixa de salário do FORMULÁRIO, só para quem não recebe mensagem (etiqueta nao-entregue).
+ * Puro. "de_10_a_15_mil" → 10 A 15 MIL; acima de 15 ("acima_de_15_mil", "Superior a 15 mil") → ACIMA DE 15 MIL;
+ * o resto, inclusive o ambíguo "De 7 a 15 mil" e faixa vazia → Desqualificado.
+ */
+export function colunaPelaFaixa(faixa: string | null | undefined): number {
+  const f = String(faixa || '').toLowerCase().replace(/_/g, ' ')
+  if (/acima de 15|superior a 15|mais de 15/.test(f)) return STATUS.acima15
+  if (/\b10 a 15\b/.test(f)) return STATUS.de10a15
+  return STATUS.desqualificado
+}

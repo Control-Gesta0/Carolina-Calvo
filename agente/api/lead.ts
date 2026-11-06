@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import { bloqueio } from '../lib/agent'
 import { primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
-import { CRM_MAP, PIPELINES, STATUS } from '../lib/crm-map'
+import { colunaPelaFaixa, CRM_MAP, PIPELINES, STATUS, TAG_NAO_ENTREGUE } from '../lib/crm-map'
 import { logExec, marcarWebhook } from '../lib/execlog'
 import { iniciarRegua } from '../lib/followup'
 import { memoriaNoInicio } from '../lib/memoria'
@@ -13,7 +13,8 @@ import { esperarSaudacao } from '../lib/saudacao'
 import { saudacaoDaHora } from '../lib/plantao'
 import { etiquetaDoMes } from '../lib/etiqueta-mes'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
-import { addLeadTags, getLead, getMainContactName, runSalesbot, updateLeadFields } from '../lib/kommo'
+import { addLeadNote, addLeadTags, fieldValue, getLead, getMainContactName, leadTags, removeLeadTags, runSalesbot, updateLeadFields, updateLeadStatus, type KommoLead } from '../lib/kommo'
+import { cancelarRegua } from '../lib/followup'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
 import { clearState, getState, patchState } from '../lib/state'
@@ -78,6 +79,12 @@ async function tratar(ev: Evento): Promise<void> {
     if (ev.tipo === 'status') return
 
     let lead = await getLead(ev.id)
+    // a saudação deu "Erro" no WhatsApp e a equipe pôs a etiqueta nao-entregue: o card vai para a coluna da
+    // faixa do formulário e a Anna para de mandar mensagem a esse lead (Dra., 05/11)
+    if (lead.pipeline_id === PIPELINES.sdr && leadTags(lead).some(t => t.toLowerCase() === TAG_NAO_ENTREGUE)) {
+      await naoEntregue(lead)
+      return
+    }
     if (ev.tipo === 'add' && CONFIG.autoGateFormLeads && CONFIG.gateTag && ehLeadDeFormularioSE(lead)) {
       // a etiqueta do mês entra junto (o relógio só a poria na volta seguinte, até 5 min depois)
       const mes = CONFIG.etiquetaMesAtiva ? [etiquetaDoMes(new Date())] : []
@@ -133,4 +140,20 @@ async function tratar(ev: Evento): Promise<void> {
     await redis.del(k('iniciado', ev.id))
     await logExec({ tipo: 'erro', leadId: ev.id, detalhe: `webhook de lead: ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}` })
   }
+}
+
+const NOME_COLUNA: Record<number, string> = { [STATUS.acima15]: 'ACIMA DE 15 MIL', [STATUS.de10a15]: '10 A 15 MIL', [STATUS.desqualificado]: 'Desqualificado' }
+
+/** Etiqueta nao-entregue: uma vez por card, move pela faixa do formulário, para a régua e tira o lead da Anna. */
+async function naoEntregue(lead: KommoLead): Promise<void> {
+  if ((await redis.set(k('nao-entregue', lead.id), '1', { nx: true, ex: 90 * 86400 })) !== 'OK') return
+  const faixa = String(fieldValue(lead, CRM_MAP.campos.formSalario) || '')
+  const destino = colunaPelaFaixa(faixa)
+  await cancelarRegua(lead.id)
+  await patchState(lead.id, { etapa: 'humano', finalizado: { motivo: 'mensagem não entregue', em: new Date().toISOString() } })
+  // sem a tag de liberação a Anna não retoma o card sozinha (se o lead escrever, a equipe atende)
+  if (CONFIG.gateTag && leadTags(lead).some(t => t.toLowerCase() === CONFIG.gateTag)) await removeLeadTags(lead.id, [CONFIG.gateTag])
+  if (lead.status_id !== destino) await updateLeadStatus(lead.id, destino, PIPELINES.sdr)
+  await addLeadNote(lead.id, `Anna: a mensagem não foi entregue a este número (etiqueta "${TAG_NAO_ENTREGUE}"). Card movido para ${NOME_COLUNA[destino]} pela faixa do formulário ("${faixa || 'sem faixa'}"). A Anna não manda mais mensagens a este lead.`)
+  await logExec({ tipo: 'pulou', leadId: lead.id, nome: lead.name, detalhe: `mensagem não entregue: card movido para ${NOME_COLUNA[destino]} pela faixa do formulário` })
 }

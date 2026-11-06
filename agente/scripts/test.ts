@@ -25,6 +25,7 @@ async function main() {
   const { ehPerguntaRobo } = await import('../lib/anna/interprete')
   const A = await import('../lib/anna/agenda')
   const { colunaPorRenda, STATUS, PIPELINES, CRM_MAP } = await import('../lib/crm-map')
+  const CRM = await import('../lib/crm-map')
   const F = await import('../lib/followup')
   const { parseKommoWebhook } = await import('../api/inbound')
   const { parseLeadWebhook } = await import('../api/lead')
@@ -649,6 +650,10 @@ async function main() {
     eq('duas variáveis na ordem', W.casarModelo('Vence em {{lead.cf.805166}}: {{lead.cf.805164}}', 'Vence em {{1}}: {{2}}'), { 1: '{{lead.cf.805166}}', 2: '{{lead.cf.805164}}' })
     eq('modelo sem variável', W.casarModelo('Bom dia !', 'Bom dia !'), {})
   }
+
+  console.log('\n— Mensagem não entregue: coluna pela faixa do formulário (Dra., 05/11)')
+  eq('faixas do formulário → coluna', ['acima_de_15_mil', 'de_10_a_15_mil', 'de_5_a_10_mil', 'Superior a 15 mil', 'De 7 a 15 mil', '', 'até 5 mil'].map(CRM.colunaPelaFaixa),
+    [STATUS.acima15, STATUS.de10a15, STATUS.desqualificado, STATUS.acima15, STATUS.desqualificado, STATUS.desqualificado, STATUS.desqualificado])
 
   console.log('\n— Robô do Kommo x equipe (06/11)')
   {
