@@ -121,7 +121,7 @@ export const OBJETIVO: Record<string, string> = {
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma'])
 
 interface Fala { id: string; obrigatorio?: string[] }
 
@@ -262,6 +262,17 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     const texto = compor(leitura.resposta, PENDENTE[etapa](s, quandoOfertado))
     const enviado = await falar(ctx, deps, texto, etapa, { id: 'livre', obrigatorio: etapa === 'oferta' ? [quandoOfertado || ''] : [] })
     return { acao: `respondeu fora do roteiro (${leitura.intencao})`, enviado, leitura }
+  }
+
+  // resposta do lead recorrente à mensagem da Dra. ("piorou", "continua igual"): retoma de onde parou,
+  // com a pergunta da etapa; se ele já mandou valores ou escolheu a opção, segue o roteiro normal (Dra., 06/11)
+  if (s.recorrentePendente) {
+    await deps.patch({ recorrentePendente: false })
+    const deuDado = leitura.opcao || leitura.renda_bruta != null || leitura.renda_liquida != null || leitura.desconto_conta != null
+    if (!deuDado && leituraMemoria(ctx.textoTurno) && PENDENTE[etapa](s)) {
+      const enviado = await falar(ctx, deps, `${TEXTOS.recorrenteRetoma(ctx.primeiroNome || undefined)}\n\n${PENDENTE[etapa](s)}`, etapa, { id: 'recorrente_retoma' })
+      return { acao: 'recorrente respondeu: retomou de onde parou', enviado, leitura }
+    }
   }
 
   switch (etapa) {

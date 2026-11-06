@@ -104,6 +104,15 @@ export function resumoMemoria(m: Memoria, agora = new Date()): string {
   return `Este telefone já teve ${m.cards.length} atendimento(s) antes: ${lista}.${m.valores ? ` Último registro com valores (${m.valores.quando}): ${valoresTexto(m.valores)}.` : ''}`
 }
 
+/**
+ * Lead recorrente (Dra., 06/11, caso Eva Lima): já procurou o escritório antes, em outro dia, e não deu
+ * continuidade (nenhum card anterior com reunião, Closer ou cliente: esses vão para a equipe). Puro.
+ */
+export function ehRecorrente(m: Memoria, agoraMs = Date.now()): boolean {
+  if (m.bloqueio) return false
+  return m.cards.some(c => c.criado * 1000 < agoraMs - 24 * 3600_000)
+}
+
 /** Lê os cards do mesmo telefone do contato principal do lead. */
 export async function memoriaDoLead(lead: KommoLead): Promise<Memoria> {
   const c = (lead._embedded?.contacts || []).find(x => x.is_main) || lead._embedded?.contacts?.[0]

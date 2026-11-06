@@ -25,7 +25,9 @@ import { quandoExtenso } from '../lib/anna/agenda'
 import { enviarModelo } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
 import { sendReply } from '../lib/transport'
-import { getState } from '../lib/state'
+import { getState, patchState } from '../lib/state'
+import { ehRecorrente, memoriaDoLead, memoriaVale } from '../lib/memoria'
+import { TEXTOS } from '../lib/anna/textos'
 
 /**
  * O RELÓGIO. QStash chama de 5 em 5 minutos (Authorization: Bearer CRON_SECRET)
@@ -173,7 +175,20 @@ async function executar(job: Job): Promise<string> {
       await enviarModelo(leadId, modelo, { primeiroNome: nome || undefined })
       await addLeadNote(leadId, `Anna: follow-up enviado (${CRM_MAP.modelos[modelo].nome}).`)
     },
-    async enviarTexto(texto, modeloForaDaJanela) {
+    async textoEspecial(regua, idx) {
+      // lead recorrente (Dra., 06/11): já procurou antes sem continuar, respondeu neste ciclo e parou de novo →
+      // a mensagem da Dra. no lugar do 1º follow-up da qualificação, uma vez por ciclo, dentro da janela de 24h
+      if (regua !== 'qualificacao' || idx !== 0 || !memoriaVale(leadId)) return null
+      const st = await getState(leadId)
+      if (st.recorrenteEnviado) return null
+      const ultimaDoLead = (await getHistory(leadId)).filter(m => m.dir === 'in').pop()?.ts
+      if (!ultimaDoLead || Date.now() - ultimaDoLead > 23 * 3600_000) return null
+      const lead = await getLead(leadId)
+      if (!ehRecorrente(await memoriaDoLead(lead))) return null
+      await patchState(leadId, { recorrenteEnviado: true, recorrentePendente: true })
+      return TEXTOS.recorrente(primeiroNome(await getMainContactName(lead).catch(() => '')) || undefined)
+    },
+    async enviarTexto(texto, modeloForaDaJanela, nota) {
       // texto livre só dentro da janela de 24h da Meta (contada da última mensagem do lead); fora dela, o modelo aprovado
       const ultimaDoLead = (await getHistory(leadId)).filter(m => m.dir === 'in').pop()?.ts ?? 0
       if (Date.now() - ultimaDoLead > 23 * 3600_000) {
@@ -185,7 +200,7 @@ async function executar(job: Job): Promise<string> {
       }
       await sendReply(leadId, texto)
       await appendMessage(leadId, { id: crypto.randomUUID(), dir: 'out', text: texto, ts: Date.now() })
-      await addLeadNote(leadId, 'Anna: follow-up enviado (texto da equipe sobre a confirmação do horário).')
+      await addLeadNote(leadId, nota || 'Anna: follow-up enviado (texto da equipe sobre a confirmação do horário).')
       return 'texto'
     },
     async aposPrimeiroFollow() {

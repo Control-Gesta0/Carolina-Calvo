@@ -30,6 +30,9 @@ export interface LeadState {
   recusados?: string[]
   /** renda de R$ 10 a 15 mil: caso encaminhado para a equipe avaliar (Dra., 06/11) */
   aguardaAvaliacao?: boolean
+  /** lead recorrente: a mensagem da Dra. já saiu neste ciclo (uma vez só) e a resposta dele está pendente (Dra., 06/11) */
+  recorrenteEnviado?: boolean
+  recorrentePendente?: boolean
   reuniao?: { eventId: string; inicio: string; link: string; criadaEm: string }
   /** memória (Ajuste 3): valores de um atendimento anterior do mesmo telefone, e se a Anna espera o "melhorou, piorou ou igual" */
   memoria?: { quando: string; rendaBruta?: number; rendaLiquida?: number; descontoConta?: number }

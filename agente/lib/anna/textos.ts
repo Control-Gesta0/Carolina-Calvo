@@ -102,6 +102,11 @@ export const TEXTOS_PADRAO = {
   /** [Dra., 06/11] o lead pediu atendimento presencial: como funciona o atendimento (sem valores) */
   como_funciona: 'Claro! Vou te explicar como funciona nosso atendimento.\n\nPrimeiro, fazemos uma avaliação on-line do seu caso para verificar se é uma situação em que nosso escritório pode te ajudar.\n\nSe o seu caso estiver dentro da nossa área de atuação, agendamos uma primeira reunião on-line com a Dra. Carolina Calvo, com duração aproximada de 30 minutos.\n\nNessa conversa, a Dra. Carolina vai explicar o que pode ser feito no seu caso e quais são as possibilidades de atuação.\n\n*Essa primeira reunião on-line é totalmente gratuita.*\n\nCaso você tenha interesse em contratar o escritório após essa conversa, podemos agendar um horário para que venha presencialmente.\n\nTudo bem para você?',
 
+  /** [Dra., 06/11] lead recorrente que de novo parou de responder: substitui o 1º follow-up da qualificação, uma vez por ciclo */
+  recorrente: 'Olá, {nome}! Tudo bem?\n\nVerifiquei aqui que você já procurou nosso escritório em outras ocasiões, mas acabou não dando continuidade ao atendimento.\n\n*Quero te fazer uma pergunta importante: enquanto você adia essa avaliação, o que realmente mudou na sua situação financeira?*\n\nBuscar orientação é o primeiro passo, mas, sem dar continuidade, não conseguimos avaliar quais medidas podem ser adotadas para ajudar você a sair dessa situação.\n\n*De lá para cá, sua situação financeira melhorou, piorou ou continua igual?*\n\nMe conta, porque quero entender o que está acontecendo e verificar como podemos avançar com seu atendimento.',
+  /** [Dra., 06/11] resposta do recorrente ("piorou", "continua igual"): retoma de onde parou; a pergunta da etapa vem logo depois */
+  recorrente_retoma: 'Entendi, {nome}. Então é importante avaliarmos sua situação atual para verificar quais possibilidades existem no seu caso.\n\nVamos atualizar algumas informações para dar continuidade.',
+
   /** [Dra., 06/11] renda bruta de R$ 10 mil a R$ 15 mil: encerramento provisório; a equipe avalia e dá o retorno */
   encaminha_10_15: 'Entendi, {nome}. Obrigada pelas informações!\n\nVou encaminhar sua situação para a nossa equipe responsável.\n\nAssim que tivermos uma posição, entraremos em contato com você por aqui, tudo bem?',
 
@@ -168,6 +173,8 @@ export const TEXTOS = {
   agendado: (quando: string, link: string) => preencher(texto('agendado'), { quando, link }),
   // encerramentos que passam para a equipe: entre 22h e 4h, com o aviso de fora do horário (Dra., 04/11)
   get semReuniao() { return comAvisoFora(texto('sem_reuniao'), new Date(), CONFIG.plantao) },
+  recorrente: (nome?: string) => (nome ? preencher(texto('recorrente'), { nome }) : texto('recorrente').replace(', {nome}!', '!')),
+  recorrenteRetoma: (nome?: string) => (nome ? preencher(texto('recorrente_retoma'), { nome }) : texto('recorrente_retoma').replace(', {nome}.', '.')),
   get comoFunciona() { return texto('como_funciona') },
   encaminha1015: (nome?: string) => comAvisoFora(nome ? preencher(texto('encaminha_10_15'), { nome }) : texto('encaminha_10_15').replace(', {nome}', ''), new Date(), CONFIG.plantao),
   get passaHumano() { return comAvisoFora(texto('passa_humano'), new Date(), CONFIG.plantao) },

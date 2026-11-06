@@ -348,6 +348,31 @@ async function main() {
   }
 
   {
+    // Dra., 06/11 (caso Eva Lima): lead recorrente
+    const PENDENTE_Q2 = (await import('../lib/anna/interprete')).PENDENTE.q2({})
+    const M = await import('../lib/memoria')
+    const agoraMs = new Date('2026-11-06T15:00:00-03:00').getTime()
+    const card = (diasAtras: number) => ({ id: 1, criado: Math.floor((agoraMs - diasAtras * 86400_000) / 1000), situacao: 'atendimento sem reunião' })
+    eq('recorrente: card anterior de outro dia, sem reunião', [
+      M.ehRecorrente({ cards: [card(10)], valores: null, bloqueio: null }, agoraMs),
+      M.ehRecorrente({ cards: [card(0.1)], valores: null, bloqueio: null }, agoraMs),
+      M.ehRecorrente({ cards: [card(10)], valores: null, bloqueio: 'já fez reunião com a Dra. (card 1, outubro)' }, agoraMs),
+      M.ehRecorrente({ cards: [], valores: null, bloqueio: null }, agoraMs),
+    ], [true, false, false, false])
+    eq('mensagem do recorrente: texto da Dra., sem valores antigos', [TEXTOS.recorrente('Eva').startsWith('Olá, Eva! Tudo bem?'), TEXTOS.recorrente().startsWith('Olá! Tudo bem?'), /R\$/.test(TEXTOS.recorrente('Eva')), TEXTOS.recorrente('Eva').includes('*De lá para cá, sua situação financeira melhorou, piorou ou continua igual?*')], [true, true, false, true])
+    const { w, deps } = mundo(seg9)
+    w.state = { etapa: 'q2', objetivo: 3, recorrenteEnviado: true, recorrentePendente: true }
+    w.leituras.push(L({ intencao: 'responde_etapa' }))
+    await fluxo.turno({ ...ctx(w, seg9, 'piorou bastante'), primeiroNome: 'Eva' }, deps)
+    eq('recorrente responde "piorou" → retoma e pede os valores que faltam', [w.enviados[0].startsWith('Entendi, Eva. Então é importante avaliarmos sua situação atual'), w.enviados[0].endsWith(PENDENTE_Q2), w.state.recorrentePendente], [true, true, false])
+    const m2 = mundo(seg9)
+    m2.w.state = { etapa: 'q2', objetivo: 3, recorrenteEnviado: true, recorrentePendente: true }
+    m2.w.leituras.push(L({ renda_bruta: 18000, renda_liquida: 6000, desconto_conta: 3000 }))
+    await fluxo.turno(ctx(m2.w, seg9, 'piorou: bruto 18 mil, líquido 6 mil e o banco tira 3 mil'), m2.deps)
+    eq('recorrente já manda os valores → segue o roteiro (pergunta do cheque especial)', m2.w.enviados[0], TEXTOS.perguntaLimite)
+  }
+
+  {
     // Dra., 06/11 (caso Tathiana): renda de 10 a 15 mil não é desqualificado; encerramento provisório + tarefa
     const { w, deps } = mundo(seg9)
     w.state = { etapa: 'q3', objetivo: 3, rendaBruta: 12000, rendaLiquida: 5000, descontoConta: 1500 }
