@@ -120,7 +120,8 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       // sem a data nos campos, os lembretes do Kommo (2h, 1h, 15 min) e a ida para Cliente decisão não disparam;
       // os lembretes da Anna conferem o evento no Google antes de sair
       await limparCampos(leadId, [CRM_MAP.campos.reuniao, CRM_MAP.campos.agendamento, CRM_MAP.campos.horarioReuniao, CRM_MAP.campos.linkMeet]).catch(e => { falhas.push(`campos: ${e instanceof Error ? e.message : e}`) })
-      const tarefas = await concluirTarefas(leadId, CRM_MAP.tarefaReuniao.tipo, `Reunião cancelada pelo lead (${motivo}).`).catch(() => 0)
+      let tarefas = 0
+      for (const tipo of CRM_MAP.tiposTarefaReuniao) tarefas += await concluirTarefas(leadId, tipo, `Reunião cancelada pelo lead (${motivo}).`).catch(() => 0)
       const quando = quandoExtenso(new Date(reuniao.inicio))
       await addLeadNote(leadId, `Anna: reunião de ${quando} cancelada (${motivo}). Evento apagado da agenda da Dra., ${tarefas ? 'tarefa da reunião concluída' : 'sem tarefa da reunião aberta'} e lembretes cancelados.${falhas.length ? ` ATENÇÃO, conferir à mão: ${falhas.join('; ')}.` : ''}`)
     },

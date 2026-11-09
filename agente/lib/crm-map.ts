@@ -78,8 +78,12 @@ export const CRM_MAP = {
 
   /** tarefa criada para a equipe quando a Anna passa o atendimento */
   tarefa: { responsavelId: 12068987, tipo: 1, prazoMin: 60 },
-  /** a reunião na agenda do Kommo: tipo "Reunião" (4217119), 30 min, da Dra. (como a equipe já faz) */
-  tarefaReuniao: { responsavelId: 12068987, tipo: 4217119, duracaoS: 1800 },
+  /** a reunião na agenda do Kommo: tarefa de reunião de 30 min, da Dra., no horário marcado */
+  // tipo 2 = "Reunião" padrão do Kommo (Meeting). O tipo "Reunião" 4217119 é de outra integração (client_uuid
+  // próprio) e o Kommo recusa a Anna (403 "Client UUID mismatch"): desde 05/11 nenhuma tarefa de reunião entrava (09/11)
+  tarefaReuniao: { responsavelId: 12068987, tipo: 2, duracaoS: 1800 },
+  /** tipos de tarefa de reunião que contam ao cancelar (o da Anna e o que a equipe usa) */
+  tiposTarefaReuniao: [2, 4217119] as number[],
   /** lead que quer contratar ou respondeu em Cliente decisão: retorno imediato */
   tarefaPrioritaria: { responsavelId: 12068987, tipo: 1, prazoMin: 15 },
 
