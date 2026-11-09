@@ -108,6 +108,20 @@ export function conferirLembrete(inicioCombinado: string, ev: { status: string; 
   return Date.parse(ev.inicio) === Date.parse(inicioCombinado) ? 'ok' : 'mudou'
 }
 
+/** Remarca o MESMO evento (mantém o link do Meet). Devolve o link, ou null se o evento não existe mais. */
+export async function moverReuniao(eventId: string, inicio: Date, fim: Date): Promise<string | null> {
+  try {
+    const ev = await google<{ hangoutLink?: string; status?: string; conferenceData?: { entryPoints?: Array<{ entryPointType: string; uri: string }> } }>(
+      'PATCH', `${cal()}/events/${encodeURIComponent(eventId)}`,
+      { start: { dateTime: inicio.toISOString(), timeZone: 'America/Sao_Paulo' }, end: { dateTime: fim.toISOString(), timeZone: 'America/Sao_Paulo' }, status: 'confirmed' },
+    )
+    return ev.hangoutLink || ev.conferenceData?.entryPoints?.find(e => e.entryPointType === 'video')?.uri || ''
+  } catch (e) {
+    if (/-> (404|410):/.test(e instanceof Error ? e.message : '')) return null
+    throw e
+  }
+}
+
 export async function apagarReuniao(eventId: string): Promise<void> {
   await google('DELETE', `${cal()}/events/${encodeURIComponent(eventId)}`)
 }

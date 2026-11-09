@@ -807,6 +807,7 @@ async function main() {
     eq('reunião da Anna → nada; equipe remarca a da Anna → apaga a dela e cria; data passada → nada', [
       d(amanha15, null, amanha15), d(amanha16, null, amanha15), d(s('2026-11-09T10:00:00-03:00'), null, null), d(null, null, null),
     ], ['nada', 'remarcou-da-anna', 'nada', 'nada'])
+    eq('equipe apaga a data de uma reunião da Anna → apaga o evento dela', d(null, null, amanha15), 'apagar')
   }
 
   console.log('\n— Tarefas da Anna como "Dia todo" no calendário (09/11)')

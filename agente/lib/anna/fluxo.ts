@@ -249,6 +249,8 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
     if (!(aceita || cancela || desiste || depois)) return null
     if (s.reuniao && deps.cancelarReuniao) {
       const motivo = depois ? 'o lead vai entrar em contato depois' : desiste ? 'o lead não quer mais a reunião' : aceita ? 'o lead pediu para remarcar' : 'o lead avisou que não vai participar'
+      // a reunião sai do estado ANTES de limpar os campos: o webhook do campo vazio não pode apagar de novo
+      await deps.patch({ reuniao: undefined, oferta: undefined })
       await deps.cancelarReuniao(s.reuniao, motivo)
     }
     await deps.patch({ reuniao: undefined, oferta: undefined })
