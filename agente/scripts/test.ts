@@ -794,6 +794,15 @@ async function main() {
   eq('faixas do formulário → coluna', ['acima_de_15_mil', 'de_10_a_15_mil', 'de_5_a_10_mil', 'Superior a 15 mil', 'De 7 a 15 mil', '', 'até 5 mil'].map(CRM.colunaPelaFaixa),
     [STATUS.acima15, STATUS.de10a15, STATUS.desqualificado, STATUS.acima15, STATUS.desqualificado, STATUS.desqualificado, STATUS.desqualificado])
 
+  console.log('\n— Tarefas da Anna como "Dia todo" no calendário (09/11)')
+  {
+    const K = await import('../lib/kommo')
+    eq('fim do dia em Brasília (23:59), inclusive à noite depois das 21h', [
+      new Date(K.fimDoDiaBrt(new Date('2026-11-09T14:10:00-03:00').getTime()) * 1000).toISOString(),
+      new Date(K.fimDoDiaBrt(new Date('2026-11-09T22:30:00-03:00').getTime()) * 1000).toISOString(),
+    ], ['2026-11-10T02:59:00.000Z', '2026-11-10T02:59:00.000Z'])
+  }
+
   console.log('\n— Robô do Kommo x equipe (06/11)')
   {
     const K = await import('../lib/kommo')

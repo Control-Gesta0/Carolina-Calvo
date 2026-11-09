@@ -128,10 +128,20 @@ export function fieldEnumIds(lead: KommoLead, fieldId: number): number[] {
 }
 
 /** Tarefa para a equipe (a Anna passou o atendimento, pediu remarcação etc.). */
+/**
+ * Puro: 23:59 do dia de hoje em Brasília, em segundos. É como o Kommo guarda a tarefa de "Dia todo": ela aparece
+ * no topo do dia no calendário, fora da grade de horários, que fica só com as reuniões (Dra., 09/11).
+ */
+export function fimDoDiaBrt(agoraMs = Date.now()): number {
+  const dia = new Date(agoraMs - 3 * 3600_000).toISOString().slice(0, 10)
+  return Math.floor(new Date(`${dia}T23:59:00-03:00`).getTime() / 1000)
+}
+
 export async function addLeadTask(leadId: number, text: string, o: { responsavelId: number; tipo: number; prazoMin: number }): Promise<void> {
+  // tarefas de acompanhamento da Anna: "Dia todo" (antes vencia em prazoMin e aparecia na grade como se fosse reunião)
   await kommo('POST', '/api/v4/tasks', [{
     text, entity_id: leadId, entity_type: 'leads', task_type_id: o.tipo, responsible_user_id: o.responsavelId,
-    complete_till: Math.floor(Date.now() / 1000) + o.prazoMin * 60,
+    complete_till: fimDoDiaBrt(),
   }])
 }
 
