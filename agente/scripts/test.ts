@@ -359,10 +359,10 @@ async function main() {
       w.state = marcado()
       w.leituras.push(L({ intencao: 'cancela_reuniao' }))
       await fluxo.turno(ctx(w, seg9, 'Não vou conseguir participar hoje. Tive um imprevisto.'), deps)
-      eq('A1 imprevisto: reunião cancelada, oferta de remarcar (texto da Dra.), card ainda não vai para AGENDAR', [(w as W).canceladas, w.enviados[0].startsWith('Sem problemas, Maria! Imprevistos acontecem'), w.state.etapa, w.movido, w.state.reuniao], [['ev1'], true, 'remarcar_pergunta', [], undefined])
+      eq('A1 imprevisto: reunião cancelada, card sai de Reunião agendada para AGENDAR (caso Zizi) e oferta de remarcar', [(w as W).canceladas, w.enviados[0].startsWith('Sem problemas, Maria! Imprevistos acontecem'), w.state.etapa, w.movido, w.state.reuniao], [['ev1'], true, 'remarcar_pergunta', [STATUS.agendarReuniao], undefined])
       w.leituras.push(L({ intencao: 'remarcar' }))
       await fluxo.turno(ctx(w, seg9, 'Sim, quero remarcar.'), deps)
-      eq('A2 aceitou remarcar → AGENDAR REUNIÃO na hora e pergunta o período', [w.movido, w.enviados[1], w.state.etapa, w.state.remarcacao], [[STATUS.agendarReuniao], TEXTOS.manhaOuTarde, 'preferencia', true])
+      eq('A2 aceitou remarcar → continua em AGENDAR REUNIÃO e pergunta o período', [w.movido[w.movido.length - 1], w.enviados[1], w.state.etapa, w.state.remarcacao], [STATUS.agendarReuniao, TEXTOS.manhaOuTarde, 'preferencia', true])
       w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'tarde' }))
       await fluxo.turno(ctx(w, seg9, 'à tarde'), deps)
       eq('A3 período → um horário do próximo dia útil à tarde', w.enviados[2], TEXTOS.novaOferta('AMANHÃ às 15:00'))
@@ -384,10 +384,10 @@ async function main() {
       w.state = marcado()
       w.leituras.push(L({ intencao: 'desiste' }))
       await fluxo.turno(ctx(w, seg9, 'Pode cancelar. Não quero continuar.'), deps)
-      eq('C1 desiste → cancela e faz uma única tentativa (texto da Dra.)', [(w as W).canceladas, w.enviados[0].startsWith('Entendo, Maria, e respeito sua decisão.'), w.state.etapa, w.movido], [['ev1'], true, 'desistencia_pergunta', []])
+      eq('C1 desiste → cancela, card na coluna da renda (não AGENDAR) e uma única tentativa (texto da Dra.)', [(w as W).canceladas, w.enviados[0].startsWith('Entendo, Maria, e respeito sua decisão.'), w.state.etapa, w.movido], [['ev1'], true, 'desistencia_pergunta', [STATUS.acima15]])
       w.leituras.push(L({ intencao: 'desiste' }))
       await fluxo.turno(ctx(w, seg9, 'Não, prefiro não continuar mesmo'), deps)
-      eq('C2 mantém → respeita, Não quer continuar, sem AGENDAR e sem nova oferta', [w.enviados[1], w.movido, w.state.etapa, w.eventos], [TEXTOS.desistiu, [STATUS.naoQuerContinuar], 'humano', []])
+      eq('C2 mantém → respeita, Não quer continuar, sem AGENDAR e sem nova oferta', [w.enviados[1], w.movido, w.state.etapa, w.eventos], [TEXTOS.desistiu, [STATUS.acima15, STATUS.naoQuerContinuar], 'humano', []])
     }
     // TESTE D: depois entra em contato
     {

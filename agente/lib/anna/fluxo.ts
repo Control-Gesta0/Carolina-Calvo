@@ -257,7 +257,9 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
       return { acao: 'desistiu da reunião: Não quer continuar', enviado, leitura }
     }
     const enviado = await dizer(ctx, deps, TEXTOS.comNome('desistencia_pergunta', nome), { id: 'desistencia_pergunta' })
-    await deps.patch({ etapa: 'desistencia_pergunta' })
+    // reunião cancelada: o card não fica em Reunião agendada; desistência não vai para AGENDAR REUNIÃO (Dra., 09/11)
+    if (etapa === 'agendado' && s.rendaBruta) await deps.mover(colunaPorRenda(s.rendaBruta), PIPELINES.sdr)
+    await deps.patch({ etapa: 'desistencia_pergunta', remarcacao: true })
     return { acao: 'não quer mais a reunião: uma tentativa de entender', enviado, leitura }
   }
   if (aceita) {
@@ -280,6 +282,13 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
     return { acao: 'aceitou remarcar: AGENDAR REUNIÃO, perguntou o período', enviado, leitura }
   }
   if (cancela || etapa === 'cancelou_motivo') {
+    // a reunião foi cancelada e a Anna vai tentar remarcar: o card sai de Reunião agendada na hora e fica em
+    // SDR › AGENDAR REUNIÃO, que é a situação real do lead (Dra., 09/11, caso Zizi Cris). Se ele desistir, sai de lá.
+    if (etapa === 'agendado') {
+      await deps.mover(STATUS.agendarReuniao, PIPELINES.sdr)
+      await deps.nota('Anna: o lead não vai participar da reunião. Reunião cancelada e card em AGENDAR REUNIÃO enquanto a Anna tenta remarcar.')
+      await deps.patch({ remarcacao: true })
+    }
     // cancelou: com o motivo dito (ou respondendo ao "aconteceu algum imprevisto?"), oferece remarcar; sem motivo, pergunta
     if (etapa === 'agendado' && !RX_MOTIVO.test(t)) {
       const enviado = await dizer(ctx, deps, TEXTOS.comNome('cancelou_motivo', nome), { id: 'cancelou_motivo' })
