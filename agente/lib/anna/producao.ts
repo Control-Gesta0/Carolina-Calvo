@@ -1,9 +1,9 @@
 import { CONFIG } from '../config'
-import { CRM_MAP, PIPELINES, STATUS } from '../crm-map'
+import { colunaPelaFaixa, colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from '../crm-map'
 import { emptyUsage, type Usage } from '../execlog'
 import { cancelarRegua, iniciarRegua } from '../followup'
 import { agendaConectada, apagarReuniao, criarReuniao, ocupados } from '../google'
-import { concluirTarefas, limparCampos } from '../kommo'
+import { concluirTarefas, fieldValue, limparCampos } from '../kommo'
 import { quandoExtenso } from './agenda'
 import { marcarMovidoPelaAnna } from '../closer'
 import { appendMessage, getHistory } from '../history'
@@ -111,7 +111,24 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
     },
     addTags: t => addLeadTags(leadId, t),
     nota: t => addLeadNote(leadId, t),
-    tarefa: t => addLeadTask(leadId, t, CRM_MAP.tarefa),
+    tarefa: async t => { await addLeadTask(leadId, t, CRM_MAP.tarefa) },
+    async encaminharAcaoSdr(providencia, resumo) {
+      // Dra., 09/11: só leads das faixas 10 A 15 MIL e ACIMA DE 15 MIL (renda confirmada ou, sem ela, a do formulário)
+      const st = await getState(leadId)
+      const faixa = st.rendaBruta != null ? colunaPorRenda(st.rendaBruta) : colunaPelaFaixa(String(fieldValue(lead, CRM_MAP.campos.formSalario) || ''))
+      if (faixa !== STATUS.de10a15 && faixa !== STATUS.acima15) return false
+      await cancelarRegua(leadId)
+      await pausar(leadId, `AÇÃO SDR: ${providencia}`)
+      if (lead.pipeline_id === PIPELINES.closer) await marcarMovidoPelaAnna(leadId)
+      await updateLeadStatus(leadId, STATUS.acaoSdr, PIPELINES.sdr)
+      lead = { ...lead, status_id: STATUS.acaoSdr, pipeline_id: PIPELINES.sdr }
+      const tagFaixa = faixa === STATUS.acima15 ? CRM_MAP.tags.faixaAcima15 : CRM_MAP.tags.faixa10a15
+      await addLeadTags(leadId, [tagFaixa])
+      const tarefaId = await addLeadTask(leadId, `AÇÃO SDR: ${providencia}. ${resumo} Quando concluir, coloque a etiqueta "anna-retomar" no card: a Anna retoma de onde parou e o card volta para ${faixa === STATUS.acima15 ? 'ACIMA DE 15 MIL' : '10 A 15 MIL'}.`, CRM_MAP.tarefaAcaoSdr)
+      await patchState(leadId, { acaoSdr: { faixa, tarefaId: tarefaId ?? undefined, providencia, em: new Date().toISOString() } })
+      await addLeadNote(leadId, `Anna: card em AÇÃO SDR (faixa ${faixa === STATUS.acima15 ? 'ACIMA DE 15 MIL' : '10 A 15 MIL'}). Providência: ${providencia}. A Anna está pausada neste card até a equipe colocar a etiqueta "anna-retomar".`)
+      return true
+    },
     tarefaReuniao: (inicio, t) => addLeadTaskAt(leadId, t, { ...CRM_MAP.tarefaReuniao, quando: Math.floor(inicio.getTime() / 1000) }),
     async cancelarReuniao(reuniao, motivo) {
       // Dra., 09/11: a reunião cancelada não fica ativa em nenhuma agenda e nenhum lembrete dela sai

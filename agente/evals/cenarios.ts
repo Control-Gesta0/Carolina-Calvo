@@ -92,6 +92,7 @@ export function cenarios(textos?: Textos): Cenario[] {
       criterios: [...RESPOSTA_BOA, 'Diz claramente que a primeira reunião on-line é gratuita, sem citar valor nem atendimento pago'],
     },
     { id: 'q2-manda-segunda', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'Mandarei todas as informações na segunda-feira, pq conseguirei coleta-las de melhor forma.']], espera: { intencaoEm: ['responde_etapa', 'outro', 'escolhe_periodo'], renda_bruta: null, renda_liquida: null, desconto_conta: null } },
+    { id: 'q2-contracheque', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', '[imagem do lead]: Contracheque da Secretaria de Educação do DF. Salário bruto R$ 18.000,00, líquido R$ 9.000,00, descontos de empréstimos consignados R$ 4.500,00.']], espera: { renda_bruta: 18000, renda_liquida: 9000, desconto_conta: null } },
     { id: 'pede-doutora', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'quero falar direto com a doutora, por favor']], espera: { intencao: 'pede_humano' } },
     { id: 'robo', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'isso aqui é um robô respondendo?']], espera: { intencao: 'pergunta_se_robo', resposta: null } },
     { id: 'advogado', etapa: 'q2', state: comQ2, conversa: [['out', Q2], ['in', 'eu já tenho advogado nesse processo contra o banco']], espera: { intencao: 'tem_advogado' } },

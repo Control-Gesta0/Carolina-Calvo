@@ -137,12 +137,18 @@ export function fimDoDiaBrt(agoraMs = Date.now()): number {
   return Math.floor(new Date(`${dia}T23:59:00-03:00`).getTime() / 1000)
 }
 
-export async function addLeadTask(leadId: number, text: string, o: { responsavelId: number; tipo: number; prazoMin: number }): Promise<void> {
+export async function addLeadTask(leadId: number, text: string, o: { responsavelId: number; tipo: number; prazoMin: number }): Promise<number | null> {
   // tarefas de acompanhamento da Anna: "Dia todo" (antes vencia em prazoMin e aparecia na grade como se fosse reunião)
-  await kommo('POST', '/api/v4/tasks', [{
+  const r = await kommo<{ _embedded?: { tasks?: Array<{ id: number }> } }>('POST', '/api/v4/tasks', [{
     text, entity_id: leadId, entity_type: 'leads', task_type_id: o.tipo, responsible_user_id: o.responsavelId,
     complete_till: fimDoDiaBrt(),
   }])
+  return r?._embedded?.tasks?.[0]?.id ?? null
+}
+
+/** Conclui uma tarefa pelo id (ex.: a da AÇÃO SDR quando a equipe devolve o atendimento). */
+export async function concluirTarefa(id: number, resultado: string): Promise<void> {
+  await kommo('PATCH', '/api/v4/tasks', [{ id, is_completed: true, result: { text: resultado } }])
 }
 
 /** Tarefa com data e duração (a reunião na agenda do Kommo, como a equipe faz: tipo "Reunião", 30 min). */

@@ -1,6 +1,7 @@
 import { CONFIG } from './config'
 import { logExec } from './execlog'
-import { addLeadNote, addLeadTags, leadTags, removeLeadTags, type KommoLead } from './kommo'
+import { addLeadNote, addLeadTags, concluirTarefa, fieldValue, leadTags, removeLeadTags, updateLeadStatus, type KommoLead } from './kommo'
+import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from './crm-map'
 import { k, redis } from './redis'
 import { getState, patchState, type LeadState } from './state'
 
@@ -51,6 +52,20 @@ export async function retomar(lead: KommoLead): Promise<string> {
   const s = await getState(lead.id)
   const etapa = etapaDeVolta(s)
   if (s.etapa === 'humano') await patchState(lead.id, { etapa, finalizado: undefined })
+  // valores que a equipe registrou no card (renda, líquido, desconto) valem: a Anna não pergunta de novo
+  const num = (id: number) => { const v = Number(fieldValue(lead, id)); return Number.isFinite(v) && fieldValue(lead, id) !== null && fieldValue(lead, id) !== '' ? v : undefined }
+  const doCard = { rendaBruta: num(CRM_MAP.campos.rendaBruta), rendaLiquida: num(CRM_MAP.campos.rendaLiquida), descontoConta: num(CRM_MAP.campos.descontoConta) }
+  const novos = Object.fromEntries(Object.entries(doCard).filter(([k2, v]) => v !== undefined && s[k2 as keyof typeof doCard] == null))
+  if (Object.keys(novos).length) await patchState(lead.id, novos)
+  // saiu da AÇÃO SDR (Dra., 09/11): o card volta para a coluna da faixa e a tarefa da providência é concluída
+  if (s.acaoSdr) {
+    const renda = s.rendaBruta ?? doCard.rendaBruta
+    const faixa = renda != null ? colunaPorRenda(renda) : s.acaoSdr.faixa
+    if (lead.pipeline_id === PIPELINES.sdr && lead.status_id === STATUS.acaoSdr) await updateLeadStatus(lead.id, faixa, PIPELINES.sdr)
+    if (s.acaoSdr.tarefaId) await concluirTarefa(s.acaoSdr.tarefaId, 'Providência concluída: atendimento devolvido à Anna (etiqueta anna-retomar).').catch(() => undefined)
+    await removeLeadTags(lead.id, [CRM_MAP.tags.faixa10a15, CRM_MAP.tags.faixaAcima15]).catch(() => undefined)
+    await patchState(lead.id, { acaoSdr: undefined })
+  }
   await addLeadNote(lead.id, `Anna: atendimento devolvido pela equipe (etiqueta "${TAG_RETOMAR}"). Ela retoma de onde parou${etapa ? ` (etapa ${etapa})` : ''}, considerando também o que a equipe e o lead conversaram. Se a equipe voltar a escrever ao lead, ela pausa de novo.`)
   await logExec({ tipo: 'pulou', leadId: lead.id, nome: lead.name, detalhe: `atendimento devolvido à Anna pela equipe (etapa ${etapa || 'nova'})` })
   return `retomado (etapa ${etapa || 'nova'})`

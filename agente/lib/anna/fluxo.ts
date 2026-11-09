@@ -31,6 +31,22 @@ export const RENDA_OFERTA_REUNIAO = 15000
 export const RENDA_MINIMA = 10000
 /** pedido de atendimento presencial */
 const ETAPAS_QUALIFICACAO = new Set<string>(['q1', 'q2', 'limite', 'q3'])
+/**
+ * Passagens para a equipe que pedem uma providência para o atendimento continuar → AÇÃO SDR (Dra., 09/11).
+ * Fora daqui (outro assunto, já é cliente, tem advogado, quer contratar) a equipe assume de vez. Puro.
+ */
+export function providenciaDaPassagem(motivo: string): string | null {
+  if (motivo === 'pediu atendimento humano') return 'o lead pediu para falar com uma pessoa da equipe; responder pelo WhatsApp'
+  if (motivo === 'perguntou se é robô') return 'o lead perguntou se está falando com um robô; responder pelo WhatsApp e seguir o atendimento'
+  if (motivo === 'agenda indisponível' || motivo === 'sem horário livre nos próximos dias') return 'marcar a reunião com o lead: a agenda não tinha horário livre para a Anna oferecer'
+  if (/^recusou \d+ horários/.test(motivo)) return 'combinar com o lead o horário da reunião (ele recusou os horários oferecidos)'
+  if (motivo === 'renda até 15 mil pediu reunião') return 'o lead pediu reunião: avaliar se o escritório pode atender e responder'
+  if (motivo === 'pediu para remarcar') return 'remarcar a reunião com o lead'
+  return null
+}
+/** leitura de documento que o inbound põe no histórico (media.ts) */
+const RX_DOC_LIDO = /\[(imagem|documento) do lead\]:/i
+const RX_DOC_FALHOU = /\[(imagem|documento) recebido, mas não consegui abrir\]/i
 /** pergunta de honorários, valores ou preço (Dra., 09/11) */
 export const RX_HONORARIOS = /honor[aá]rio|quanto (voc[eê]s )?cobra|quanto (custa|cobram|fica|sai|[eé]) (o |a )?(servi[cç]o|processo|a[cç][aã]o|trabalho|advogad|consulta|atendimento)|quanto custa|qual (o |[eé] o )?(valor|pre[cç]o) (do|da|de|pra|para) (servi[cç]o|processo|a[cç][aã]o|trabalho|consulta|atendimento|voc[eê]s|advogad)|valor (do|da|de) (servi[cç]o|processo|a[cç][aã]o|trabalho|consulta|atendimento)|quanto (eu )?(vou|vai) pagar|\bpre[cç]o\b|\bcobram\b/i
 /** reunião marcada e o caminho do cancelamento (Dra., 09/11) */
@@ -40,6 +56,7 @@ export const RX_DEPOIS_CONTATO = /depois (eu )?(entro em contato|te procuro|proc
 /** motivo de cancelamento já dito: imprevisto, trabalho, saúde, compromisso */
 export const RX_MOTIVO = /imprevisto|surgiu|reuni[aã]o no trabalho|trabalh|hospital|m[eé]dic|doente|consulta|compromisso|precisei sair|viagem|viajando|emerg[eê]ncia|n[aã]o vou conseguir nesse hor[aá]rio|esqueci|problema/i
 const RX_SIM = /^\s*(sim|s|claro|pode|pode ser|quero|quero sim|vamos|ok|bora|isso|com certeza|aceito|gostaria)\b/i
+const RX_CONFIRMA = /^\s*(sim|s|confere|confirmo|isso|isso mesmo|correto|certo|exato|est[aá] certo|t[aá] certo|perfeito|ok|positivo)\b/i
 const RX_NAO = /^\s*(n[aã]o|nao quero|n[aã]o precisa|deixa|melhor n[aã]o)\b/i
 const RX_DUVIDA_REUNIAO = /adianta|vale a pena|precisa mesmo|pra qu[eê]|para qu[eê]|resolve alguma coisa|serve pra/i
 const RX_PRESENCIAL = /presencial|pessoalmente|no escrit[oó]rio|ir a[ií] no|ir at[eé] o escrit/i
@@ -88,6 +105,8 @@ export interface Deps {
   /** cancela a reunião marcada: apaga o evento no Google, limpa os campos da reunião (os lembretes param),
    *  conclui a tarefa "Reunião" no Kommo e registra no card (Dra., 09/11) */
   cancelarReuniao?(reuniao: NonNullable<LeadState['reuniao']>, motivo: string): Promise<void>
+  /** AÇÃO SDR (Dra., 09/11): move, etiqueta da faixa, tarefa com responsável e prazo, pausa. false = lead fora das faixas 10 A 15 / ACIMA DE 15 */
+  encaminharAcaoSdr?(providencia: string, resumo: string): Promise<boolean>
 }
 
 export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string }
@@ -135,7 +154,7 @@ export const OBJETIVO: Record<string, string> = {
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios', 'doc_confirma', 'doc_equipe', 'doc_ilegivel', 'valores_equipe', 'valores_conferir'])
 
 interface Fala { id: string; obrigatorio?: string[] }
 
@@ -167,7 +186,10 @@ export async function abrir(ctx: Ctx, deps: Deps): Promise<Resultado> {
 async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitura?: Leitura, id = 'passa_humano'): Promise<Resultado> {
   const resumo = `${leitura?.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`
   const enviado = await dizer(ctx, deps, texto, { id })
-  await deps.passarParaHumano(motivo, resumo)
+  // providência da equipe para continuar o atendimento (Dra., 09/11): faixa de 10 mil ou mais → AÇÃO SDR
+  const providencia = providenciaDaPassagem(motivo)
+  const foiAcaoSdr = providencia && deps.encaminharAcaoSdr ? await deps.encaminharAcaoSdr(providencia, resumo) : false
+  if (!foiAcaoSdr) await deps.passarParaHumano(motivo, resumo)
   await deps.patch({ etapa: 'humano', etapaAntes: ctx.state.etapa, finalizado: { motivo, em: ctx.agora.toISOString() } })
   return { acao: `passou para humano: ${motivo}`, enviado, leitura, resumo }
 }
@@ -209,6 +231,50 @@ async function agendar(ctx: Ctx, deps: Deps, slot: Slot, leitura?: Leitura): Pro
   await deps.agendarLembretes(slot.inicio, ev.eventId)
   await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
   return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
+}
+
+/** AÇÃO SDR (Dra., 09/11): encaminha, avisa o lead e pausa. null = lead fora das faixas de 10 mil ou mais. */
+async function irParaAcaoSdr(ctx: Ctx, deps: Deps, providencia: string, texto: string, id: string, leitura: Leitura): Promise<Resultado | null> {
+  if (!deps.encaminharAcaoSdr) return null
+  const resumo = `${leitura.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`
+  if (!(await deps.encaminharAcaoSdr(providencia, resumo))) return null
+  const enviado = await dizer(ctx, deps, texto, { id })
+  await deps.patch({ etapa: 'humano', etapaAntes: ctx.state.etapa, finalizado: { motivo: `AÇÃO SDR: ${providencia}`, em: ctx.agora.toISOString() } })
+  return { acao: `AÇÃO SDR: ${providencia}`, enviado, leitura }
+}
+
+/**
+ * DOCUMENTO NA QUALIFICAÇÃO (Dra., 09/11). Documento lido com segurança: a Anna confirma a renda bruta com o lead
+ * antes de classificar (docPendente). Os descontos do contracheque nunca viram "desconto em conta corrente": esse
+ * valor ela pergunta à parte. Documento que não abriu ou ilegível: AÇÃO SDR (faixas de 10 mil ou mais) ou pede os
+ * valores por escrito. null = o fluxo normal segue (ex.: documento sem renda ou renda já informada).
+ */
+async function tratarDocumento(ctx: Ctx, deps: Deps, leitura: Leitura): Promise<Resultado | null> {
+  const s = ctx.state
+  const t = ctx.textoTurno
+  leitura.desconto_conta = null // contracheque mostra consignado, não o débito na conta corrente
+  const bruta = leitura.renda_bruta
+  const liquida = leitura.renda_liquida
+  const ilegivel = RX_DOC_FALHOU.test(t) || (bruta == null && /ileg[ií]vel/i.test(t))
+  if (ilegivel) {
+    const r = await irParaAcaoSdr(ctx, deps, 'o lead enviou um documento que a Anna não conseguiu ler; conferir o documento na conversa e registrar no card a renda bruta, o líquido e o desconto em conta corrente', TEXTOS.docEquipe, 'doc_equipe', leitura)
+    if (r) return r
+    await deps.patch({ etapa: 'q2' })
+    const enviado = await falar(ctx, deps, TEXTOS.docIlegivel, 'q2', { id: 'doc_ilegivel' })
+    return { acao: 'documento ilegível: pediu os valores por escrito', enviado, leitura }
+  }
+  if (bruta == null || s.rendaBruta != null) return null
+  if (liquida != null && liquida > bruta) {
+    const r = await irParaAcaoSdr(ctx, deps, `o documento do lead mostra líquido (${brl(liquida)}) maior que o bruto (${brl(bruta)}); conferir os valores com o lead`, TEXTOS.valoresEquipe, 'valores_equipe', leitura)
+    if (r) return r
+    await deps.patch({ etapa: 'q2' })
+    const enviado = await falar(ctx, deps, TEXTOS.valoresConferir, 'q2', { id: 'valores_conferir' })
+    return { acao: 'documento com valores contraditórios: pediu para conferir', enviado, leitura }
+  }
+  await deps.patch({ etapa: 'q2', docPendente: { rendaBruta: bruta, ...(liquida != null ? { rendaLiquida: liquida } : {}) } })
+  const valores = liquida != null ? `${brl(bruta)} e o líquido de ${brl(liquida)}` : brl(bruta)
+  const enviado = await falar(ctx, deps, TEXTOS.docConfirma(valores), 'q2', { id: 'doc_confirma', obrigatorio: [brl(bruta)] })
+  return { acao: 'documento lido: confirmando a renda bruta com o lead', enviado, leitura }
 }
 
 /**
@@ -383,6 +449,12 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     return { acao: 'perguntou de honorários: texto da Dra.', enviado, leitura }
   }
 
+  // DOCUMENTO (contracheque, extrato) na qualificação (Dra., 09/11)
+  if (ETAPAS_QUALIFICACAO.has(etapa) && (RX_DOC_LIDO.test(ctx.textoTurno) || RX_DOC_FALHOU.test(ctx.textoTurno))) {
+    const r = await tratarDocumento(ctx, deps, leitura)
+    if (r) return r
+  }
+
   // na oferta, "outro dia ou horário" é preferência, não remarcação de reunião marcada
   if ((etapa === 'oferta' || etapa === 'preferencia') && leitura.intencao === 'remarcar') leitura.intencao = 'escolhe_periodo'
 
@@ -472,9 +544,31 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     }
 
     case 'q2': {
+      // resposta à confirmação dos valores lidos no documento (Dra., 09/11)
+      if (s.docPendente) {
+        const doc = s.docPendente
+        await deps.patch({ docPendente: undefined })
+        const digitou = leitura.renda_bruta != null || leitura.renda_liquida != null
+        if (!digitou && RX_CONFIRMA.test(ctx.textoTurno)) {
+          leitura.renda_bruta = doc.rendaBruta ?? null
+          leitura.renda_liquida = doc.rendaLiquida ?? null
+        } else if (!digitou && RX_NAO.test(ctx.textoTurno)) {
+          const enviado = await falar(ctx, deps, `Sem problemas. ${PENDENTE.q2(s)}`, 'q2', { id: 'livre' })
+          return { acao: 'documento: o lead não confirmou os valores, pediu por escrito', enviado, leitura }
+        }
+      }
       const patch: Partial<LeadState> = {}
       const campos: Record<number, number> = {}
       const disse = { rendaBruta: leitura.renda_bruta, rendaLiquida: leitura.renda_liquida, descontoConta: leitura.desconto_conta }
+      // valores contraditórios digitados (líquido maior que o bruto): AÇÃO SDR ou pede para conferir (Dra., 09/11)
+      const brutaN = disse.rendaBruta ?? s.rendaBruta
+      const liquidaN = disse.rendaLiquida ?? s.rendaLiquida
+      if (brutaN != null && liquidaN != null && liquidaN > brutaN && (disse.rendaBruta != null || disse.rendaLiquida != null)) {
+        const r = await irParaAcaoSdr(ctx, deps, `valores contraditórios: líquido ${brl(liquidaN)} maior que o bruto ${brl(brutaN)}; conferir com o lead`, TEXTOS.valoresEquipe, 'valores_equipe', leitura)
+        if (r) return r
+        const enviado = await falar(ctx, deps, TEXTOS.valoresConferir, 'q2', { id: 'valores_conferir' })
+        return { acao: 'valores contraditórios: pediu para conferir', enviado, leitura }
+      }
       if (s.memoriaPendente) {
         // resposta ao "melhorou, piorou ou continua igual?": igual reaproveita os valores registrados;
         // mudou (ou não deu para saber) pede os valores de hoje. Números ditos agora sempre valem.

@@ -185,6 +185,7 @@ async function main() {
       },
       async agendarLembretes() { w.lembretes++ },
       async tarefaReuniao(inicio: Date) { (w as unknown as { reuniaoKommo: string }).reuniaoKommo = inicio.toISOString() },
+      async encaminharAcaoSdr(p: string) { const x = w as unknown as { acao?: string[]; naFaixa?: boolean }; if (!x.naFaixa) return false; x.acao = [...(x.acao || []), p]; return true },
       async cancelarReuniao(r) { (w as unknown as { canceladas: string[] }).canceladas = [...((w as unknown as { canceladas?: string[] }).canceladas || []), r.eventId] },
     }
     void slotsLivres
@@ -436,6 +437,42 @@ async function main() {
       m3.w.leituras.push(L({ intencao: 'desiste' }))
       await fluxo.turno(ctx(m3.w, seg9, 'Pode cancelar, não quero mais'), m3.deps)
       eq('desistência sem renda registrada → card sai de Reunião agendada para ACIMA DE 15 MIL', m3.w.movido, [STATUS.acima15])
+    }
+    // Dra., 09/11: AÇÃO SDR
+    {
+      type WA = { acao?: string[]; naFaixa?: boolean }
+      eq('passagens que pedem providência → AÇÃO SDR; as definitivas não', ['pediu atendimento humano', 'perguntou se é robô', 'sem horário livre nos próximos dias', 'recusou 2 horários oferecidos', 'já tem advogado no caso', 'assunto de outra área', 'já é cliente'].map(m => !!fluxo.providenciaDaPassagem(m)), [true, true, true, true, false, false, false])
+      const { w, deps } = mundo(seg9); (w as WA).naFaixa = true
+      w.state = { etapa: 'q2', objetivo: 3 }
+      w.leituras.push(L({ intencao: 'pede_humano' }))
+      await fluxo.turno(ctx(w, seg9, 'quero falar com uma pessoa'), deps)
+      eq('pediu pessoa (faixa de 10 mil ou mais) → AÇÃO SDR, sem a passagem comum', [(w as WA).acao?.length, w.humano.length, w.state.etapa, w.state.etapaAntes], [1, 0, 'humano', 'q2'])
+      const m2 = mundo(seg9)
+      m2.w.state = { etapa: 'q2', objetivo: 3 }
+      m2.w.leituras.push(L({ intencao: 'pede_humano' }))
+      await fluxo.turno(ctx(m2.w, seg9, 'quero falar com uma pessoa'), m2.deps)
+      eq('mesmo pedido, lead abaixo de 10 mil → passagem comum', [(m2.w as WA).acao, m2.w.humano.length], [undefined, 1])
+      // documento lido com segurança: confirma a renda antes de classificar; desconto do contracheque não vira desconto em conta
+      const m3 = mundo(seg9); (m3.w as WA).naFaixa = true
+      m3.w.state = { etapa: 'q2', objetivo: 3 }
+      m3.w.leituras.push(L({ intencao: 'responde_etapa', renda_bruta: 18000, renda_liquida: 9000, desconto_conta: 4500 }))
+      await fluxo.turno(ctx(m3.w, seg9, '[imagem do lead]: Contracheque do GDF. Salário bruto R$ 18.000,00, líquido R$ 9.000,00, descontos consignados R$ 4.500,00.'), m3.deps)
+      eq('documento lido → pede confirmação da renda, sem mover o card nem gravar desconto em conta', [m3.w.enviados[0], m3.w.movido, m3.w.state.docPendente, m3.w.campos[CRM_MAP.campos.descontoConta]], [TEXTOS.docConfirma('R$ 18.000 e o líquido de R$ 9.000'), [], { rendaBruta: 18000, rendaLiquida: 9000 }, undefined])
+      m3.w.leituras.push(L({ intencao: 'responde_etapa' }))
+      await fluxo.turno(ctx(m3.w, seg9, 'sim, confere'), m3.deps)
+      eq('confirmou → grava bruto e líquido, coluna ACIMA DE 15 MIL e pergunta o desconto em conta à parte', [m3.w.campos[CRM_MAP.campos.rendaBruta], m3.w.campos[CRM_MAP.campos.rendaLiquida], m3.w.movido, m3.w.enviados[1].includes('conta corrente')], [18000, 9000, [STATUS.acima15], true])
+      // documento ilegível → AÇÃO SDR
+      const m4 = mundo(seg9); (m4.w as WA).naFaixa = true
+      m4.w.state = { etapa: 'q2', objetivo: 3 }
+      m4.w.leituras.push(L({ intencao: 'responde_etapa' }))
+      await fluxo.turno(ctx(m4.w, seg9, '[imagem recebido, mas não consegui abrir]'), m4.deps)
+      eq('documento que não abriu → AÇÃO SDR com aviso ao lead', [(m4.w as WA).acao?.[0]?.startsWith('o lead enviou um documento'), m4.w.enviados[0], m4.w.state.etapa], [true, TEXTOS.docEquipe, 'humano'])
+      // valores contraditórios digitados → AÇÃO SDR
+      const m5 = mundo(seg9); (m5.w as WA).naFaixa = true
+      m5.w.state = { etapa: 'q2', objetivo: 3 }
+      m5.w.leituras.push(L({ intencao: 'responde_etapa', renda_bruta: 9000, renda_liquida: 12000 }))
+      await fluxo.turno(ctx(m5.w, seg9, 'bruto 9 mil e líquido 12 mil'), m5.deps)
+      eq('líquido maior que o bruto → AÇÃO SDR, sem gravar os valores', [(m5.w as WA).acao?.[0]?.startsWith('valores contraditórios'), m5.w.enviados[0], m5.w.campos[CRM_MAP.campos.rendaBruta]], [true, TEXTOS.valoresEquipe, undefined])
     }
     // Dra., 09/11: honorários e faixa do formulário no 1º follow-up
     eq('pergunta de honorários é reconhecida; outras não', ['Quanto vocês cobram?', 'qual o valor dos honorários?', 'quanto custa o processo?', 'Quanto vou pagar pela ação?', 'O primeiro atendimento é sempre pago?', 'Qual o valor do desconto que vocês conseguem tirar?', 'ganho 20 mil'].map(t => fluxo.RX_HONORARIOS.test(t)), [true, true, true, true, false, false, false])

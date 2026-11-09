@@ -99,6 +99,17 @@ export const TEXTOS_PADRAO = {
   /** [CG] renda bruta até R$ 15 mil: a Anna não oferece reunião nem cria tarefa (Dra., 15/10); o card fica na coluna da renda */
   sem_reuniao: 'Obrigada pelas informações. Vou deixar o seu caso registrado para a equipe da Dra. Carolina avaliar o melhor caminho. Se tiver alguma dúvida, é só me escrever por aqui.',
 
+  /** [Dra., 09/11] documento lido com segurança: confirmar a renda bruta antes de classificar ({valores} = "R$ 18.000" ou "R$ 18.000 e o líquido de R$ 9.000") */
+  doc_confirma: 'Obrigada pelo documento! Pelo que consegui ver, sua renda bruta é de {valores}. Confere?',
+  /** [Dra., 09/11] documento que a Anna não conseguiu ler; o card vai para AÇÃO SDR */
+  doc_equipe: 'Recebi seu documento! Vou pedir para a nossa equipe conferir as informações, e retornamos por aqui.',
+  /** [Dra., 09/11] documento ilegível, lead fora das faixas de 10 mil ou mais: pedir os valores por escrito */
+  doc_ilegivel: 'Não consegui ler o documento com clareza. Pode me informar por aqui a sua renda bruta mensal, quanto você recebe líquido e quanto o banco desconta da sua conta corrente por mês?',
+  /** [Dra., 09/11] valores contraditórios (ex.: líquido maior que o bruto); o card vai para AÇÃO SDR */
+  valores_equipe: 'Obrigada pelas informações! Vou pedir para a nossa equipe conferir esses valores com você, e retornamos por aqui.',
+  /** [Dra., 09/11] valores contraditórios, lead fora das faixas de 10 mil ou mais: pedir para conferir */
+  valores_conferir: 'Só para confirmar: o valor líquido ficou maior que o bruto. Pode conferir a sua renda bruta mensal (antes dos descontos) e quanto você recebe líquido?',
+
   /** [Dra., 09/11] o lead pergunta de honorários, valores ou quanto custa, durante a qualificação */
   honorarios: 'Compreendemos sua preocupação com os honorários!\n\n*Nosso escritório trabalha com atendimento jurídico personalizado, e não com soluções padronizadas.* Por isso, os valores dependem da análise de cada caso.\n\n*A avaliação inicial é gratuita, on-line e sem compromisso.*\n\nApós compreender sua situação, a Dra. Carolina apresentará a estratégia jurídica recomendada e os respectivos honorários.\n\n*Você conhecerá todos os valores antes de decidir pela contratação, sem qualquer obrigação de prosseguir.*\n\nPara isso, precisamos apenas das informações iniciais solicitadas.\n\nPodemos continuar?',
 
@@ -193,6 +204,11 @@ export const TEXTOS = {
   recorrenteRetoma: (nome?: string) => (nome ? preencher(texto('recorrente_retoma'), { nome }) : texto('recorrente_retoma').replace(', {nome}.', '.')),
   get comoFunciona() { return texto('como_funciona') },
   get honorarios() { return texto('honorarios') },
+  docConfirma: (valores: string) => preencher(texto('doc_confirma'), { valores }),
+  get docEquipe() { return texto('doc_equipe') },
+  get docIlegivel() { return texto('doc_ilegivel') },
+  get valoresEquipe() { return texto('valores_equipe') },
+  get valoresConferir() { return texto('valores_conferir') },
   /** textos da remarcação com {nome}; sem nome, some ", {nome}" */
   comNome: (id: 'cancelou_motivo' | 'remarcar_oferta' | 'remarcar_depois' | 'desistencia_pergunta' | 'depois_contato' | 'questiona_reuniao', nome?: string) =>
     nome ? preencher(texto(id), { nome }) : texto(id).replace(', {nome}', ''),

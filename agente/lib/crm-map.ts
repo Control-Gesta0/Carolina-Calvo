@@ -21,6 +21,8 @@ export const STATUS = {
   desqualificado: 75401467,
   /** SDR › AGUARDANDO QUALIFICAÇÃO: recebeu o 1º follow-up e ainda não informou a renda (Dra., 05/11/2026) */
   aguardandoQualificacao: 113789335,
+  /** intervenção humana temporária (Dra., 09/11), depois de AGUARDANDO QUALIFICAÇÃO, amarela */
+  acaoSdr: 113936047,
   reuniaoAgendada: 75401491, // funil Closer
   clienteDecisao: 75538167, // funil Closer
   /** Closer › Retorno imediato: criada em 22/10/2026 (pedido da Dra.), logo depois de Cliente decisão */
@@ -74,6 +76,9 @@ export const CRM_MAP = {
     jaFezReuniao: 'JÁ FEZ REUNIÃO',
     /** cobrança: entra no D+1 e sai quando o cliente não tem mais parcela vencida */
     inadimplente: 'inadimplentes',
+    /** faixa de renda preservada quando o card vai para AÇÃO SDR (Dra., 09/11) */
+    faixa10a15: 'FAIXA 10 A 15 MIL',
+    faixaAcima15: 'FAIXA ACIMA DE 15 MIL',
   },
 
   /** tarefa criada para a equipe quando a Anna passa o atendimento */
@@ -86,6 +91,8 @@ export const CRM_MAP = {
   tiposTarefaReuniao: [2, 4217119] as number[],
   /** lead que quer contratar ou respondeu em Cliente decisão: retorno imediato */
   tarefaPrioritaria: { responsavelId: 12068987, tipo: 1, prazoMin: 15 },
+  /** tarefa da AÇÃO SDR: responsável definido e prazo no fim do dia (Dra., 09/11) */
+  tarefaAcaoSdr: { responsavelId: 12068987, tipo: 1, prazoMin: 60 },
 
   /** funis onde a Anna nunca fala (clientes e financeiro) */
   pipelinesProibidos: [PIPELINES.gestao, PIPELINES.financeiro] as number[],

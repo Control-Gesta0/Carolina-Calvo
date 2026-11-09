@@ -50,6 +50,10 @@ export interface LeadState {
   etapaAntes?: Etapa
   /** remarcação de uma reunião cancelada pelo lead (Dra., 09/11): o card está em SDR › AGENDAR REUNIÃO */
   remarcacao?: boolean
+  /** em AÇÃO SDR (Dra., 09/11): faixa para voltar, tarefa a concluir na retomada */
+  acaoSdr?: { faixa: number; tarefaId?: number; providencia: string; em: string }
+  /** valores lidos de um documento, esperando o lead confirmar a renda bruta (Dra., 09/11) */
+  docPendente?: { rendaBruta?: number; rendaLiquida?: number }
 }
 
 /** 365 dias: a Anna retoma de onde parou quando o lead volta meses depois (regra da Dra., 15/10/2026) */
