@@ -831,6 +831,14 @@ async function main() {
   eq('faixas do formulário → coluna', ['acima_de_15_mil', 'de_10_a_15_mil', 'de_5_a_10_mil', 'Superior a 15 mil', 'De 7 a 15 mil', '', 'até 5 mil'].map(CRM.colunaPelaFaixa),
     [STATUS.acima15, STATUS.de10a15, STATUS.desqualificado, STATUS.acima15, STATUS.desqualificado, STATUS.desqualificado, STATUS.desqualificado])
 
+  console.log('\n— Cancelamento com o atendimento na equipe (Dra., 09/11)')
+  {
+    const C = await import('../lib/cancelamento-equipe')
+    eq('pedidos claros (exemplos da Dra.) → claro', ['Quero cancelar minha reunião.', 'Pode desmarcar.', 'Não vou participar.', 'Não vou poder participar da reunião de amanhã', 'Pode cancelar, não quero mais a reunião'].map(C.classificarCancelamento), ['claro', 'claro', 'claro', 'claro', 'claro'])
+    eq('ambíguos (exemplos da Dra.) → ambíguo, não cancela', ['Acho que não vou conseguir.', 'Talvez precise desmarcar.', 'E se eu não puder comparecer?', 'Será que dá para cancelar?'].map(C.classificarCancelamento), ['ambiguo', 'ambiguo', 'ambiguo', 'ambiguo'])
+    eq('não é sobre cancelar a reunião → nada', ['Quero cancelar o empréstimo consignado', 'Obrigada, até amanhã', 'Pode confirmar o link?', 'Vou participar sim'].map(C.classificarCancelamento), [null, null, null, null])
+  }
+
   console.log('\n— Reunião marcada pela equipe no Kommo → agenda Google (09/11)')
   {
     const R = await import('../lib/reuniao-equipe')

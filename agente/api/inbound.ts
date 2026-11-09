@@ -18,6 +18,7 @@ import { PIPELINES } from '../lib/crm-map'
 import { confirmarSaudacao } from '../lib/saudacao'
 import { getState } from '../lib/state'
 import { INSTRUCAO_RETOMAR, pausado, pausar } from '../lib/pausa'
+import { cancelamentoComEquipe, classificarCancelamento } from '../lib/cancelamento-equipe'
 
 /**
  * Webhook nativo "add_message" do Kommo (form-urlencoded, chaves em colchetes):
@@ -122,6 +123,11 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         if (posReuniaoVale(m.leadId)) {
           const lead = await getLead(m.leadId).catch(() => null)
           if (lead?.pipeline_id === PIPELINES.closer) await respostaPosReuniao(lead, text).catch(e => console.error(`[inbound] pós-reunião ${m.leadId}:`, e))
+        }
+        // cancelamento de reunião com o atendimento na equipe: agenda sim, mensagem ao cliente não (Dra., 09/11)
+        if (classificarCancelamento(text)) {
+          const lead = await getLead(m.leadId).catch(() => null)
+          if (lead) await cancelamentoComEquipe(lead, text, m.id).catch(e => logExec({ tipo: 'erro', leadId: m.leadId, detalhe: `cancelamento com a equipe: ${(e instanceof Error ? e.message : String(e)).slice(0, 200)}` }))
         }
       }
       if (!(await podeAtender(m.leadId))) {
