@@ -461,6 +461,17 @@ async function main() {
       m3.w.leituras.push(L({ intencao: 'responde_etapa' }))
       await fluxo.turno(ctx(m3.w, seg9, 'sim, confere'), m3.deps)
       eq('confirmou → grava bruto e líquido, coluna ACIMA DE 15 MIL e pergunta o desconto em conta à parte', [m3.w.campos[CRM_MAP.campos.rendaBruta], m3.w.campos[CRM_MAP.campos.rendaLiquida], m3.w.movido, m3.w.enviados[1].includes('conta corrente')], [18000, 9000, [STATUS.acima15], true])
+      // não confirmou o documento (a IA ainda relê os valores do histórico) → pede por escrito, sem usar os do documento
+      const m6 = mundo(seg9); (m6.w as WA).naFaixa = true
+      m6.w.state = { etapa: 'q2', objetivo: 3, docPendente: { rendaBruta: 18000, rendaLiquida: 9000 } }
+      m6.w.leituras.push(L({ intencao: 'responde_etapa', renda_bruta: 18000, renda_liquida: 9000 }))
+      await fluxo.turno(ctx(m6.w, seg9, 'não, está errado'), m6.deps)
+      eq('"não, está errado" → não grava os valores do documento e pede por escrito', [m6.w.campos[CRM_MAP.campos.rendaBruta], m6.w.movido, m6.w.enviados[0].startsWith('Sem problemas.')], [undefined, [], true])
+      const m7 = mundo(seg9); (m7.w as WA).naFaixa = true
+      m7.w.state = { etapa: 'q2', objetivo: 3 }
+      m7.w.leituras.push(L({ intencao: 'responde_etapa' }))
+      await fluxo.turno(ctx(m7.w, seg9, '[imagem do lead]: Foto de um contracheque desfocada; valores ilegíveis.'), m7.deps)
+      eq('"valores ilegíveis" (plural) → AÇÃO SDR', [(m7.w as WA).acao?.length, m7.w.enviados[0]], [1, TEXTOS.docEquipe])
       // documento ilegível → AÇÃO SDR
       const m4 = mundo(seg9); (m4.w as WA).naFaixa = true
       m4.w.state = { etapa: 'q2', objetivo: 3 }

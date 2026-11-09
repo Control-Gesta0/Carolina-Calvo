@@ -255,7 +255,7 @@ async function tratarDocumento(ctx: Ctx, deps: Deps, leitura: Leitura): Promise<
   leitura.desconto_conta = null // contracheque mostra consignado, não o débito na conta corrente
   const bruta = leitura.renda_bruta
   const liquida = leitura.renda_liquida
-  const ilegivel = RX_DOC_FALHOU.test(t) || (bruta == null && /ileg[ií]vel/i.test(t))
+  const ilegivel = RX_DOC_FALHOU.test(t) || (bruta == null && /ileg[ií]ve(l|is)|n[aã]o (est[aá]|s[aã]o) leg[ií]ve|n[aã]o (d[aá]|foi poss[ií]vel) (para |de )?ler|desfocad|cortad/i.test(t))
   if (ilegivel) {
     const r = await irParaAcaoSdr(ctx, deps, 'o lead enviou um documento que a Anna não conseguiu ler; conferir o documento na conversa e registrar no card a renda bruta, o líquido e o desconto em conta corrente', TEXTOS.docEquipe, 'doc_equipe', leitura)
     if (r) return r
@@ -548,11 +548,13 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (s.docPendente) {
         const doc = s.docPendente
         await deps.patch({ docPendente: undefined })
-        const digitou = leitura.renda_bruta != null || leitura.renda_liquida != null
-        if (!digitou && RX_CONFIRMA.test(ctx.textoTurno)) {
+        // a IA relê o documento do histórico: só vale como valor digitado o que tem número NESTA mensagem
+        const digitou = /\d/.test(ctx.textoTurno) && (leitura.renda_bruta != null || leitura.renda_liquida != null)
+        if (!digitou && RX_CONFIRMA.test(ctx.textoTurno) && !RX_NAO.test(ctx.textoTurno)) {
           leitura.renda_bruta = doc.rendaBruta ?? null
           leitura.renda_liquida = doc.rendaLiquida ?? null
-        } else if (!digitou && RX_NAO.test(ctx.textoTurno)) {
+        } else if (!digitou) {
+          // não confirmou (ou não deu para saber): pede os valores por escrito, sem usar os do documento
           const enviado = await falar(ctx, deps, `Sem problemas. ${PENDENTE.q2(s)}`, 'q2', { id: 'livre' })
           return { acao: 'documento: o lead não confirmou os valores, pediu por escrito', enviado, leitura }
         }
