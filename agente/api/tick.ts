@@ -9,7 +9,7 @@ import { baseVigente } from '../lib/base'
 import { textosDoRoteiro } from '../lib/base-core'
 import { depsProducao, montarCtx, primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
-import { CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
+import { colunaDoPrimeiroFollow, CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
 import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { varrerCloser } from '../lib/closer'
@@ -19,7 +19,7 @@ import { executarPosReuniao, varrerPosReuniao } from '../lib/pos-reuniao'
 import { verificarSaudacao } from '../lib/saudacao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
-import { addLeadNote, addLeadTask, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
+import { addLeadNote, addLeadTask, fieldValue, getLead, getMainContactName, updateLeadStatus } from '../lib/kommo'
 import { conferirLembrete, lerReuniao } from '../lib/google'
 import { quandoExtenso } from '../lib/anna/agenda'
 import { enviarModelo } from '../lib/modelos'
@@ -210,8 +210,13 @@ async function executar(job: Job): Promise<string> {
       // quem já está numa coluna de renda fica onde está). A renda informada depois leva para a coluna certa.
       const lead = await getLead(leadId)
       if (lead.pipeline_id !== PIPELINES.sdr || lead.status_id !== STATUS.contatoInicial) return
-      await updateLeadStatus(leadId, STATUS.aguardandoQualificacao, PIPELINES.sdr)
-      await addLeadNote(leadId, 'Anna: o lead recebeu o 1º follow-up sem responder. Card movido para AGUARDANDO QUALIFICAÇÃO.')
+      // Dra., 09/11: quem marcou no formulário "de 10 a 15" ou "acima de 15" vai direto para a coluna da faixa;
+      // só "até 5 mil" e "de 5 a 10 mil" (e faixa ambígua ou vazia) ficam em AGUARDANDO QUALIFICAÇÃO
+      const destino = colunaDoPrimeiroFollow(String(fieldValue(lead, CRM_MAP.campos.formSalario) || ''))
+      await updateLeadStatus(leadId, destino, PIPELINES.sdr)
+      await addLeadNote(leadId, destino === STATUS.aguardandoQualificacao
+        ? 'Anna: o lead recebeu o 1º follow-up sem responder. Card movido para AGUARDANDO QUALIFICAÇÃO.'
+        : `Anna: o lead recebeu o 1º follow-up sem responder. Pela faixa do formulário, card movido para ${destino === STATUS.acima15 ? 'ACIMA DE 15 MIL' : '10 A 15 MIL'}. A renda confirmada na conversa continua valendo para a coluna final.`)
     },
     async encerrar(pipelineId, statusId) {
       const lead = await getLead(leadId)

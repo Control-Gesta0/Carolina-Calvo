@@ -99,6 +99,9 @@ export const TEXTOS_PADRAO = {
   /** [CG] renda bruta até R$ 15 mil: a Anna não oferece reunião nem cria tarefa (Dra., 15/10); o card fica na coluna da renda */
   sem_reuniao: 'Obrigada pelas informações. Vou deixar o seu caso registrado para a equipe da Dra. Carolina avaliar o melhor caminho. Se tiver alguma dúvida, é só me escrever por aqui.',
 
+  /** [Dra., 09/11] o lead pergunta de honorários, valores ou quanto custa, durante a qualificação */
+  honorarios: 'Compreendemos sua preocupação com os honorários!\n\n*Nosso escritório trabalha com atendimento jurídico personalizado, e não com soluções padronizadas.* Por isso, os valores dependem da análise de cada caso.\n\n*A avaliação inicial é gratuita, on-line e sem compromisso.*\n\nApós compreender sua situação, a Dra. Carolina apresentará a estratégia jurídica recomendada e os respectivos honorários.\n\n*Você conhecerá todos os valores antes de decidir pela contratação, sem qualquer obrigação de prosseguir.*\n\nPara isso, precisamos apenas das informações iniciais solicitadas.\n\nPodemos continuar?',
+
   /** [Dra., 09/11] reunião cancelada pelo lead sem dizer o motivo */
   cancelou_motivo: 'Entendo, {nome}! Sem problemas.\n\nAconteceu algum imprevisto ou houve alguma questão que fez você reconsiderar a reunião?\n\nPergunto porque gostaria de entender melhor e verificar se conseguimos encontrar uma alternativa para você.',
   /** [Dra., 09/11] o lead teve um imprevisto: oferta de remarcação */
@@ -189,6 +192,7 @@ export const TEXTOS = {
   recorrente: (nome?: string) => (nome ? preencher(texto('recorrente'), { nome }) : texto('recorrente').replace(', {nome}!', '!')),
   recorrenteRetoma: (nome?: string) => (nome ? preencher(texto('recorrente_retoma'), { nome }) : texto('recorrente_retoma').replace(', {nome}.', '.')),
   get comoFunciona() { return texto('como_funciona') },
+  get honorarios() { return texto('honorarios') },
   /** textos da remarcação com {nome}; sem nome, some ", {nome}" */
   comNome: (id: 'cancelou_motivo' | 'remarcar_oferta' | 'remarcar_depois' | 'desistencia_pergunta' | 'depois_contato' | 'questiona_reuniao', nome?: string) =>
     nome ? preencher(texto(id), { nome }) : texto(id).replace(', {nome}', ''),

@@ -437,6 +437,17 @@ async function main() {
       await fluxo.turno(ctx(m3.w, seg9, 'Pode cancelar, não quero mais'), m3.deps)
       eq('desistência sem renda registrada → card sai de Reunião agendada para ACIMA DE 15 MIL', m3.w.movido, [STATUS.acima15])
     }
+    // Dra., 09/11: honorários e faixa do formulário no 1º follow-up
+    eq('pergunta de honorários é reconhecida; outras não', ['Quanto vocês cobram?', 'qual o valor dos honorários?', 'quanto custa o processo?', 'Quanto vou pagar pela ação?', 'O primeiro atendimento é sempre pago?', 'Qual o valor do desconto que vocês conseguem tirar?', 'ganho 20 mil'].map(t => fluxo.RX_HONORARIOS.test(t)), [true, true, true, true, false, false, false])
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = { etapa: 'q2', objetivo: 3 }
+      w.leituras.push(L({ intencao: 'pergunta', resposta: 'Os honorários são tratados na reunião.' }))
+      await fluxo.turno(ctx(w, seg9, 'Antes de passar os valores, quanto vocês cobram?'), deps)
+      eq('honorários na qualificação → texto da Dra., sem valor', [w.enviados[0] === TEXTOS.honorarios, w.enviados[0].startsWith('Compreendemos sua preocupação com os honorários!'), /R\$/.test(w.enviados[0]), w.state.etapa], [true, true, false, 'q2'])
+    }
+    eq('faixa do formulário no 1º follow-up: 10 a 15 e acima de 15 vão para a coluna; o resto, AGUARDANDO', ['de_10_a_15_mil', 'acima_de_15_mil', 'Superior a 15 mil', 'de_5_a_10_mil', 'até_5_mil', 'De 7 a 15 mil', ''].map(CRM.colunaDoPrimeiroFollow),
+      [STATUS.de10a15, STATUS.acima15, STATUS.acima15, STATUS.aguardandoQualificacao, STATUS.aguardandoQualificacao, STATUS.aguardandoQualificacao, STATUS.aguardandoQualificacao])
     // mensagem que não é sobre a reunião: a Anna não responde (Closer é da equipe)
     {
       const { w, deps } = mundo(seg9)
@@ -581,8 +592,8 @@ async function main() {
   {
     const { w, deps } = mundo(seg9)
     w.state = { etapa: 'q1' }
-    w.leituras.push(L({ intencao: 'pergunta', resposta: 'A primeira reunião é on-line e não é cobrada. Qual das opções você quer saber: 1, 2 ou 3?' }))
-    await fluxo.turno(ctx(w, seg9, 'quanto custa?'), deps)
+    w.leituras.push(L({ intencao: 'pergunta', resposta: 'A primeira reunião é on-line e dura 30 minutos. Qual das opções você quer saber: 1, 2 ou 3?' }))
+    await fluxo.turno(ctx(w, seg9, 'como é a reunião?'), deps)
     eq('pergunta fora do roteiro → resposta livre e régua recomeça', [w.enviados[0].startsWith('A primeira reunião'), w.reguas[0], w.state.etapa], [true, 'qualificacao', 'q1'])
     w.leituras.push(L({ intencao: 'tem_advogado' }))
     await fluxo.turno(ctx(w, seg9, 'já tenho advogado no processo'), deps)

@@ -31,6 +31,8 @@ export const RENDA_OFERTA_REUNIAO = 15000
 export const RENDA_MINIMA = 10000
 /** pedido de atendimento presencial */
 const ETAPAS_QUALIFICACAO = new Set<string>(['q1', 'q2', 'limite', 'q3'])
+/** pergunta de honorários, valores ou preço (Dra., 09/11) */
+export const RX_HONORARIOS = /honor[aá]rio|quanto (voc[eê]s )?cobra|quanto (custa|cobram|fica|sai|[eé]) (o |a )?(servi[cç]o|processo|a[cç][aã]o|trabalho|advogad|consulta|atendimento)|quanto custa|qual (o |[eé] o )?(valor|pre[cç]o) (do|da|de|pra|para) (servi[cç]o|processo|a[cç][aã]o|trabalho|consulta|atendimento|voc[eê]s|advogad)|valor (do|da|de) (servi[cç]o|processo|a[cç][aã]o|trabalho|consulta|atendimento)|quanto (eu )?(vou|vai) pagar|\bpre[cç]o\b|\bcobram\b/i
 /** reunião marcada e o caminho do cancelamento (Dra., 09/11) */
 export const ETAPAS_REUNIAO = new Set<string>(['agendado', 'cancelou_motivo', 'remarcar_pergunta', 'desistencia_pergunta'])
 /** "depois eu entro em contato", "vou deixar para outra ocasião" */
@@ -133,7 +135,7 @@ export const OBJETIVO: Record<string, string> = {
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios'])
 
 interface Fala { id: string; obrigatorio?: string[] }
 
@@ -368,6 +370,12 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   if (ETAPAS_QUALIFICACAO.has(etapa) && semValores && RX_PRESENCIAL.test(ctx.textoTurno) && !jaExplicou) {
     const enviado = await falar(ctx, deps, TEXTOS.comoFunciona, etapa, { id: 'como_funciona' })
     return { acao: 'pediu presencial: explicou como funciona o atendimento', enviado, leitura }
+  }
+  // perguntou de honorários / quanto custa na qualificação: o texto da Dra. (09/11), uma vez por conversa
+  const jaFalouHonorarios = ctx.conversa.some(m => m.dir === 'out' && m.text.includes('preocupação com os honorários'))
+  if (ETAPAS_QUALIFICACAO.has(etapa) && semValores && RX_HONORARIOS.test(ctx.textoTurno) && !jaFalouHonorarios) {
+    const enviado = await falar(ctx, deps, TEXTOS.honorarios, etapa, { id: 'honorarios' })
+    return { acao: 'perguntou de honorários: texto da Dra.', enviado, leitura }
   }
 
   // na oferta, "outro dia ou horário" é preferência, não remarcação de reunião marcada

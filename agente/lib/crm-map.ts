@@ -142,6 +142,16 @@ export function colunaPorRenda(renda: number): number {
   return STATUS.acima15
 }
 
+/**
+ * Para onde vai o card de Contato inicial no 1º follow-up sem resposta (Dra., 09/11). Puro.
+ * Formulário "de 10 a 15" → 10 A 15 MIL; "acima de 15" → ACIMA DE 15 MIL; o resto (até 5, 5 a 10, ambíguo, vazio)
+ * → AGUARDANDO QUALIFICAÇÃO. A renda confirmada pelo lead na conversa continua decidindo a coluna final.
+ */
+export function colunaDoPrimeiroFollow(faixa: string | null | undefined): number {
+  const c = colunaPelaFaixa(faixa)
+  return c === STATUS.desqualificado ? STATUS.aguardandoQualificacao : c
+}
+
 /** Etiqueta que a equipe põe quando a saudação dá "Erro" no WhatsApp (Dra., 05/11). */
 export const TAG_NAO_ENTREGUE = 'nao-entregue'
 
