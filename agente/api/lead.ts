@@ -16,6 +16,7 @@ import { esperarSaudacao } from '../lib/saudacao'
 import { saudacaoDaHora } from '../lib/plantao'
 import { etiquetaDoMes } from '../lib/etiqueta-mes'
 import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
+import { sincronizarReuniaoEquipe } from '../lib/reuniao-equipe'
 import { addLeadNote, addLeadTags, fieldValue, getLead, getMainContactName, leadTags, removeLeadTags, runSalesbot, updateLeadFields, updateLeadStatus, type KommoLead } from '../lib/kommo'
 import { cancelarRegua } from '../lib/followup'
 import { enviarModelo } from '../lib/modelos'
@@ -79,6 +80,8 @@ async function tratar(ev: Evento): Promise<void> {
       const r = await agendarPosReuniao(await getLead(ev.id))
       if (r) await logExec({ tipo: 'followup', leadId: ev.id, tools: [r] })
     }
+    // reunião marcada, remarcada ou apagada pela equipe no campo "Reunião" → agenda Google da Dra. (09/11)
+    await sincronizarReuniaoEquipe(await getLead(ev.id)).catch(e => logExec({ tipo: 'erro', leadId: ev.id, detalhe: `agenda Google (reunião da equipe): ${(e instanceof Error ? e.message : String(e)).slice(0, 200)}` }))
     if (ev.tipo === 'status') return
 
     let lead = await getLead(ev.id)

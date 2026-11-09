@@ -794,6 +794,21 @@ async function main() {
   eq('faixas do formulário → coluna', ['acima_de_15_mil', 'de_10_a_15_mil', 'de_5_a_10_mil', 'Superior a 15 mil', 'De 7 a 15 mil', '', 'até 5 mil'].map(CRM.colunaPelaFaixa),
     [STATUS.acima15, STATUS.de10a15, STATUS.desqualificado, STATUS.acima15, STATUS.desqualificado, STATUS.desqualificado, STATUS.desqualificado])
 
+  console.log('\n— Reunião marcada pela equipe no Kommo → agenda Google (09/11)')
+  {
+    const R = await import('../lib/reuniao-equipe')
+    const agoraMs = new Date('2026-11-09T14:00:00-03:00').getTime()
+    const s = (iso: string) => Math.floor(new Date(iso).getTime() / 1000)
+    const d = (reuniao: number | null, sincronizado: { eventId: string; inicio: number } | null, reuniaoDaAnna: number | null) => R.decidir({ reuniao, agoraMs, sincronizado, reuniaoDaAnna })
+    const amanha15 = s('2026-11-10T15:00:00-03:00'), amanha16 = s('2026-11-10T16:00:00-03:00')
+    eq('equipe marca → cria; mesmo horário → nada; remarca → move; apaga a data → apaga', [
+      d(amanha15, null, null), d(amanha15, { eventId: 'e', inicio: amanha15 }, null), d(amanha16, { eventId: 'e', inicio: amanha15 }, null), d(null, { eventId: 'e', inicio: amanha15 }, null),
+    ], ['criar', 'nada', 'mover', 'apagar'])
+    eq('reunião da Anna → nada; equipe remarca a da Anna → apaga a dela e cria; data passada → nada', [
+      d(amanha15, null, amanha15), d(amanha16, null, amanha15), d(s('2026-11-09T10:00:00-03:00'), null, null), d(null, null, null),
+    ], ['nada', 'remarcou-da-anna', 'nada', 'nada'])
+  }
+
   console.log('\n— Tarefas da Anna como "Dia todo" no calendário (09/11)')
   {
     const K = await import('../lib/kommo')

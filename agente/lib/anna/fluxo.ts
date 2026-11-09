@@ -192,6 +192,9 @@ async function agendar(ctx: Ctx, deps: Deps, slot: Slot, leitura?: Leitura): Pro
   if (!ev) return oferecer(ctx, deps, {}, TEXTOS.horarioOcupado, 'horario_ocupado')
   const quando = primeiraMaiuscula(quandoExtenso(slot.inicio))
   await deps.cancelarRegua()
+  // a reunião entra no estado ANTES do campo "Reunião": o webhook do campo não pode achar que foi a equipe
+  // e criar outro evento no Google (reuniao-equipe.ts)
+  await deps.patch({ reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
   await deps.salvarCampos({
     [CRM_MAP.campos.reuniao]: Math.floor(slot.inicio.getTime() / 1000),
     [CRM_MAP.campos.agendamento]: Math.floor(slot.inicio.getTime() / 1000),
