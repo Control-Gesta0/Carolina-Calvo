@@ -419,6 +419,24 @@ async function main() {
       await fluxo.turno(ctx(w, seg9, 'Surgiu uma reunião no trabalho'), deps)
       eq('respondeu o motivo → oferece remarcar', [w.enviados[1].startsWith('Sem problemas, Maria!'), w.state.etapa], [true, 'remarcar_pergunta'])
     }
+    // revisão de 09/11: confirmação com o mesmo horário não cancela; "Não, tive um compromisso" é motivo; sem renda → ACIMA DE 15 MIL
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'tarde', data_preferida: '2026-10-12', hora_preferida: '15:00' }))
+      await fluxo.turno(ctx(w, seg9, 'Confirmado, hoje às 15h estarei lá'), deps)
+      eq('confirmação com o mesmo dia e hora da reunião → não cancela nada', [(w as W).canceladas, w.movido, w.enviados.length, w.state.etapa], [undefined, [], 0, 'agendado'])
+      const m2 = mundo(seg9)
+      m2.w.state = { ...marcado(), etapa: 'cancelou_motivo', reuniao: undefined, remarcacao: true }
+      m2.w.leituras.push(L({ intencao: 'outro' }))
+      await fluxo.turno(ctx(m2.w, seg9, 'Não, tive um compromisso no trabalho'), m2.deps)
+      eq('"Não, tive um compromisso" ao perguntar o motivo → oferece remarcar (não é desistência)', [m2.w.enviados[0].startsWith('Sem problemas, Maria!'), m2.w.state.etapa], [true, 'remarcar_pergunta'])
+      const m3 = mundo(seg9)
+      m3.w.state = { ...marcado(), rendaBruta: undefined }
+      m3.w.leituras.push(L({ intencao: 'desiste' }))
+      await fluxo.turno(ctx(m3.w, seg9, 'Pode cancelar, não quero mais'), m3.deps)
+      eq('desistência sem renda registrada → card sai de Reunião agendada para ACIMA DE 15 MIL', m3.w.movido, [STATUS.acima15])
+    }
     // mensagem que não é sobre a reunião: a Anna não responde (Closer é da equipe)
     {
       const { w, deps } = mundo(seg9)

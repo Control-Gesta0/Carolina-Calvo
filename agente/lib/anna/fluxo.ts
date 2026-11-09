@@ -223,9 +223,20 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
   const nome = ctx.primeiroNome || undefined
   const i = leitura.intencao
   const preferencia = !!(leitura.periodo || leitura.data_preferida || leitura.hora_preferida)
+  // com a reunião marcada, dia/hora/período só valem como remarcação se forem DIFERENTES da reunião
+  // ("confirmado, amanhã às 15h estarei lá" não cancela nada)
+  const outraData = etapa !== 'agendado' || !s.reuniao ? preferencia : (() => {
+    const ini = new Date(s.reuniao.inicio)
+    const hhmm = ini.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
+    return (!!leitura.data_preferida && leitura.data_preferida !== diaIso(ini))
+      || (!!leitura.hora_preferida && leitura.hora_preferida !== hhmm)
+      || (!!leitura.periodo && leitura.periodo !== periodoDoSlot({ chave: `${diaIso(ini)}T${hhmm}` }))
+  })()
   const depois = RX_DEPOIS_CONTATO.test(t)
-  const desiste = i === 'desiste' || (etapa !== 'agendado' && RX_NAO.test(t) && !preferencia)
-  const aceita = !depois && !desiste && (i === 'remarcar' || i === 'pede_reuniao' || i === 'escolhe_periodo' || preferencia
+  // "não" no começo só é desistência quando a Anna perguntou se quer remarcar (não quando perguntou o motivo)
+  const desiste = i === 'desiste' || ((etapa === 'remarcar_pergunta' || etapa === 'desistencia_pergunta') && RX_NAO.test(t) && !preferencia)
+  const aceita = !depois && !desiste && (i === 'remarcar' || i === 'pede_reuniao'
+    || (etapa === 'agendado' ? (i === 'escolhe_periodo' || i === 'recusa_horario' || i === 'cancela_reuniao') && outraData : (i === 'escolhe_periodo' || preferencia))
     || (etapa !== 'agendado' && etapa !== 'cancelou_motivo' && (i === 'aceita_horario' || RX_SIM.test(t))))
   const cancela = i === 'cancela_reuniao' || (etapa === 'agendado' && i === 'recusa_horario')
 
@@ -241,7 +252,8 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
   if (depois) {
     await deps.cancelarRegua()
     const enviado = await dizer(ctx, deps, TEXTOS.comNome('depois_contato', nome), { id: 'depois_contato' })
-    if (s.rendaBruta) await deps.mover(colunaPorRenda(s.rendaBruta), PIPELINES.sdr)
+    // sem a renda registrada, ACIMA DE 15 MIL: só recebe oferta de reunião quem passou dos R$ 15 mil
+    await deps.mover(s.rendaBruta ? colunaPorRenda(s.rendaBruta) : STATUS.acima15, PIPELINES.sdr)
     await deps.nota('Anna: o lead prefere retomar depois. Reunião cancelada, sem novo agendamento e sem novas ofertas de horário.')
     await deps.patch({ etapa: 'humano', etapaAntes: 'agendado', remarcacao: undefined, finalizado: { motivo: 'retoma depois', em: ctx.agora.toISOString() } })
     return { acao: 'reunião cancelada: o lead vai entrar em contato depois', enviado, leitura }
@@ -258,7 +270,7 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
     }
     const enviado = await dizer(ctx, deps, TEXTOS.comNome('desistencia_pergunta', nome), { id: 'desistencia_pergunta' })
     // reunião cancelada: o card não fica em Reunião agendada; desistência não vai para AGENDAR REUNIÃO (Dra., 09/11)
-    if (etapa === 'agendado' && s.rendaBruta) await deps.mover(colunaPorRenda(s.rendaBruta), PIPELINES.sdr)
+    if (etapa === 'agendado') await deps.mover(s.rendaBruta ? colunaPorRenda(s.rendaBruta) : STATUS.acima15, PIPELINES.sdr)
     await deps.patch({ etapa: 'desistencia_pergunta', remarcacao: true })
     return { acao: 'não quer mais a reunião: uma tentativa de entender', enviado, leitura }
   }
