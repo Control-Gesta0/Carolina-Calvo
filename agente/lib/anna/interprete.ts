@@ -18,7 +18,7 @@ import { texto } from './textos'
 
 export const INTENCOES = [
   'responde_etapa', 'aceita_horario', 'recusa_horario', 'escolhe_periodo', 'pergunta', 'pede_humano', 'pergunta_se_robo',
-  'tem_advogado', 'ja_e_cliente', 'quer_contratar', 'outro_assunto', 'pede_reuniao', 'remarcar', 'desiste', 'outro',
+  'tem_advogado', 'ja_e_cliente', 'quer_contratar', 'outro_assunto', 'pede_reuniao', 'remarcar', 'cancela_reuniao', 'desiste', 'outro',
 ] as const
 export type Intencao = typeof INTENCOES[number]
 
@@ -58,11 +58,17 @@ export const PENDENTE: Record<Etapa, (s: LeadState, quando?: string) => string> 
   agendado: () => '',
   sem_reuniao: () => '',
   humano: () => '',
+  cancelou_motivo: () => '',
+  remarcar_pergunta: () => '',
+  desistencia_pergunta: () => '',
 }
 
 const SEM_PENDENTE: Partial<Record<Etapa, string>> = {
   analise: 'nenhuma: a Anna disse que volta em alguns minutos com o horário da Dra.',
-  agendado: 'nenhuma: a reunião já está marcada',
+  agendado: 'nenhuma: a reunião já está marcada (se o lead avisar que não vai participar, é `cancela_reuniao`; se pedir outro dia ou horário, `remarcar`; se não quiser mais a reunião, `desiste`)',
+  cancelou_motivo: 'nenhuma: o lead cancelou a reunião e a Anna perguntou se aconteceu algum imprevisto ou se ele reconsiderou',
+  remarcar_pergunta: 'nenhuma: a Anna perguntou se o lead quer remarcar a reunião e se prefere manhã ou tarde ("sim", "quero" ou um período = `remarcar`; "não quero mais" = `desiste`)',
+  desistencia_pergunta: 'nenhuma: o lead disse que não quer mais a reunião e a Anna perguntou se a situação financeira melhorou ou por que ele não quer continuar',
   sem_reuniao: 'nenhuma: o caso foi registrado para a equipe avaliar',
   humano: 'nenhuma',
 }

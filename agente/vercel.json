@@ -10,8 +10,8 @@
       "includeFiles": "{prompts/**,config/**}"
     },
     "api/lead.ts": {
-      "maxDuration": 120,
-      "includeFiles": "config/**"
+      "maxDuration": 300,
+      "includeFiles": "{prompts/**,config/**}"
     },
     "api/validate.ts": {
       "maxDuration": 60,

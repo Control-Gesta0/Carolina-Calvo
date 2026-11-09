@@ -31,6 +31,15 @@ export const RENDA_OFERTA_REUNIAO = 15000
 export const RENDA_MINIMA = 10000
 /** pedido de atendimento presencial */
 const ETAPAS_QUALIFICACAO = new Set<string>(['q1', 'q2', 'limite', 'q3'])
+/** reunião marcada e o caminho do cancelamento (Dra., 09/11) */
+export const ETAPAS_REUNIAO = new Set<string>(['agendado', 'cancelou_motivo', 'remarcar_pergunta', 'desistencia_pergunta'])
+/** "depois eu entro em contato", "vou deixar para outra ocasião" */
+export const RX_DEPOIS_CONTATO = /depois (eu )?(entro em contato|te procuro|procuro voc[eê]s|falo com voc[eê]s|retorno|chamo)|vou deixar para (outra|uma outra) (ocasi[aã]o|hora|vez)|outra hora eu (vejo|chamo|procuro)|quando der eu (chamo|procuro|retorno)|mais pra frente eu (vejo|chamo|procuro)/i
+/** motivo de cancelamento já dito: imprevisto, trabalho, saúde, compromisso */
+export const RX_MOTIVO = /imprevisto|surgiu|reuni[aã]o no trabalho|trabalh|hospital|m[eé]dic|doente|consulta|compromisso|precisei sair|viagem|viajando|emerg[eê]ncia|n[aã]o vou conseguir nesse hor[aá]rio|esqueci|problema/i
+const RX_SIM = /^\s*(sim|s|claro|pode|pode ser|quero|quero sim|vamos|ok|bora|isso|com certeza|aceito|gostaria)\b/i
+const RX_NAO = /^\s*(n[aã]o|nao quero|n[aã]o precisa|deixa|melhor n[aã]o)\b/i
+const RX_DUVIDA_REUNIAO = /adianta|vale a pena|precisa mesmo|pra qu[eê]|para qu[eê]|resolve alguma coisa|serve pra/i
 const RX_PRESENCIAL = /presencial|pessoalmente|no escrit[oó]rio|ir a[ií] no|ir at[eé] o escrit/i
 
 export interface Ctx {
@@ -74,6 +83,9 @@ export interface Deps {
   memoria?(): Promise<LeadState['memoria'] | null>
   /** reescreve a mensagem do roteiro como conversa (redator.ts); sem ela, sai o texto pronto */
   redigir?(r: Redacao): Promise<string>
+  /** cancela a reunião marcada: apaga o evento no Google, limpa os campos da reunião (os lembretes param),
+   *  conclui a tarefa "Reunião" no Kommo e registra no card (Dra., 09/11) */
+  cancelarReuniao?(reuniao: NonNullable<LeadState['reuniao']>, motivo: string): Promise<void>
 }
 
 export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string }
@@ -81,7 +93,7 @@ export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; 
 /** encaminhamento → oferta: 15 minutos (Dra., 05/11; antes 30) */
 const PAUSA_ANALISE_MS = 15 * 60_000
 
-const reguaDaEtapa = (e: Etapa): Regua | null =>
+export const reguaDaEtapa = (e: Etapa): Regua | null =>
   e === 'q1' || e === 'q2' || e === 'limite' || e === 'q3' ? 'qualificacao' : e === 'oferta' || e === 'preferencia' ? 'agendamento' : null
 
 const slotDaOferta = (o: Oferta): Slot => ({ chave: o.chave, inicio: new Date(o.inicio), fim: new Date(o.fim) })
@@ -154,7 +166,7 @@ async function humano(ctx: Ctx, deps: Deps, motivo: string, texto: string, leitu
   const resumo = `${leitura?.resumo || ctx.textoTurno.slice(0, 200)} · ${resumoLead(ctx.state)}`
   const enviado = await dizer(ctx, deps, texto, { id })
   await deps.passarParaHumano(motivo, resumo)
-  await deps.patch({ etapa: 'humano', finalizado: { motivo, em: ctx.agora.toISOString() } })
+  await deps.patch({ etapa: 'humano', etapaAntes: ctx.state.etapa, finalizado: { motivo, em: ctx.agora.toISOString() } })
   return { acao: `passou para humano: ${motivo}`, enviado, leitura, resumo }
 }
 
@@ -188,10 +200,121 @@ async function agendar(ctx: Ctx, deps: Deps, slot: Slot, leitura?: Leitura): Pro
   await deps.addTags([CRM_MAP.tags.agendou])
   const texto = TEXTOS.agendado(quando, ev.link)
   await deps.enviar(texto)
-  await deps.patch({ etapa: 'agendado', oferta: undefined, reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
+  await deps.patch({ etapa: 'agendado', oferta: undefined, remarcacao: undefined, recusas: 0, recusados: [], reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
   await deps.agendarLembretes(slot.inicio, ev.eventId)
   await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
   return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
+}
+
+/**
+ * CANCELAMENTO, DESISTÊNCIA E REMARCAÇÃO (Dra., 09/11, caso Nayara). Reunião marcada pela Anna:
+ *  - aceitou remarcar (mesmo sem horário) → cancela a reunião e o card vai NA HORA para SDR › AGENDAR REUNIÃO;
+ *    com dia/período/hora oferece um horário; o agendamento confirmado leva para Reunião agendada (agendar());
+ *  - não vai participar: cancela a reunião; sem motivo, pergunta o motivo; com imprevisto, oferece remarcar;
+ *  - não quer mais: uma única tentativa de entender; se mantiver, respeita (Não quer continuar), sem insistir;
+ *  - "depois eu entro em contato": cancela, uma mensagem de encerramento, card na coluna da renda.
+ * A reunião cancelada sai da agenda Google, da tarefa do Kommo e dos lembretes. Devolve null quando a
+ * mensagem não é sobre a reunião (o resto do fluxo decide).
+ */
+async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promise<Resultado | null> {
+  const s = ctx.state
+  const etapa = s.etapa!
+  const t = ctx.textoTurno
+  const nome = ctx.primeiroNome || undefined
+  const i = leitura.intencao
+  const preferencia = !!(leitura.periodo || leitura.data_preferida || leitura.hora_preferida)
+  const depois = RX_DEPOIS_CONTATO.test(t)
+  const desiste = i === 'desiste' || (etapa !== 'agendado' && RX_NAO.test(t) && !preferencia)
+  const aceita = !depois && !desiste && (i === 'remarcar' || i === 'pede_reuniao' || i === 'escolhe_periodo' || preferencia
+    || (etapa !== 'agendado' && etapa !== 'cancelou_motivo' && (i === 'aceita_horario' || RX_SIM.test(t))))
+  const cancela = i === 'cancela_reuniao' || (etapa === 'agendado' && i === 'recusa_horario')
+
+  if (etapa === 'agendado') {
+    if (!(aceita || cancela || desiste || depois)) return null
+    if (s.reuniao && deps.cancelarReuniao) {
+      const motivo = depois ? 'o lead vai entrar em contato depois' : desiste ? 'o lead não quer mais a reunião' : aceita ? 'o lead pediu para remarcar' : 'o lead avisou que não vai participar'
+      await deps.cancelarReuniao(s.reuniao, motivo)
+    }
+    await deps.patch({ reuniao: undefined, oferta: undefined })
+  }
+
+  if (depois) {
+    await deps.cancelarRegua()
+    const enviado = await dizer(ctx, deps, TEXTOS.comNome('depois_contato', nome), { id: 'depois_contato' })
+    if (s.rendaBruta) await deps.mover(colunaPorRenda(s.rendaBruta), PIPELINES.sdr)
+    await deps.nota('Anna: o lead prefere retomar depois. Reunião cancelada, sem novo agendamento e sem novas ofertas de horário.')
+    await deps.patch({ etapa: 'humano', etapaAntes: 'agendado', remarcacao: undefined, finalizado: { motivo: 'retoma depois', em: ctx.agora.toISOString() } })
+    return { acao: 'reunião cancelada: o lead vai entrar em contato depois', enviado, leitura }
+  }
+  if (desiste) {
+    if (etapa === 'desistencia_pergunta') {
+      // manteve a decisão: respeita, sem insistir
+      await deps.cancelarRegua()
+      const enviado = await dizer(ctx, deps, TEXTOS.desistiu, { id: 'desistiu' })
+      await deps.mover(STATUS.naoQuerContinuar, PIPELINES.sdr)
+      await deps.nota(`Anna: o lead manteve a decisão de não continuar. Reunião cancelada. ${leitura.resumo || ''}`.trim())
+      await deps.patch({ etapa: 'humano', etapaAntes: 'agendado', remarcacao: undefined, finalizado: { motivo: 'desistiu da reunião', em: ctx.agora.toISOString() } })
+      return { acao: 'desistiu da reunião: Não quer continuar', enviado, leitura }
+    }
+    const enviado = await dizer(ctx, deps, TEXTOS.comNome('desistencia_pergunta', nome), { id: 'desistencia_pergunta' })
+    await deps.patch({ etapa: 'desistencia_pergunta' })
+    return { acao: 'não quer mais a reunião: uma tentativa de entender', enviado, leitura }
+  }
+  if (aceita) {
+    // aceitou remarcar: o card vai na hora para AGENDAR REUNIÃO, mesmo sem horário escolhido
+    await deps.mover(STATUS.agendarReuniao, PIPELINES.sdr)
+    await deps.nota('Anna: o lead quer remarcar a reunião. Card em AGENDAR REUNIÃO até o novo horário ser confirmado.')
+    await deps.patch({ etapa: 'preferencia', remarcacao: true, recusas: 0, recusados: [], oferta: undefined })
+    const ctxP = { ...ctx, state: { ...s, etapa: 'preferencia' as Etapa, remarcacao: true, recusas: 0, recusados: [] } }
+    if (preferencia) {
+      const hoje = diaIso(ctx.agora)
+      const hora = leitura.hora_preferida && /^\d{2}:\d{2}$/.test(leitura.hora_preferida) ? leitura.hora_preferida : undefined
+      const dia = leitura.data_preferida && leitura.data_preferida >= hoje ? leitura.data_preferida : hora ? hoje : proximoDiaUtil(hoje)
+      return oferecer(ctxP, deps, { periodo: hora ? undefined : leitura.periodo || undefined, aPartirDoDia: dia, horaExata: hora, antecedenciaMin: AGENDA.antecedenciaConfirmacaoMin }, TEXTOS.novaOferta, 'nova_oferta')
+    }
+    if (/depois (eu )?vejo|vejo (o hor[aá]rio )?depois|ainda n[aã]o sei (o hor[aá]rio|quando)/i.test(t)) {
+      const enviado = await dizer(ctx, deps, TEXTOS.comNome('remarcar_depois', nome), { id: 'remarcar_depois' })
+      return { acao: 'aceitou remarcar, horário depois: AGENDAR REUNIÃO', enviado, leitura }
+    }
+    const enviado = await falar(ctxP, deps, TEXTOS.manhaOuTarde, 'preferencia', { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
+    return { acao: 'aceitou remarcar: AGENDAR REUNIÃO, perguntou o período', enviado, leitura }
+  }
+  if (cancela || etapa === 'cancelou_motivo') {
+    // cancelou: com o motivo dito (ou respondendo ao "aconteceu algum imprevisto?"), oferece remarcar; sem motivo, pergunta
+    if (etapa === 'agendado' && !RX_MOTIVO.test(t)) {
+      const enviado = await dizer(ctx, deps, TEXTOS.comNome('cancelou_motivo', nome), { id: 'cancelou_motivo' })
+      await deps.patch({ etapa: 'cancelou_motivo' })
+      return { acao: 'cancelou a reunião sem motivo: perguntou o motivo', enviado, leitura }
+    }
+    if (RX_DUVIDA_REUNIAO.test(t)) {
+      const enviado = await dizer(ctx, deps, TEXTOS.comNome('questiona_reuniao', nome), { id: 'questiona_reuniao' })
+      await deps.patch({ etapa: 'remarcar_pergunta' })
+      return { acao: 'duvidou da reunião: explicou e ofereceu remarcar', enviado, leitura }
+    }
+    const enviado = await dizer(ctx, deps, TEXTOS.comNome('remarcar_oferta', nome), { id: 'remarcar_oferta' })
+    await deps.patch({ etapa: 'remarcar_pergunta' })
+    return { acao: 'cancelou com imprevisto: ofereceu remarcar', enviado, leitura }
+  }
+  if (etapa !== 'agendado' && RX_DUVIDA_REUNIAO.test(t)) {
+    const enviado = await dizer(ctx, deps, TEXTOS.comNome('questiona_reuniao', nome), { id: 'questiona_reuniao' })
+    await deps.patch({ etapa: 'remarcar_pergunta' })
+    return { acao: 'duvidou da reunião: explicou e ofereceu remarcar', enviado, leitura }
+  }
+  if (etapa === 'desistencia_pergunta') {
+    // respondeu à tentativa: piorou ou continua igual → vale a avaliação; melhorou ou outro motivo → respeita
+    if (leituraMemoria(t) && !/melhor/i.test(t)) {
+      const enviado = await dizer(ctx, deps, TEXTOS.comNome('questiona_reuniao', nome), { id: 'questiona_reuniao' })
+      await deps.patch({ etapa: 'remarcar_pergunta' })
+      return { acao: 'desistência: a situação não melhorou, ofereceu remarcar', enviado, leitura }
+    }
+    await deps.cancelarRegua()
+    const enviado = await dizer(ctx, deps, TEXTOS.desistiu, { id: 'desistiu' })
+    await deps.mover(STATUS.naoQuerContinuar, PIPELINES.sdr)
+    await deps.nota(`Anna: o lead não quis remarcar a reunião. Motivo: "${t.slice(0, 200)}"`)
+    await deps.patch({ etapa: 'humano', etapaAntes: 'agendado', remarcacao: undefined, finalizado: { motivo: 'desistiu da reunião', em: ctx.agora.toISOString() } })
+    return { acao: 'desistiu da reunião: Não quer continuar', enviado, leitura }
+  }
+  return null
 }
 
 /** Job da pausa de 15 min: a 5ª mensagem com o primeiro horário da sequência. */
@@ -226,6 +349,17 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     return { acao: 'pediu presencial: explicou como funciona o atendimento', enviado, leitura }
   }
 
+  // na oferta, "outro dia ou horário" é preferência, não remarcação de reunião marcada
+  if ((etapa === 'oferta' || etapa === 'preferencia') && leitura.intencao === 'remarcar') leitura.intencao = 'escolhe_periodo'
+
+  // reunião marcada pela Anna: o lead cancela, desiste ou quer remarcar (Dra., 09/11, caso Nayara).
+  // Em "agendado" o card está no Closer: fora disso a Anna não conversa (quem conversa é a equipe)
+  if (ETAPAS_REUNIAO.has(etapa)) {
+    const r = await tratarCancelamento(ctx, deps, leitura)
+    if (r) return r
+    if (etapa === 'agendado') return { acao: 'agendado: nada sobre a reunião, a equipe conduz', leitura }
+  }
+
   switch (leitura.intencao) {
     case 'pergunta_se_robo': return humano(ctx, deps, 'perguntou se é robô', TEXTOS.passaHumano, leitura)
     case 'pede_humano': {
@@ -241,7 +375,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       await deps.cancelarRegua()
       await deps.passarParaHumano('Lead deseja contratar — retorno imediato', resumo, true)
       await deps.mover(STATUS.retornoImediato, PIPELINES.closer)
-      await deps.patch({ etapa: 'humano', finalizado: { motivo: 'quer contratar', em: ctx.agora.toISOString() } })
+      await deps.patch({ etapa: 'humano', etapaAntes: ctx.state.etapa, finalizado: { motivo: 'quer contratar', em: ctx.agora.toISOString() } })
       return { acao: 'passou para humano: quer contratar', leitura, resumo }
     }
     case 'outro_assunto': return humano(ctx, deps, 'assunto de outra área', TEXTOS.passaHumano, leitura)
@@ -454,7 +588,8 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       const hoje = diaIso(ctx.agora)
       const hora = leitura.hora_preferida && /^\d{2}:\d{2}$/.test(leitura.hora_preferida) ? leitura.hora_preferida : undefined
       if (leitura.periodo || leitura.data_preferida || hora) {
-        const dia = leitura.data_preferida && leitura.data_preferida >= hoje ? leitura.data_preferida : hora ? hoje : undefined
+        // remarcação: prioriza o próximo dia útil (Dra., 09/11)
+        const dia = leitura.data_preferida && leitura.data_preferida >= hoje ? leitura.data_preferida : hora ? hoje : s.remarcacao ? proximoDiaUtil(hoje) : undefined
         // pedido do próprio lead com dia ou hora: mínimo de 30 min; só o período: a regra da oferta (1 h)
         const antecedenciaMin = dia || hora ? AGENDA.antecedenciaConfirmacaoMin : undefined
         // o lead pediu exatamente um horário que já tinha recusado ("deixa 11 mesmo"): ele volta a valer

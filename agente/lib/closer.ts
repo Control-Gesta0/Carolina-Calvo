@@ -41,6 +41,13 @@ export function origemCloser(ev: MudancaEtapa): number | null {
 }
 
 const K_FEITO = (evId: string) => k('closer', 'ev', evId)
+const K_ANNA_MOVEU = (leadId: number) => k('closer', 'anna-moveu', leadId)
+
+/** A própria Anna tirou o card do Closer (reunião cancelada pelo lead, Dra. 09/11): a proteção não desfaz. */
+export async function marcarMovidoPelaAnna(leadId: number): Promise<void> {
+  await redis.set(K_ANNA_MOVEU(leadId), '1', { ex: 3600 })
+}
+const movidoPelaAnna = async (leadId: number) => !!(await redis.get(K_ANNA_MOVEU(leadId)).catch(() => null))
 const K_ULTIMA_MSG = (leadId: number) => k('ultima-in', leadId)
 
 /** O inbound guarda a última mensagem de cada lead (qualquer card), para a tarefa dizer o que ele quer. */
@@ -86,6 +93,7 @@ export async function veioDoCloser(leadId: number): Promise<{ ev: MudancaEtapa; 
   const d = await kommoGet<{ _embedded?: { events?: MudancaEtapa[] } }>(`/api/v4/events?filter[entity]=lead&filter[entity_id]=${leadId}&filter[type]=lead_status_changed&limit=5`)
   const ev = [...(d?._embedded?.events || [])].sort((a, b) => b.created_at - a.created_at)[0]
   if (!ev || Date.now() / 1000 - ev.created_at > 30 * 60) return null
+  if (await movidoPelaAnna(leadId)) return null
   const origem = origemCloser(ev)
   return origem ? { ev, origem } : null
 }
@@ -100,6 +108,7 @@ export async function varrerCloser(): Promise<string[]> {
     const origem = origemCloser(ev)
     if (!origem) continue
     if (CONFIG.protegeCloserSoTeste && !CONFIG.testLeadIds.includes(ev.entity_id)) continue
+    if (await movidoPelaAnna(ev.entity_id)) continue
     try {
       const r = await devolverAoCloser(ev, origem)
       if (r) feitos.push(r)

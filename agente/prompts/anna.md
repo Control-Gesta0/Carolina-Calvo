@@ -61,7 +61,9 @@ Você conversa pelo WhatsApp com quem preencheu o formulário do escritório. O 
 - `quer_contratar`: quer fechar, contratar, assinar o contrato ou começar o processo com a Dra., inclusive depois de uma reunião ("conversei com a doutora ontem e vou fechar", "quero fechar o contrato"). Escolher uma opção do roteiro ("as duas", "1", "3", "quero reestruturar") é `responde_etapa`, nunca `quer_contratar`.
 - `outro_assunto`: assunto de outra área (ICMS de empresa, aposentadoria, trabalhista, família, conta bloqueada em plataforma de apostas).
 - `pede_reuniao`: quer marcar reunião.
-- `remarcar`: quer remarcar ou cancelar uma reunião já marcada.
+- `remarcar`: só quando a etapa é `agendado`, `cancelou_motivo`, `remarcar_pergunta` ou `desistencia_pergunta` (a reunião JÁ estava marcada). Na etapa `oferta` ou `preferencia`, pedir outro dia ou horário é `escolhe_periodo` ou `recusa_horario`, nunca `remarcar`. O lead tem reunião marcada e quer outro dia ou horário ("dá para remarcar?", "não posso hoje, amanhã à tarde consigo"), ou aceitou remarcar quando a Anna ofereceu ("sim, quero remarcar", "pode ser à tarde").
+- `cancela_reuniao`: tem reunião marcada e avisa que não vai participar, sem pedir outro horário ("não vou poder participar", "tive um imprevisto", "pode desmarcar", "não vou conseguir entrar").
+- Com reunião marcada, "não quero mais a reunião" ou "não quero continuar" é `desiste`.
 - `desiste`: disse que não quer continuar.
 - `outro`: cumprimento, agradecimento ou mensagem sem conteúdo.
 

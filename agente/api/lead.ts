@@ -1,7 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { waitUntil } from '@vercel/functions'
 import crypto from 'crypto'
-import { bloqueio } from '../lib/agent'
+import { bloqueio, processLead } from '../lib/agent'
+import { getHistory } from '../lib/history'
+import { retomar, TAG_RETOMAR } from '../lib/pausa'
+import { reguaDaEtapa } from '../lib/anna/fluxo'
 import { primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
 import { colunaPelaFaixa, CRM_MAP, PIPELINES, STATUS, TAG_NAO_ENTREGUE } from '../lib/crm-map'
@@ -79,6 +82,12 @@ async function tratar(ev: Evento): Promise<void> {
     if (ev.tipo === 'status') return
 
     let lead = await getLead(ev.id)
+    // a equipe devolveu o atendimento à Anna (etiqueta anna-retomar, Dra. 09/11): ela retoma de onde parou
+    if (leadTags(lead).some(t => t.toLowerCase() === TAG_RETOMAR)) {
+      const r = await retomar(lead)
+      if (r.startsWith('retomado')) await continuarDepoisDaRetomada(ev.id)
+      return
+    }
     // a saudação deu "Erro" no WhatsApp e a equipe pôs a etiqueta nao-entregue: o card vai para a coluna da
     // faixa do formulário e a Anna para de mandar mensagem a esse lead (Dra., 05/11)
     if (lead.pipeline_id === PIPELINES.sdr && leadTags(lead).some(t => t.toLowerCase() === TAG_NAO_ENTREGUE)) {
@@ -140,6 +149,18 @@ async function tratar(ev: Evento): Promise<void> {
     await redis.del(k('iniciado', ev.id))
     await logExec({ tipo: 'erro', leadId: ev.id, detalhe: `webhook de lead: ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}` })
   }
+}
+
+/** Depois da retomada: se a última mensagem é do lead, a Anna responde considerando todo o histórico; senão, a régua da etapa recomeça. */
+async function continuarDepoisDaRetomada(leadId: number): Promise<void> {
+  const ultima = (await getHistory(leadId).catch(() => [])).slice(-1)[0]
+  if (ultima?.dir === 'in') {
+    await processLead(leadId, `retomar-${Date.now()}`)
+    return
+  }
+  const etapa = (await getState(leadId)).etapa
+  const regua = etapa ? reguaDaEtapa(etapa) : null
+  if (regua) await iniciarRegua(leadId, regua, Date.now())
 }
 
 const NOME_COLUNA: Record<number, string> = { [STATUS.acima15]: 'ACIMA DE 15 MIL', [STATUS.de10a15]: '10 A 15 MIL', [STATUS.desqualificado]: 'Desqualificado' }

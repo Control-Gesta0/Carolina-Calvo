@@ -1,14 +1,15 @@
 import { CONFIG } from './config'
-import { CRM_MAP, PIPELINES } from './crm-map'
+import { CRM_MAP, PIPELINES, STATUS } from './crm-map'
 import { devolverAoCloser, jaPassouPeloCloser, veioDoCloser } from './closer'
 import { adoptToken, currentToken, debounceAndClaim, esperaDaResposta, releaseLock, renewLock } from './buffer'
 import { emptyUsage, logExec } from './execlog'
 import { alreadyAnswered, getHistory, humanSpokeRecently, lastInbound, markAnswered } from './history'
 import { addLeadNote, addLeadTask, getLead, leadTags, type KommoLead } from './kommo'
 import { k, redis } from './redis'
-import { turno } from './anna/fluxo'
+import { conferirEtiquetaDaPausa, pausado } from './pausa'
+import { ETAPAS_REUNIAO, turno } from './anna/fluxo'
 import { depsProducao, montarCtx, type Telemetria } from './anna/producao'
-import { clearState, getState } from './state'
+import { clearState, getState, type LeadState } from './state'
 import { memoriaNoInicio } from './memoria'
 import { motivoDaFrase, perfilDaRenda } from './central-data'
 import { comTextos } from './anna/textos'
@@ -33,8 +34,10 @@ export function bloqueio(lead: KommoLead): string | null {
 }
 
 /** Por que a Anna não CONVERSA com este lead, mesmo liberado (os lembretes e jobs seguem). Dra., 22/10. */
-export function foraDaQualificacao(lead: KommoLead): string | null {
-  if (lead.pipeline_id === PIPELINES.closer) return 'card no Closer: quem conversa é a equipe'
+export function foraDaQualificacao(lead: KommoLead, st?: LeadState): string | null {
+  // exceção (Dra., 09/11): reunião marcada pela Anna, em Reunião agendada, quando o lead cancela ou quer remarcar
+  const reuniaoDaAnna = lead.status_id === STATUS.reuniaoAgendada && !!st?.etapa && ETAPAS_REUNIAO.has(st.etapa)
+  if (lead.pipeline_id === PIPELINES.closer && !reuniaoDaAnna) return 'card no Closer: quem conversa é a equipe'
   if (leadTags(lead).some(t => t.toLowerCase() === CRM_MAP.tags.jaFezReuniao.toLowerCase())) return `tag "${CRM_MAP.tags.jaFezReuniao}": a Anna não qualifica de novo`
   return null
 }
@@ -53,13 +56,20 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
     const b = bloqueio(lead)
     // sem gate: silêncio sem poluir o diário (a conta inteira manda add_message)
     if (b) return pular(b, !b.startsWith('sem a tag'))
+    // pausa (a equipe está atendendo): vale mesmo se a etiqueta sumiu do card, que é recolocada (Dra., 09/11)
+    if (await pausado(leadId)) {
+      await conferirEtiquetaDaPausa(lead).catch(() => undefined)
+      return pular('pausada: a equipe está atendendo (para devolver, etiqueta anna-retomar)')
+    }
     if (await humanSpokeRecently(leadId)) return pular('a equipe falou pelo Kommo nas últimas 6h: a Anna não atropela')
-    const fora = foraDaQualificacao(lead)
-    if (fora) return pular(fora)
-    // card de teste (TEST_LEAD_IDS) pode voltar a ser qualificado depois de um teste no Closer
-    if (!CONFIG.testLeadIds.includes(leadId) && await jaPassouPeloCloser(leadId)) return pular('o card já passou pelo Closer: a Anna não qualifica de novo')
-
     const st0 = await getState(leadId)
+    const fora = foraDaQualificacao(lead, st0)
+    if (fora) return pular(fora)
+    // card de teste (TEST_LEAD_IDS) pode voltar a ser qualificado depois de um teste no Closer;
+    // a reunião da Anna e a remarcação dela passam pelo Closer de propósito (Dra., 09/11)
+    const reuniaoEmCurso = !!st0.remarcacao || (!!st0.etapa && ETAPAS_REUNIAO.has(st0.etapa))
+    if (!CONFIG.testLeadIds.includes(leadId) && !reuniaoEmCurso && await jaPassouPeloCloser(leadId)) return pular('o card já passou pelo Closer: a Anna não qualifica de novo')
+
     if (st0.etapa === 'humano' && st0.finalizado) {
       // Tag de gate recolocada num lead finalizado = novo ciclo
       await clearState(leadId)
@@ -78,7 +88,7 @@ export async function processLead(leadId: number, webhookId: string): Promise<vo
       return pular(`card veio do Closer por um robô: ${r || 'já devolvido'}`)
     }
     const agoraLead = await getLead(leadId)
-    const fora2 = foraDaQualificacao(agoraLead)
+    const fora2 = foraDaQualificacao(agoraLead, await getState(leadId))
     if (fora2) return pular(fora2)
     // ciclo novo: quem já fez reunião ou é cliente (em outro card do mesmo telefone) vai para a equipe
     if (!(await getState(leadId)).etapa) {

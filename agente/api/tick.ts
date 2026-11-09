@@ -28,6 +28,7 @@ import { sendReply } from '../lib/transport'
 import { getState, patchState } from '../lib/state'
 import { ehRecorrente, memoriaDoLead, memoriaVale } from '../lib/memoria'
 import { TEXTOS } from '../lib/anna/textos'
+import { pausado } from '../lib/pausa'
 
 /**
  * O RELÓGIO. QStash chama de 5 em 5 minutos (Authorization: Bearer CRON_SECRET)
@@ -163,6 +164,7 @@ async function executar(job: Job): Promise<string> {
     async podeSeguir(regua: Regua) {
       const lead = await getLead(leadId)
       if (await humanSpokeRecently(leadId)) return 'a equipe falou com o lead'
+      if (await pausado(leadId)) return 'pausada: a equipe está atendendo'
       const b = bloqueio(lead)
       if (b) return b
       const etapa = (await getState(leadId)).etapa

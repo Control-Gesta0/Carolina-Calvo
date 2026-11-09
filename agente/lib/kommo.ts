@@ -76,6 +76,12 @@ async function setLeadTags(leadId: number, names: string[]): Promise<void> {
 
 export async function addLeadTags(leadId: number, names: string[]): Promise<void> {
   if (!names.length) return
+  // tags_to_add só acrescenta: não regrava o conjunto inteiro. Regravar perdia etiqueta quando outro processo
+  // (ou alguém salvando o card) gravava ao mesmo tempo (caso Adriana, 09/11: "atendimento-humano" sumiu)
+  try {
+    await kommo('PATCH', `/api/v4/leads/${leadId}`, { tags_to_add: names.map(name => ({ name })) })
+    return
+  } catch { /* conta sem tags_to_add: regrava o conjunto (merge local) */ }
   const current = leadTags(await getLead(leadId))
   const lower = new Set(current.map(t => t.toLowerCase()))
   const add = names.filter(n => !lower.has(n.toLowerCase()))
@@ -132,6 +138,21 @@ export async function addLeadTask(leadId: number, text: string, o: { responsavel
 /** Tarefa com data e duração (a reunião na agenda do Kommo, como a equipe faz: tipo "Reunião", 30 min). */
 export async function addLeadTaskAt(leadId: number, text: string, o: { responsavelId: number; tipo: number; quando: number; duracaoS: number }): Promise<void> {
   await kommo('POST', '/api/v4/tasks', [{ text, entity_id: leadId, entity_type: 'leads', task_type_id: o.tipo, responsible_user_id: o.responsavelId, complete_till: o.quando, duration: o.duracaoS }])
+}
+
+/** Limpa campos do card (valor nulo). */
+export async function limparCampos(leadId: number, campos: number[]): Promise<void> {
+  if (!campos.length) return
+  await kommo('PATCH', `/api/v4/leads/${leadId}`, { custom_fields_values: campos.map(field_id => ({ field_id, values: null })) })
+}
+
+/** Conclui as tarefas abertas de um tipo no card (ex.: a tarefa "Reunião" de uma reunião cancelada). Devolve quantas. */
+export async function concluirTarefas(leadId: number, tipo: number, resultado: string): Promise<number> {
+  const d = await kommo<{ _embedded?: { tasks?: Array<{ id: number; task_type_id: number; is_completed: boolean }> } }>('GET',
+    `/api/v4/tasks?filter[entity_type]=leads&filter[entity_id]=${leadId}&filter[is_completed]=0&limit=50`).catch(() => null)
+  const abertas = (d?._embedded?.tasks || []).filter(t => t.task_type_id === tipo && !t.is_completed)
+  if (abertas.length) await kommo('PATCH', '/api/v4/tasks', abertas.map(t => ({ id: t.id, is_completed: true, result: { text: resultado } })))
+  return abertas.length
 }
 
 const templateCache = new Map<number, string>()

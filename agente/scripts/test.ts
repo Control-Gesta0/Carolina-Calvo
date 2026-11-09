@@ -185,6 +185,7 @@ async function main() {
       },
       async agendarLembretes() { w.lembretes++ },
       async tarefaReuniao(inicio: Date) { (w as unknown as { reuniaoKommo: string }).reuniaoKommo = inicio.toISOString() },
+      async cancelarReuniao(r) { (w as unknown as { canceladas: string[] }).canceladas = [...((w as unknown as { canceladas?: string[] }).canceladas || []), r.eventId] },
     }
     void slotsLivres
     return { w, deps }
@@ -345,6 +346,90 @@ async function main() {
     w.leituras.push(L({ intencao: 'pede_humano' }))
     await fluxo.turno({ ...ctx(w, seg9, 'Não, só aceito presencial'), conversa: [{ dir: 'out', text: TEXTOS.comoFunciona, ts: 0, id: 'x' }] as never }, deps)
     eq('insiste no presencial depois da explicação → equipe', w.humano.length, 1)
+  }
+
+  {
+    // Dra., 09/11 (caso Nayara): cancelamento, desistência e remarcação de reunião marcada pela Anna
+    const reuniao = { eventId: 'ev1', inicio: A.deBrt(2026, 9, 12, 15, 0).toISOString(), link: 'https://meet.google.com/x', criadaEm: '' }
+    const marcado = (): LS => ({ etapa: 'agendado', objetivo: 3, rendaBruta: 20000, reuniao })
+    type W = { canceladas?: string[] }
+    // TESTE A: imprevisto e aceita remarcar
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'cancela_reuniao' }))
+      await fluxo.turno(ctx(w, seg9, 'Não vou conseguir participar hoje. Tive um imprevisto.'), deps)
+      eq('A1 imprevisto: reunião cancelada, oferta de remarcar (texto da Dra.), card ainda não vai para AGENDAR', [(w as W).canceladas, w.enviados[0].startsWith('Sem problemas, Maria! Imprevistos acontecem'), w.state.etapa, w.movido, w.state.reuniao], [['ev1'], true, 'remarcar_pergunta', [], undefined])
+      w.leituras.push(L({ intencao: 'remarcar' }))
+      await fluxo.turno(ctx(w, seg9, 'Sim, quero remarcar.'), deps)
+      eq('A2 aceitou remarcar → AGENDAR REUNIÃO na hora e pergunta o período', [w.movido, w.enviados[1], w.state.etapa, w.state.remarcacao], [[STATUS.agendarReuniao], TEXTOS.manhaOuTarde, 'preferencia', true])
+      w.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'tarde' }))
+      await fluxo.turno(ctx(w, seg9, 'à tarde'), deps)
+      eq('A3 período → um horário do próximo dia útil à tarde', w.enviados[2], TEXTOS.novaOferta('AMANHÃ às 15:00'))
+      w.leituras.push(L({ intencao: 'aceita_horario' }))
+      await fluxo.turno(ctx(w, seg9, 'pode ser'), deps)
+      eq('A4 confirmou → nova reunião e Reunião agendada', [w.eventos, w.movido[w.movido.length - 1], w.state.etapa, w.state.remarcacao], [['2026-10-13T15:00'], STATUS.reuniaoAgendada, 'agendado', undefined])
+    }
+    // TESTE B: quer remarcar, horário depois
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'remarcar' }))
+      await fluxo.turno(ctx(w, seg9, 'Quero remarcar, depois vejo o horário.'), deps)
+      eq('B quer remarcar sem horário → cancela, AGENDAR REUNIÃO, nenhuma reunião nova', [(w as W).canceladas, w.movido, w.eventos, w.enviados[0].startsWith('Combinado, Maria! Quando puder')], [['ev1'], [STATUS.agendarReuniao], [], true])
+    }
+    // TESTE C: não quer continuar
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'desiste' }))
+      await fluxo.turno(ctx(w, seg9, 'Pode cancelar. Não quero continuar.'), deps)
+      eq('C1 desiste → cancela e faz uma única tentativa (texto da Dra.)', [(w as W).canceladas, w.enviados[0].startsWith('Entendo, Maria, e respeito sua decisão.'), w.state.etapa, w.movido], [['ev1'], true, 'desistencia_pergunta', []])
+      w.leituras.push(L({ intencao: 'desiste' }))
+      await fluxo.turno(ctx(w, seg9, 'Não, prefiro não continuar mesmo'), deps)
+      eq('C2 mantém → respeita, Não quer continuar, sem AGENDAR e sem nova oferta', [w.enviados[1], w.movido, w.state.etapa, w.eventos], [TEXTOS.desistiu, [STATUS.naoQuerContinuar], 'humano', []])
+    }
+    // TESTE D: depois entra em contato
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'cancela_reuniao' }))
+      await fluxo.turno(ctx(w, seg9, 'Pode cancelar. Depois eu procuro vocês.'), deps)
+      eq('D depois → cancela, uma mensagem de encerramento, card na coluna da renda, sem AGENDAR', [(w as W).canceladas, w.enviados.length, w.enviados[0].startsWith('Combinado, Maria! Vou deixar seu atendimento disponível'), w.movido, w.state.etapa], [['ev1'], 1, true, [STATUS.acima15], 'humano'])
+    }
+    // TESTE E: dia e período
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'remarcar', periodo: 'tarde', data_preferida: '2026-10-13' }))
+      await fluxo.turno(ctx(w, seg9, 'Não posso hoje. Amanhã à tarde consigo.'), deps)
+      eq('E dia e período → cancela, AGENDAR e oferece amanhã à tarde', [(w as W).canceladas, w.movido, w.enviados[0], w.state.etapa], [['ev1'], [STATUS.agendarReuniao], TEXTOS.novaOferta('AMANHÃ às 15:00'), 'oferta'])
+      w.leituras.push(L({ intencao: 'aceita_horario' }))
+      await fluxo.turno(ctx(w, seg9, 'pode'), deps)
+      eq('E confirmou → Reunião agendada', [w.eventos, w.movido[w.movido.length - 1]], [['2026-10-13T15:00'], STATUS.reuniaoAgendada])
+    }
+    // sem motivo → pergunta o motivo; motivo → oferece remarcar
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'cancela_reuniao' }))
+      await fluxo.turno(ctx(w, seg9, 'Não vou poder participar.'), deps)
+      eq('sem motivo → pergunta o motivo (texto da Dra.)', [w.enviados[0].startsWith('Entendo, Maria! Sem problemas.'), w.state.etapa], [true, 'cancelou_motivo'])
+      w.leituras.push(L({ intencao: 'outro' }))
+      await fluxo.turno(ctx(w, seg9, 'Surgiu uma reunião no trabalho'), deps)
+      eq('respondeu o motivo → oferece remarcar', [w.enviados[1].startsWith('Sem problemas, Maria!'), w.state.etapa], [true, 'remarcar_pergunta'])
+    }
+    // mensagem que não é sobre a reunião: a Anna não responde (Closer é da equipe)
+    {
+      const { w, deps } = mundo(seg9)
+      w.state = marcado()
+      w.leituras.push(L({ intencao: 'outro', resposta: 'Por nada!' }))
+      await fluxo.turno(ctx(w, seg9, 'obrigada!'), deps)
+      eq('reunião marcada + "obrigada" → nada muda, nada é enviado', [w.enviados.length, (w as W).canceladas, w.state.etapa], [0, undefined, 'agendado'])
+    }
+    // pausa e retomada (caso Adriana)
+    const P = await import('../lib/pausa')
+    eq('retomada volta para a etapa de antes da passagem', [P.etapaDeVolta({ etapa: 'q2' }), P.etapaDeVolta({ etapa: 'humano', etapaAntes: 'q2' }), P.etapaDeVolta({ etapa: 'humano' }), P.etapaDeVolta({})], ['q2', 'q2', undefined, undefined])
   }
 
   {

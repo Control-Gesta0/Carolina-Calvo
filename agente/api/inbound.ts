@@ -17,6 +17,7 @@ import { posReuniaoVale, respostaPosReuniao } from '../lib/pos-reuniao'
 import { PIPELINES } from '../lib/crm-map'
 import { confirmarSaudacao } from '../lib/saudacao'
 import { getState } from '../lib/state'
+import { INSTRUCAO_RETOMAR, pausado, pausar } from '../lib/pausa'
 
 /**
  * Webhook nativo "add_message" do Kommo (form-urlencoded, chaves em colchetes):
@@ -100,7 +101,7 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
   // liberação, com a equipe, cliente, financeiro) sai aqui, antes de gastar OpenAI com áudio/imagem.
   const liberado = new Map<number, boolean>()
   const podeAtender = async (leadId: number) => {
-    if (!liberado.has(leadId)) liberado.set(leadId, await getLead(leadId).then(l => !bloqueio(l)).catch(() => true))
+    if (!liberado.has(leadId)) liberado.set(leadId, await getLead(leadId).then(async l => !bloqueio(l) && !(await pausado(leadId))).catch(() => true))
     return liberado.get(leadId)!
   }
   for (const m of msgs) {
@@ -130,6 +131,12 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
           const contato = lead?._embedded?.contacts?.find(c => c.is_main) || lead?._embedded?.contacts?.[0]
           const origem = await respostaEmOutroCard(m.leadId, contato?.id, text).catch(() => null)
           if (origem) await logExec({ tipo: 'pulou', leadId: origem, detalhe: `o lead respondeu ao primeiro contato, mas a conversa abriu no card ${m.leadId}: equipe avisada` })
+        }
+        // atendimento com a equipe (pausa): a conversa entra no histórico, para a Anna retomar sabendo o que
+        // o lead e a equipe disseram (Dra., 09/11). Áudio e imagem ficam marcados, sem transcrever.
+        if ((await pausado(m.leadId)) || (await getState(m.leadId)).etapa) {
+          const registro = text || (mediaKind(m.attachType) ? `[${mediaKind(m.attachType)} enviado${outgoing ? ' pela equipe' : ' pelo lead'}]` : '')
+          if (registro) await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: outgoing ? 'out' : 'in', text: registro, ts: Date.now() })
         }
         continue
       }
@@ -161,12 +168,12 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'out', text, ts: Date.now() })
         await markHumanSpoke(m.leadId)
         await cancelarRegua(m.leadId)
-        // a equipe assumiu: a Anna sai do atendimento e não volta sozinha (Dra., 22/10). Para devolver: tirar a tag.
-        await addLeadTags(m.leadId, [CONFIG.humanTag])
+        // a equipe assumiu: a Anna pausa (etiqueta + marca no Redis) até a equipe devolver com a etiqueta anna-retomar (Dra., 09/11)
+        await pausar(m.leadId, 'a equipe escreveu para o lead')
         await addLeadNote(m.leadId, annaAtendia
-          ? `A equipe escreveu para o lead pelo Kommo: a Anna saiu do atendimento e não volta sozinha. Para devolver o lead à Anna, tire a tag "${CONFIG.humanTag}".`
-          : `A equipe iniciou o atendimento deste lead pelo Kommo antes de a Anna falar com ele. A Anna não vai atuar neste card (tag "${CONFIG.humanTag}"). Para entregar o lead à Anna, tire a tag.`)
-        await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: 'a equipe escreveu para o lead: a Anna saiu do atendimento (tag atendimento-humano)' })
+          ? `A equipe escreveu para o lead pelo Kommo: a Anna pausou o atendimento deste card (etiqueta "${CONFIG.humanTag}") para não responder junto com a equipe. ${INSTRUCAO_RETOMAR}`
+          : `A equipe iniciou o atendimento deste lead pelo Kommo antes de a Anna falar com ele: a Anna fica pausada neste card (etiqueta "${CONFIG.humanTag}"). ${INSTRUCAO_RETOMAR}`)
+        await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: 'a equipe escreveu para o lead: a Anna pausou (etiqueta atendimento-humano)' })
         liberado.set(m.leadId, false)
         continue
       }

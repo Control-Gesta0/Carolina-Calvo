@@ -99,6 +99,19 @@ export const TEXTOS_PADRAO = {
   /** [CG] renda bruta até R$ 15 mil: a Anna não oferece reunião nem cria tarefa (Dra., 15/10); o card fica na coluna da renda */
   sem_reuniao: 'Obrigada pelas informações. Vou deixar o seu caso registrado para a equipe da Dra. Carolina avaliar o melhor caminho. Se tiver alguma dúvida, é só me escrever por aqui.',
 
+  /** [Dra., 09/11] reunião cancelada pelo lead sem dizer o motivo */
+  cancelou_motivo: 'Entendo, {nome}! Sem problemas.\n\nAconteceu algum imprevisto ou houve alguma questão que fez você reconsiderar a reunião?\n\nPergunto porque gostaria de entender melhor e verificar se conseguimos encontrar uma alternativa para você.',
+  /** [Dra., 09/11] o lead teve um imprevisto: oferta de remarcação */
+  remarcar_oferta: 'Sem problemas, {nome}! Imprevistos acontecem, entendo perfeitamente.\n\nPodemos aproveitar e já deixar sua reunião remarcada?\n\nAssim, conseguimos reservar um novo horário na agenda da Dra. Carolina, sem precisar iniciar todo o processo novamente.\n\n*Para você, fica melhor pela manhã ou pela tarde?*',
+  /** [Dra., 09/11] aceitou remarcar, mas vai ver o horário depois */
+  remarcar_depois: 'Combinado, {nome}! Quando puder, me diga se fica melhor pela manhã ou pela tarde, e eu verifico um horário na agenda da Dra. Carolina para você.',
+  /** [Dra., 09/11] não quer mais a reunião: uma única tentativa de entender */
+  desistencia_pergunta: 'Entendo, {nome}, e respeito sua decisão.\n\nSó gostaria de entender uma coisa: *sua situação financeira melhorou ou existe algum motivo específico para você não querer continuar com a avaliação neste momento?*\n\nPergunto porque, dependendo do que está acontecendo, ainda podemos verificar possibilidades jurídicas para ajudar você.',
+  /** [Dra., 09/11] "depois eu entro em contato" */
+  depois_contato: 'Combinado, {nome}! Vou deixar seu atendimento disponível para quando desejar retomar.\n\nSó quero te deixar uma reflexão: *enquanto sua situação financeira permanece sem uma avaliação adequada, os descontos podem continuar comprometendo sua renda todos os meses.*\n\nNossa primeira reunião on-line é gratuita e permite que a Dra. Carolina avalie sua situação e explique quais medidas jurídicas podem ser consideradas.\n\n*Quanto antes conseguirmos analisar seu caso, mais cedo poderemos identificar as possibilidades de atuação.*\n\nQuando decidir continuar, estaremos à disposição por aqui.',
+  /** [Dra., 09/11] "será que adianta fazer essa reunião?" */
+  questiona_reuniao: 'Entendo sua dúvida, {nome}.\n\nÉ justamente durante essa primeira reunião on-line, que é gratuita, que a Dra. Carolina poderá avaliar melhor sua situação e explicar quais medidas jurídicas podem ser consideradas.\n\nSem conhecer os detalhes do seu caso, não seria correto prometer uma solução.\n\nPor isso, acredito que vale a pena realizar essa avaliação antes de tomar uma decisão.\n\n*Podemos encontrar um horário melhor para você?*',
+
   /** [Dra., 06/11] o lead pediu atendimento presencial: como funciona o atendimento (sem valores) */
   como_funciona: 'Claro! Vou te explicar como funciona nosso atendimento.\n\nPrimeiro, fazemos uma avaliação on-line do seu caso para verificar se é uma situação em que nosso escritório pode te ajudar.\n\nSe o seu caso estiver dentro da nossa área de atuação, agendamos uma primeira reunião on-line com a Dra. Carolina Calvo, com duração aproximada de 30 minutos.\n\nNessa conversa, a Dra. Carolina vai explicar o que pode ser feito no seu caso e quais são as possibilidades de atuação.\n\n*Essa primeira reunião on-line é totalmente gratuita.*\n\nCaso você tenha interesse em contratar o escritório após essa conversa, podemos agendar um horário para que venha presencialmente.\n\nTudo bem para você?',
 
@@ -176,6 +189,9 @@ export const TEXTOS = {
   recorrente: (nome?: string) => (nome ? preencher(texto('recorrente'), { nome }) : texto('recorrente').replace(', {nome}!', '!')),
   recorrenteRetoma: (nome?: string) => (nome ? preencher(texto('recorrente_retoma'), { nome }) : texto('recorrente_retoma').replace(', {nome}.', '.')),
   get comoFunciona() { return texto('como_funciona') },
+  /** textos da remarcação com {nome}; sem nome, some ", {nome}" */
+  comNome: (id: 'cancelou_motivo' | 'remarcar_oferta' | 'remarcar_depois' | 'desistencia_pergunta' | 'depois_contato' | 'questiona_reuniao', nome?: string) =>
+    nome ? preencher(texto(id), { nome }) : texto(id).replace(', {nome}', ''),
   encaminha1015: (nome?: string) => comAvisoFora(nome ? preencher(texto('encaminha_10_15'), { nome }) : texto('encaminha_10_15').replace(', {nome}', ''), new Date(), CONFIG.plantao),
   get passaHumano() { return comAvisoFora(texto('passa_humano'), new Date(), CONFIG.plantao) },
   get semAgenda() { return comAvisoFora(texto('sem_agenda'), new Date(), CONFIG.plantao) },

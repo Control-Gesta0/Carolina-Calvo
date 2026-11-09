@@ -10,6 +10,8 @@ import { k, redis } from './redis'
  */
 
 export type Etapa = 'q1' | 'q2' | 'limite' | 'q3' | 'analise' | 'oferta' | 'preferencia' | 'agendado' | 'sem_reuniao' | 'humano'
+  /** cancelamento de reunião (Dra., 09/11): perguntou o motivo · ofereceu remarcar · tentativa única antes da desistência */
+  | 'cancelou_motivo' | 'remarcar_pergunta' | 'desistencia_pergunta'
 
 export interface Oferta { chave: string; inicio: string; fim: string; em: number }
 
@@ -44,6 +46,10 @@ export interface LeadState {
   /** token do job da 5ª mensagem (pausa de 30 min); trocar o token cancela o job */
   msg5Token?: string
   finalizado?: { motivo: string; em: string; resumo?: string }
+  /** etapa em que estava quando passou para a equipe: a etiqueta anna-retomar volta para ela (Dra., 09/11) */
+  etapaAntes?: Etapa
+  /** remarcação de uma reunião cancelada pelo lead (Dra., 09/11): o card está em SDR › AGENDAR REUNIÃO */
+  remarcacao?: boolean
 }
 
 /** 365 dias: a Anna retoma de onde parou quando o lead volta meses depois (regra da Dra., 15/10/2026) */

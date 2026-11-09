@@ -2,7 +2,10 @@ import { CONFIG } from '../config'
 import { CRM_MAP, PIPELINES, STATUS } from '../crm-map'
 import { emptyUsage, type Usage } from '../execlog'
 import { cancelarRegua, iniciarRegua } from '../followup'
-import { agendaConectada, criarReuniao, ocupados } from '../google'
+import { agendaConectada, apagarReuniao, criarReuniao, ocupados } from '../google'
+import { concluirTarefas, limparCampos } from '../kommo'
+import { quandoExtenso } from './agenda'
+import { marcarMovidoPelaAnna } from '../closer'
 import { appendMessage, getHistory } from '../history'
 import { addLeadNote, addLeadTags, addLeadTask, addLeadTaskAt, getLead, getMainContactName, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from '../kommo'
 import { agendarJob, novoToken } from '../jobs'
@@ -16,6 +19,7 @@ import { createInterprete } from './interprete'
 import { createRedator } from './redator'
 import { memoriaDoLead, memoriaVale } from '../memoria'
 import crypto from 'crypto'
+import { INSTRUCAO_RETOMAR, pausar } from '../pausa'
 
 /**
  * Liga o fluxo da Anna ao mundo real: Kommo (card, tags, tarefas), Redis
@@ -65,7 +69,9 @@ export interface Telemetria { usage: Usage; guard: string[] }
 
 export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = { usage: emptyUsage(), guard: [] }): Deps {
   const tags = () => leadTags(lead).map(t => t.toLowerCase())
-  const podeMover = () => lead.pipeline_id === PIPELINES.sdr && !CRM_MAP.etapasProtegidas.includes(lead.status_id)
+  // do Closer, só a reunião cancelada pelo lead sai de Reunião agendada (remarcação, desistência; Dra., 09/11)
+  const podeMover = () => (lead.pipeline_id === PIPELINES.sdr && !CRM_MAP.etapasProtegidas.includes(lead.status_id))
+    || (lead.pipeline_id === PIPELINES.closer && lead.status_id === STATUS.reuniaoAgendada)
 
   const deps: Deps = {
     async interpretar(e) {
@@ -98,6 +104,8 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
     async mover(statusId, pipelineId) {
       if (!podeMover()) { console.log(`[anna] lead ${leadId}: não movido (funil ${lead.pipeline_id}, etapa ${lead.status_id})`); return }
       if (lead.status_id === statusId && lead.pipeline_id === pipelineId) return
+      // a Anna tirando o card do Closer (remarcação): a proteção do Closer não pode desfazer
+      if (lead.pipeline_id === PIPELINES.closer && pipelineId !== PIPELINES.closer) await marcarMovidoPelaAnna(leadId)
       await updateLeadStatus(leadId, statusId, pipelineId)
       lead = { ...lead, status_id: statusId, pipeline_id: pipelineId }
     },
@@ -105,11 +113,23 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
     nota: t => addLeadNote(leadId, t),
     tarefa: t => addLeadTask(leadId, t, CRM_MAP.tarefa),
     tarefaReuniao: (inicio, t) => addLeadTaskAt(leadId, t, { ...CRM_MAP.tarefaReuniao, quando: Math.floor(inicio.getTime() / 1000) }),
+    async cancelarReuniao(reuniao, motivo) {
+      // Dra., 09/11: a reunião cancelada não fica ativa em nenhuma agenda e nenhum lembrete dela sai
+      const falhas: string[] = []
+      await apagarReuniao(reuniao.eventId).catch(e => { falhas.push(`agenda Google: ${e instanceof Error ? e.message : e}`) })
+      // sem a data nos campos, os lembretes do Kommo (2h, 1h, 15 min) e a ida para Cliente decisão não disparam;
+      // os lembretes da Anna conferem o evento no Google antes de sair
+      await limparCampos(leadId, [CRM_MAP.campos.reuniao, CRM_MAP.campos.agendamento, CRM_MAP.campos.horarioReuniao, CRM_MAP.campos.linkMeet]).catch(e => { falhas.push(`campos: ${e instanceof Error ? e.message : e}`) })
+      const tarefas = await concluirTarefas(leadId, CRM_MAP.tarefaReuniao.tipo, `Reunião cancelada pelo lead (${motivo}).`).catch(() => 0)
+      const quando = quandoExtenso(new Date(reuniao.inicio))
+      await addLeadNote(leadId, `Anna: reunião de ${quando} cancelada (${motivo}). Evento apagado da agenda da Dra., ${tarefas ? 'tarefa da reunião concluída' : 'sem tarefa da reunião aberta'} e lembretes cancelados.${falhas.length ? ` ATENÇÃO, conferir à mão: ${falhas.join('; ')}.` : ''}`)
+    },
     async passarParaHumano(motivo, resumo, prioritaria) {
       await cancelarRegua(leadId)
+      await pausar(leadId, `a Anna passou o atendimento: ${motivo}`)
       await addLeadTags(leadId, [CONFIG.humanTag, CRM_MAP.tags.passouHumano])
       if (CONFIG.gateTag && tags().includes(CONFIG.gateTag)) await removeLeadTags(leadId, [CONFIG.gateTag])
-      await addLeadTask(leadId, prioritaria ? `${motivo}. ${resumo}` : `Anna passou o atendimento: ${motivo}. ${resumo}`, prioritaria ? CRM_MAP.tarefaPrioritaria : CRM_MAP.tarefa)
+      await addLeadTask(leadId, `${prioritaria ? `${motivo}. ${resumo}` : `Anna passou o atendimento: ${motivo}. ${resumo}`} ${INSTRUCAO_RETOMAR}`, prioritaria ? CRM_MAP.tarefaPrioritaria : CRM_MAP.tarefa)
     },
     async agendarMsg5(token, quando) {
       // lead de teste (TEST_LEAD_IDS): a pausa de 15 min vira 1 min, salvo com TESTE_TEMPO_REAL=true
