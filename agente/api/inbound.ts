@@ -15,7 +15,7 @@ import { sendReply } from '../lib/transport'
 import { respostaEmOutroCard, whatsappDiretoConfigurado } from '../lib/whatsapp'
 import { posReuniaoVale, respostaPosReuniao } from '../lib/pos-reuniao'
 import { PIPELINES } from '../lib/crm-map'
-import { confirmarSaudacao } from '../lib/saudacao'
+import { confirmarSaudacao, ehModeloDaAnna, jaNoHistorico } from '../lib/saudacao'
 import { getState } from '../lib/state'
 import { INSTRUCAO_RETOMAR, pausado, pausar } from '../lib/pausa'
 import { cancelamentoComEquipe, classificarCancelamento } from '../lib/cancelamento-equipe'
@@ -162,6 +162,13 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         // Saída de um robô do Kommo (lembretes de 2h, 1h e 15 min da reunião, modelo "Lembrete Reunião"): não é a equipe.
         // Fica no histórico, mas a Anna não sai do atendimento (casos Sirlei e Zacheu, 06/11). Reconhecido pelo TEXTO:
         // no Kommo, mensagem da equipe e de robô saem com o mesmo autor (0), então o autor não serve
+        // Modelo da própria Anna (saudação, follow-up) entregue com atraso pelo Kommo: não é a equipe (caso Gilse, 09/11:
+        // a saudação chegou 12 min depois, junto com o "3" do lead, e a Anna pausou como se a equipe tivesse escrito)
+        if (await ehModeloDaAnna(text)) {
+          if (!(await jaNoHistorico(m.leadId, text))) await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'out', text, ts: Date.now() })
+          await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: `saída de um modelo da Anna entregue depois pelo Kommo (não é a equipe): "${text.slice(0, 80)}"` })
+          continue
+        }
         if (ehMensagemDeRoboKommo(text)) {
           await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: 'out', text, ts: Date.now() })
           await logExec({ tipo: 'pulou', leadId: m.leadId, detalhe: `mensagem de um robô do Kommo (não é a equipe): "${text.slice(0, 80)}"` })

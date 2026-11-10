@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { waitUntil } from '@vercel/functions'
 import crypto from 'crypto'
 import { bloqueio } from '../lib/agent'
-import { quintaMensagem } from '../lib/anna/fluxo'
+import { followOfertaEquipe, quintaMensagem } from '../lib/anna/fluxo'
 import { cobrancaPorContinuar, rodarCobranca } from '../lib/cobranca/executar'
 import { comTextos } from '../lib/anna/textos'
 import { baseVigente } from '../lib/base'
@@ -110,6 +110,35 @@ async function executar(job: Job): Promise<string> {
         ...(passou ? { porta: motivoDaFrase(r.acao.replace(/^passou para humano:\s*/, '')), detalhe: r.resumo?.slice(0, 600) } : {}),
         perfil: perfilDaRenda(depois.rendaBruta), respostaIA: r.enviado,
       })
+      return r.acao
+    }, job))
+  }
+
+  // horário oferecido pela equipe e devolvido à Anna (anna-retomar): o follow-up de 1 h, uma vez (Dra., 10/11)
+  if (job.tipo === 'oferta-equipe') {
+    return String(await comLock(leadId, async () => {
+      const lead = await getLead(leadId)
+      const b = bloqueio(lead)
+      if (b) return `follow da oferta da equipe cancelado: ${b}`
+      if (await pausado(leadId)) return 'follow da oferta da equipe cancelado: pausada (a equipe está atendendo)'
+      if (await humanSpokeRecently(leadId)) return 'follow da oferta da equipe cancelado: a equipe falou com o lead'
+      // texto livre só dentro da janela de 24 h do WhatsApp (contada da última mensagem do lead)
+      const ultimaDoLead = (await getHistory(leadId)).filter(m => m.dir === 'in').pop()?.ts ?? 0
+      if (Date.now() - ultimaDoLead > 23 * 3600_000) {
+        const st = await getState(leadId)
+        if (st.ofertaEquipe?.chave === job.token && !st.ofertaEquipe.followEnviado) {
+          await patchState(leadId, { ofertaEquipe: { ...st.ofertaEquipe, followEnviado: true } })
+          await addLeadTask(leadId, `Anna: o lead não confirmou o horário que a equipe ofereceu (${job.token.replace('T', ' às ')}) e a janela de 24 h do WhatsApp fechou, então o follow-up não pôde sair por texto. Retomar o contato com o lead.`, CRM_MAP.tarefa)
+        }
+        return 'follow da oferta da equipe: fora da janela de 24 h, tarefa para a equipe'
+      }
+      const tel = { usage: emptyUsage(), guard: [] as string[] }
+      const { ctx } = await montarCtx(leadId, lead)
+      const base = await baseVigente()
+      const r = await comTextos(textosDoRoteiro(base.textos), () => followOfertaEquipe(ctx, depsProducao(leadId, lead, tel), job.token))
+      const depois = await getState(leadId)
+      if (r.enviado) await addLeadNote(leadId, `Anna: follow-up do horário oferecido pela equipe. ${r.acao}.`)
+      await logExec({ tipo: r.enviado ? 'followup' : 'job', leadId, nome: lead.name, etapa: depois.etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160), respostaIA: r.enviado })
       return r.acao
     }, job))
   }

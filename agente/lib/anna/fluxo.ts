@@ -2,10 +2,11 @@ import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from '../crm-map'
 import type { Regua } from '../followup'
 import type { ChatMsg } from '../history'
 import type { Etapa, LeadState, Oferta } from '../state'
-import { AGENDA, periodoDoSlot, diaIso, primeiraMaiuscula, proximoDiaUtil, quandoExtenso, quandoOferta, type Periodo, type Slot } from './agenda'
+import { AGENDA, brt, deBrt, periodoDoSlot, diaIso, primeiraMaiuscula, proximoDiaUtil, quandoExtenso, quandoOferta, type Periodo, type Slot } from './agenda'
 import { compor, ehPerguntaRobo, PENDENTE, type Entrada, type Leitura } from './interprete'
 import type { Redacao } from './redator'
 import { brl, TEXTOS } from './textos'
+import { opcaoNoHistorico } from './recuperar'
 import { leituraMemoria, valoresTexto } from '../memoria'
 
 /**
@@ -18,12 +19,58 @@ import { leituraMemoria, valoresTexto } from '../memoria'
  */
 
 /** O lead vai ver os valores e mandar depois ("vou olhar o contracheque", "te mando mais tarde"). Puro. */
-const RX_DEPOIS = /\b(depois|mais tarde|amanh[aã]|daqui a pouco|j[aá] te (mando|passo|envio)|assim que|mandarei|enviarei|passarei|na (segunda|ter[cç]a|quarta|quinta|sexta)(-feira)?|no (s[aá]bado|domingo|fim de semana)|semana que vem|pr[oó]xima semana|outro dia)\b|vou (ver|verificar|olhar|conferir|pegar|procurar|consultar)|preciso (ver|verificar|olhar|conferir|pegar|procurar|consultar)|n[aã]o (sei|lembro) (de cabe[cç]a|agora|no momento)|n[aã]o tenho (aqui|agora|em m[aã]os)/i
+const RX_DEPOIS = /\b(depois|mais tarde|amanh[aã]|daqui a pouco|j[aá] te (mando|passo|envio)|assim que|mandarei|enviarei|passarei|na (segunda|ter[cç]a|quarta|quinta|sexta)(-feira)?|no (s[aá]bado|domingo|fim de semana)|semana que vem|pr[oó]xima semana|outro dia)(?![a-zà-ú0-9])|\bte (mando|passo|envio|encaminho|respondo)\b|quando (eu )?chegar|levantamento|irei (fazer|ver|verificar|passar|mandar|enviar)|vou (ver|verificar|olhar|conferir|pegar|procurar|consultar)|preciso (ver|verificar|olhar|conferir|pegar|procurar|consultar)|n[aã]o (sei|lembro) (de cabe[cç]a|agora|no momento)|n[aã]o tenho (aqui|agora|em m[aã]os)/i
 /** Só uma confirmação ("combinado", "ok", "tá bom"…), sem mais nada. Puro. */
 export const RX_OK = /^\s*(combinado|ok(ay)?|t[aá]( bom| certo)?|certo|beleza|blz|pode deixar|sim|perfeito|fechado|show|claro|👍+|obrigad[oa]|vou mandar|mando sim)[\s.!,]*(obrigad[oa])?[\s.!]*$/i
 /** Só um cumprimento ou resposta genérica ("oi", "sim", "bom dia", "tudo bem?"). Puro. */
 export const RX_GENERICO = /^\s*(oi+|ol[aá]|opa|e a[ií]|sim|ok(ay)?|certo|claro|pode ser|quero|tenho interesse|bom dia|boa tarde|boa noite|tudo bem\??|tudo bom\??|oi,? tudo bem\??|ol[aá],? (bom dia|boa tarde|boa noite))[\s.!,]*$/i
 export const vaiMandarDepois = (texto: string) => RX_DEPOIS.test(texto || '') && !/\?/.test(texto || '')
+/** O lead disse que manda depois, mesmo junto de uma pergunta ("Envio mais tarde. Com quem falo?"). Puro. */
+export const disseQueMandaDepois = (texto: string) => RX_DEPOIS.test(texto || '')
+/** "Com quem eu falo?", "quem é você?" (Dra., 10/11). Puro. */
+export const RX_IDENTIDADE = /com quem (eu )?(falo|t[oô] falando|estou falando|to falando)|quem (é|e) (voc[eê]|vc)\b|quem (fala|est[aá] falando)|qual (é |e )?(o )?seu nome/i
+
+const SEMANA_RX: Array<[RegExp, number]> = [[/domingo/i, 0], [/segunda/i, 1], [/ter[cç]a/i, 2], [/quarta/i, 3], [/quinta/i, 4], [/sexta/i, 5], [/s[aá]bado/i, 6]]
+/**
+ * Puro: a partir de quando os follow-ups podem cobrar, quando o lead disse que manda depois (Dra., 10/11: não cobrar
+ * antes do momento que ele indicou). "amanhã" → amanhã às 14h; um dia da semana → esse dia às 14h; "semana que vem"
+ * → segunda às 14h; "mais tarde", "quando chegar em casa", "vou verificar" → no dia seguinte às 10h. Nunca antes de 2 h.
+ */
+export function esperaDoLead(texto: string, agora: Date): number {
+  const b = brt(agora)
+  const dia = (n: number, h: number) => deBrt(b.ano, b.mes, b.dia + n, h, 0).getTime()
+  const t = texto || ''
+  let quando: number
+  if (/amanh[aã]/i.test(t)) quando = dia(1, 14)
+  else if (/semana que vem|pr[oó]xima semana/i.test(t)) quando = dia(((1 - b.semana + 7) % 7) || 7, 14)
+  else {
+    const sem = SEMANA_RX.find(([rx]) => rx.test(t))
+    quando = sem ? dia(((sem[1] - b.semana + 7) % 7) || 7, 14) : dia(1, 10)
+  }
+  return Math.max(quando, agora.getTime() + 2 * 3600_000)
+}
+/** A régua começa 2 h antes do 1º follow-up: base para o 1º follow-up sair em `espera`. */
+const baseParaEspera = (espera: number) => espera - 2 * 3600_000
+
+/** Puro: os valores da 2ª pergunta que ainda faltam. */
+export function valoresQueFaltam(s: Pick<LeadState, 'rendaBruta' | 'rendaLiquida' | 'descontoConta'>): Array<'bruta' | 'liquida' | 'conta'> {
+  return [s.rendaBruta == null ? 'bruta' : null, s.rendaLiquida == null ? 'liquida' : null, s.descontoConta == null ? 'conta' : null].filter((x): x is 'bruta' | 'liquida' | 'conta' => !!x)
+}
+const LINHA_VALOR = {
+  bruta: 'Sua renda bruta mensal, antes dos descontos.',
+  liquida: 'Sua renda líquida mensal, depois dos descontos do contracheque.',
+  conta: 'Quanto o banco desconta diretamente da sua conta corrente quando o salário é depositado.',
+}
+/** Puro: a lista do que falta, no formato da Dra. (as três: o texto dela; parte: só o que falta). */
+export function listaDoQueFalta(s: LeadState): string {
+  const f = valoresQueFaltam(s)
+  if (f.length === 3 || !f.length) return TEXTOS.valoresDepois
+  const nums = ['1️⃣', '2️⃣', '3️⃣']
+  return `*Para darmos continuidade à avaliação do seu caso, ${f.length === 1 ? 'falta só uma informação' : 'faltam só duas informações'}:*\n\n` +
+    f.map((x, i) => `${nums[i]} ${LINHA_VALOR[x]}`).join('\n') +
+    '\n\n*Assim que conseguir reunir, pode me encaminhar por aqui, tudo bem?*'
+}
+const temValores = (l: Leitura) => l.renda_bruta != null || l.renda_liquida != null || l.desconto_conta != null
 
 /** Só acima disto a Anna oferece reunião (regra da Dra., 15/10/2026: renda bruta acima de R$ 15 mil). */
 export const RENDA_OFERTA_REUNIAO = 15000
@@ -92,6 +139,8 @@ export interface Deps {
     disponivel(): boolean | Promise<boolean>
     buscar(o: { periodo?: Periodo; aPartirDoDia?: string; mesmoDia: boolean; horaExata?: string; antecedenciaMin?: number; excluir?: string[] }): Promise<Slot | null>
     reservar(slot: Slot): Promise<void>
+    /** o horário está livre na agenda da Dra. (e não reservado para outro lead)? Sem ela, vale a busca */
+    livre?(slot: Slot): Promise<boolean>
     /** confere de novo no Google e cria o evento com Meet; null = o horário foi ocupado */
     confirmar(slot: Slot, titulo: string, descricao: string): Promise<{ eventId: string; link: string } | null>
   }
@@ -154,9 +203,9 @@ export const OBJETIVO: Record<string, string> = {
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios', 'doc_confirma', 'doc_equipe', 'doc_ilegivel', 'valores_equipe', 'valores_conferir'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios', 'doc_confirma', 'doc_equipe', 'doc_ilegivel', 'valores_equipe', 'valores_conferir', 'identidade', 'valores_depois', 'aguardo_curto', 'q1_so_opcao', 'oferta_equipe_follow', 'oferta_equipe_outro'])
 
-interface Fala { id: string; obrigatorio?: string[] }
+interface Fala { id: string; obrigatorio?: string[]; /** começo da régua (o lead disse quando manda): sem ela, agora */ baseRegua?: number }
 
 /** Envia a mensagem (redigida como conversa, quando há redator) e devolve o texto que saiu. */
 async function dizer(ctx: Ctx, deps: Deps, texto: string, f: Fala): Promise<string> {
@@ -172,7 +221,7 @@ async function dizer(ctx: Ctx, deps: Deps, texto: string, f: Fala): Promise<stri
 async function falar(ctx: Ctx, deps: Deps, texto: string, etapa: Etapa, f: Fala): Promise<string> {
   const final = await dizer(ctx, deps, texto, f)
   const regua = reguaDaEtapa(etapa)
-  if (regua) await deps.iniciarRegua(regua, ctx.agora.getTime())
+  if (regua) await deps.iniciarRegua(regua, f.baseRegua ?? ctx.agora.getTime())
   return final
 }
 
@@ -227,7 +276,7 @@ async function agendar(ctx: Ctx, deps: Deps, slot: Slot, leitura?: Leitura): Pro
   await deps.addTags([CRM_MAP.tags.agendou])
   const texto = TEXTOS.agendado(quando, ev.link)
   await deps.enviar(texto)
-  await deps.patch({ etapa: 'agendado', oferta: undefined, remarcacao: undefined, recusas: 0, recusados: [], reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
+  await deps.patch({ etapa: 'agendado', oferta: undefined, ofertaEquipe: undefined, remarcacao: undefined, recusas: 0, recusados: [], reuniao: { eventId: ev.eventId, inicio: slot.inicio.toISOString(), link: ev.link, criadaEm: ctx.agora.toISOString() } })
   await deps.agendarLembretes(slot.inicio, ev.eventId)
   await deps.tarefaReuniao?.(slot.inicio, `Reunião on-line com ${nome} (marcada pela Anna). Meet: ${ev.link}`)
   return { acao: `agendou ${slot.chave}`, enviado: texto, leitura }
@@ -417,6 +466,62 @@ export async function quintaMensagem(ctx: Ctx, deps: Deps, token: string): Promi
   return oferecer(ctx, deps, {}, TEXTOS.mensagem5, 'mensagem5')
 }
 
+/**
+ * Retomada (anna-retomar) em que o histórico mostrou respostas que a Anna ainda não tinha usado (Dra., 10/11,
+ * caso Gilse): ela segue de onde a conversa realmente parou, com a próxima pergunta, sem repetir nada.
+ */
+export async function continuarDeOndeParou(ctx: Ctx, deps: Deps): Promise<Resultado> {
+  const s = ctx.state
+  if (s.etapa === 'q2') {
+    const f = valoresQueFaltam(s)
+    if (!f.length) {
+      await deps.patch({ etapa: 'limite' })
+      const enviado = await falar(ctx, deps, TEXTOS.perguntaLimite, 'limite', { id: 'pergunta_limite', obrigatorio: ['CHEQUE ESPECIAL', 'CARTÃO DE CRÉDITO'] })
+      return { acao: 'retomada: valores completos no histórico, pergunta do cheque especial e do cartão', enviado }
+    }
+    if (f.length === 3) {
+      const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
+      return { acao: 'retomada: opção no histórico, pergunta 2', enviado }
+    }
+    const enviado = await falar(ctx, deps, `Obrigada pelas informações! ${PENDENTE.q2(s)}`, 'q2', { id: 'q2_falta' })
+    return { acao: `retomada: faltam ${f.length} valores`, enviado }
+  }
+  if (s.etapa === 'limite') {
+    if (s.limite) {
+      const desconto = s.descontoConta ?? null
+      await deps.patch({ etapa: 'q3' })
+      const enviado = await falar(ctx, deps, TEXTOS.mensagem3(desconto), 'q3', desconto && desconto > 0 ? { id: 'mensagem3' } : { id: 'mensagem3_sem_desconto' })
+      return { acao: 'retomada: cheque especial já respondido, mensagem do alívio', enviado }
+    }
+    const enviado = await falar(ctx, deps, TEXTOS.perguntaLimite, 'limite', { id: 'pergunta_limite', obrigatorio: ['CHEQUE ESPECIAL', 'CARTÃO DE CRÉDITO'] })
+    return { acao: 'retomada: pergunta do cheque especial e do cartão', enviado }
+  }
+  return { acao: `retomada: nada a perguntar na etapa ${s.etapa || '(nenhuma)'}` }
+}
+
+/**
+ * Follow-up do horário oferecido pela EQUIPE (Dra., 10/11): 1 h depois da oferta, uma vez por oferta. Confere se o
+ * horário ainda dá (antecedência e agenda livre); se não der, oferece outro. A reunião só é marcada quando o lead
+ * confirmar (o turno da oferta trata a resposta).
+ */
+export async function followOfertaEquipe(ctx: Ctx, deps: Deps, chave: string): Promise<Resultado> {
+  const s = ctx.state
+  if (s.etapa !== 'oferta' || s.oferta?.chave !== chave || s.ofertaEquipe?.chave !== chave) return { acao: 'follow da oferta da equipe cancelado (a oferta mudou)' }
+  if (s.ofertaEquipe.followEnviado) return { acao: 'follow da oferta da equipe já enviado' }
+  const ultima = ctx.conversa[ctx.conversa.length - 1]
+  if (ultima?.dir === 'in' && ultima.ts > s.ofertaEquipe.enviadaEm) return { acao: 'follow da oferta da equipe não sai: o lead respondeu depois da oferta' }
+  await deps.patch({ ofertaEquipe: { ...s.ofertaEquipe, followEnviado: true } })
+  const slot = slotDaOferta(s.oferta)
+  const noPrazo = slot.inicio.getTime() >= ctx.agora.getTime() + AGENDA.antecedenciaConfirmacaoMin * 60_000
+  const livre = noPrazo && (await deps.agenda.disponivel()) && (deps.agenda.livre ? await deps.agenda.livre(slot) : true)
+  if (livre) {
+    const enviado = await falar(ctx, deps, TEXTOS.ofertaEquipeFollow, 'oferta', { id: 'oferta_equipe_follow' })
+    return { acao: `follow da oferta da equipe (${chave}): horário ainda disponível`, enviado }
+  }
+  const r = await oferecer({ ...ctx, state: { ...s, recusados: [...(s.recusados || []), chave] } }, deps, {}, TEXTOS.ofertaEquipeOutro, 'oferta_equipe_outro')
+  return { ...r, acao: `oferta da equipe (${chave}) não dá mais (${noPrazo ? 'agenda ocupada' : 'fora do prazo'}): ${r.acao}` }
+}
+
 /** Um turno do lead. */
 export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   const s = ctx.state
@@ -453,6 +558,26 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   if (ETAPAS_QUALIFICACAO.has(etapa) && (RX_DOC_LIDO.test(ctx.textoTurno) || RX_DOC_FALHOU.test(ctx.textoTurno))) {
     const r = await tratarDocumento(ctx, deps, leitura)
     if (r) return r
+  }
+
+  // "Com quem eu falo?" (Dra., 10/11): a Anna se identifica e responde só isso, sem informação que não foi pedida.
+  // Na 2ª pergunta, se o lead disse que manda os valores depois (agora ou na mensagem anterior), lista o que falta
+  // sem cobrar agora e espera; os follow-ups só saem depois do momento que ele indicou
+  if (ETAPAS_QUALIFICACAO.has(etapa) && RX_IDENTIDADE.test(ctx.textoTurno) && !temValores(leitura) && !leitura.opcao) {
+    const recentes = ctx.conversa.filter(m => m.dir === 'in').slice(-3).map(m => m.text).join('\n')
+    const ultimaAnna = [...ctx.conversa].reverse().find(m => m.dir === 'out')?.text || ''
+    if (etapa === 'q2' && disseQueMandaDepois(recentes) && /Aguardo seu retorno|Fico aguardando|pode me encaminhar por aqui/i.test(ultimaAnna)) {
+      // a Anna já disse que aguarda: só a identificação, sem repetir a lista nem cobrar
+      const enviado = await falar(ctx, deps, TEXTOS.identidade, 'q2', { id: 'identidade', baseRegua: baseParaEspera(esperaDoLead(recentes, ctx.agora)) })
+      return { acao: 'q2: perguntou com quem fala (já tinha dito que manda depois); só se identificou', enviado, leitura }
+    }
+    if (etapa === 'q2' && disseQueMandaDepois(recentes)) {
+      const texto = `${TEXTOS.identidade.replace(/\s*😊\s*$/u, '')}\n\n${listaDoQueFalta(s)}`
+      const enviado = await falar(ctx, deps, texto, 'q2', { id: 'valores_depois', baseRegua: baseParaEspera(esperaDoLead(recentes, ctx.agora)) })
+      return { acao: 'q2: perguntou com quem fala e vai mandar os valores depois; identificou-se, listou o que falta e aguarda', enviado, leitura }
+    }
+    const enviado = await falar(ctx, deps, compor(TEXTOS.identidade, PENDENTE[etapa](s)), etapa, { id: 'identidade' })
+    return { acao: 'perguntou com quem fala: identificou-se', enviado, leitura }
   }
 
   // na oferta, "outro dia ou horário" é preferência, não remarcação de reunião marcada
@@ -497,10 +622,10 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   }
 
   // Pergunta fora do roteiro: responde e volta para a pergunta pendente (a régua recomeça)
-  const responderLivre = async (): Promise<Resultado | null> => {
+  const responderLivre = async (e: Etapa = etapa, st: LeadState = s): Promise<Resultado | null> => {
     if (!leitura.resposta) return null
-    const texto = compor(leitura.resposta, PENDENTE[etapa](s, quandoOfertado))
-    const enviado = await falar(ctx, deps, texto, etapa, { id: 'livre', obrigatorio: etapa === 'oferta' ? [quandoOfertado || ''] : [] })
+    const texto = compor(leitura.resposta, PENDENTE[e](st, quandoOfertado))
+    const enviado = await falar(ctx, deps, texto, e, { id: 'livre', obrigatorio: e === 'oferta' ? [quandoOfertado || ''] : [] })
     return { acao: `respondeu fora do roteiro (${leitura.intencao})`, enviado, leitura }
   }
 
@@ -515,21 +640,145 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     }
   }
 
+  // 2ª pergunta (renda bruta, líquido, desconto em conta). veioDaQ1: o lead escolheu a opção agora e já tinha mandado valores
+  const etapaQ2 = async (s: LeadState, veioDaQ1 = false): Promise<Resultado> => {
+    // resposta à confirmação dos valores lidos no documento (Dra., 09/11)
+    if (s.docPendente) {
+      const doc = s.docPendente
+      await deps.patch({ docPendente: undefined })
+      // a IA relê o documento do histórico: só vale como valor digitado o que tem número NESTA mensagem
+      const digitou = /\d/.test(ctx.textoTurno) && (leitura.renda_bruta != null || leitura.renda_liquida != null)
+      if (!digitou && RX_CONFIRMA.test(ctx.textoTurno) && !RX_NAO.test(ctx.textoTurno)) {
+        leitura.renda_bruta = doc.rendaBruta ?? null
+        leitura.renda_liquida = doc.rendaLiquida ?? null
+      } else if (!digitou) {
+        // não confirmou (ou não deu para saber): pede os valores por escrito, sem usar os do documento
+        const enviado = await falar(ctx, deps, `Sem problemas. ${PENDENTE.q2(s)}`, 'q2', { id: 'livre' })
+        return { acao: 'documento: o lead não confirmou os valores, pediu por escrito', enviado, leitura }
+      }
+    }
+    const patch: Partial<LeadState> = {}
+    const campos: Record<number, number> = {}
+    const disse = { rendaBruta: leitura.renda_bruta, rendaLiquida: leitura.renda_liquida, descontoConta: leitura.desconto_conta }
+    // valores contraditórios digitados (líquido maior que o bruto): AÇÃO SDR ou pede para conferir (Dra., 09/11)
+    const brutaN = disse.rendaBruta ?? s.rendaBruta
+    const liquidaN = disse.rendaLiquida ?? s.rendaLiquida
+    if (brutaN != null && liquidaN != null && liquidaN > brutaN && (disse.rendaBruta != null || disse.rendaLiquida != null)) {
+      const r = await irParaAcaoSdr(ctx, deps, `valores contraditórios: líquido ${brl(liquidaN)} maior que o bruto ${brl(brutaN)}; conferir com o lead`, TEXTOS.valoresEquipe, 'valores_equipe', leitura)
+      if (r) return r
+      const enviado = await falar(ctx, deps, TEXTOS.valoresConferir, 'q2', { id: 'valores_conferir' })
+      return { acao: 'valores contraditórios: pediu para conferir', enviado, leitura }
+    }
+    if (s.memoriaPendente) {
+      // resposta ao "melhorou, piorou ou continua igual?": igual reaproveita os valores registrados;
+      // mudou (ou não deu para saber) pede os valores de hoje. Números ditos agora sempre valem.
+      const deuValor = disse.rendaBruta != null || disse.rendaLiquida != null || disse.descontoConta != null
+      const r = leituraMemoria(ctx.textoTurno)
+      patch.memoriaPendente = false
+      if (r === 'igual' && s.memoria) {
+        disse.rendaBruta ??= s.memoria.rendaBruta ?? null
+        disse.rendaLiquida ??= s.memoria.rendaLiquida ?? null
+        disse.descontoConta ??= s.memoria.descontoConta ?? null
+      } else if (!deuValor) {
+        if (leitura.intencao === 'pergunta' && leitura.resposta) {
+          const livre = await responderLivre('q2', s)
+          if (livre) return livre
+        }
+        await deps.patch(patch)
+        // depois de "piorou", o "Ótimo!" do início da pergunta 2 soa mal: vira "Entendi."
+        const texto = TEXTOS.pergunta2.replace(/^\s*\*?Ótimo!\*?/, 'Entendi.')
+        const enviado = await falar(ctx, deps, texto, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
+        return { acao: `memória: situação ${r === 'mudou' ? 'mudou' : 'sem resposta clara'}, pergunta 2`, enviado, leitura }
+      }
+    }
+    if (disse.rendaBruta != null && s.rendaBruta == null) { patch.rendaBruta = disse.rendaBruta; campos[CRM_MAP.campos.rendaBruta] = disse.rendaBruta }
+    if (disse.rendaLiquida != null && s.rendaLiquida == null) { patch.rendaLiquida = disse.rendaLiquida; campos[CRM_MAP.campos.rendaLiquida] = disse.rendaLiquida }
+    if (disse.descontoConta != null && s.descontoConta == null) { patch.descontoConta = disse.descontoConta; campos[CRM_MAP.campos.descontoConta] = disse.descontoConta }
+    const novo = { ...s, ...patch }
+    if (Object.keys(campos).length) await deps.salvarCampos(campos)
+    if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
+    if (Object.keys(patch).length) await deps.patch(patch)
+
+    const faltando = [
+      novo.rendaBruta == null ? ['a sua renda bruta mensal', 'bruta'] : null,
+      novo.rendaLiquida == null ? ['quanto você recebe líquido', 'líquido'] : null,
+      novo.descontoConta == null ? ['quanto o banco desconta da sua conta corrente por mês', 'conta corrente'] : null,
+    ].filter((x): x is string[] => !!x)
+    const faltam = faltando.map(f => f[0])
+    if (!faltam.length) {
+      // Dra., 27/10: antes da mensagem do alívio, cheque especial e cartão de crédito
+      await deps.patch({ etapa: 'limite' })
+      const enviado = await falar(ctx, deps, TEXTOS.perguntaLimite, 'limite', { id: 'pergunta_limite', obrigatorio: ['CHEQUE ESPECIAL', 'CARTÃO DE CRÉDITO'] })
+      return { acao: 'q2 completa: pergunta do cheque especial e do cartão', enviado, leitura }
+    }
+    // veio da 1ª pergunta com valores já guardados: conta como "já recebeu" (a Anna só pede o que falta)
+    const recebeuValor = Object.keys(campos).length > 0 || veioDaQ1
+    // Dra., 27/10: "vou ver e depois te mando" → a mensagem dela sobre a importância dos valores (a régua segue)
+    // a mensagem do "aguardo" termina em "Combinado?": um "combinado"/"ok" não pede resposta (a régua segue)
+    const ultimaAnna = [...ctx.conversa].reverse().find(m => m.dir === 'out')?.text || ''
+    if (!recebeuValor && ultimaAnna.includes('Aguardo seu retorno') && RX_OK.test(ctx.textoTurno)) {
+      return { acao: 'q2: o lead confirmou que manda os valores depois; aguardando', leitura }
+    }
+    if (!recebeuValor && vaiMandarDepois(ctx.textoTurno)) {
+      const enviado = await falar(ctx, deps, TEXTOS.aguardoValores, 'q2', { id: 'aguardo_valores', obrigatorio: ['SUSPENDER'], baseRegua: baseParaEspera(esperaDoLead(ctx.textoTurno, ctx.agora)) })
+      return { acao: 'q2: o lead vai mandar os valores depois', enviado, leitura }
+    }
+    // vai mandar depois E perguntou algo (Dra., 10/11): responde só o que foi perguntado e espera, sem cobrar os valores agora
+    if (!recebeuValor && disseQueMandaDepois(ctx.textoTurno) && leitura.resposta) {
+      const enviado = await falar(ctx, deps, `${leitura.resposta.trim()}\n\n${TEXTOS.aguardoCurto}`, 'q2', { id: 'aguardo_curto', baseRegua: baseParaEspera(esperaDoLead(ctx.textoTurno, ctx.agora)) })
+      return { acao: `q2: respondeu (${leitura.intencao}) e aguarda os valores, que o lead manda depois`, enviado, leitura }
+    }
+    if (!recebeuValor) {
+      const livre = await responderLivre('q2', s)
+      if (livre) return livre
+    }
+    const lista = faltam.length === 1 ? faltam[0] : `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}`
+    const texto = recebeuValor
+      ? `Obrigada. Falta só ${lista}. Pode me informar?`
+      : `Para eu fazer a análise inicial, preciso saber ${lista}. Pode me informar?`
+    const enviado = await falar(ctx, deps, texto, 'q2', { id: 'q2_falta', obrigatorio: faltando.map(f => f[1]) })
+    return { acao: `q2 incompleta (faltam ${faltam.length})`, enviado, leitura }
+  
+  }
+
   switch (etapa) {
     case 'q1': {
-      if (leitura.opcao) {
-        await deps.patch({ objetivo: leitura.opcao })
-        await deps.salvarCampos({ [CRM_MAP.campos.objetivo]: String(leitura.opcao) })
+      // a opção que o lead já respondeu antes (o "3" que ficou sem resposta, caso Gilse 09/11) vale: nunca pergunta de novo
+      const opcao = leitura.opcao || opcaoNoHistorico(ctx.conversa)
+      if (!opcao && temValores(leitura)) {
+        // mandou os valores antes de escolher a opção (Gilse, 10/11): a Anna guarda os valores e pede só a opção
+        const patch: Partial<LeadState> = {}
+        const campos: Record<number, number> = {}
+        if (leitura.renda_bruta != null && s.rendaBruta == null) { patch.rendaBruta = leitura.renda_bruta; campos[CRM_MAP.campos.rendaBruta] = leitura.renda_bruta }
+        if (leitura.renda_liquida != null && s.rendaLiquida == null) { patch.rendaLiquida = leitura.renda_liquida; campos[CRM_MAP.campos.rendaLiquida] = leitura.renda_liquida }
+        if (leitura.desconto_conta != null && s.descontoConta == null) { patch.descontoConta = leitura.desconto_conta; campos[CRM_MAP.campos.descontoConta] = leitura.desconto_conta }
+        if (Object.keys(campos).length) await deps.salvarCampos(campos)
+        if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
+        if (Object.keys(patch).length) await deps.patch(patch)
+        const enviado = await falar(ctx, deps, TEXTOS.q1SoOpcao, 'q1', { id: 'q1_so_opcao', obrigatorio: ['1', '2', '3'] })
+        return { acao: 'q1: mandou os valores antes da opção; guardou os valores e pediu só a opção', enviado, leitura }
+      }
+      if (opcao) {
+        await deps.patch({ objetivo: opcao })
+        await deps.salvarCampos({ [CRM_MAP.campos.objetivo]: String(opcao) })
+        // valores já ditos (agora, antes da opção, ou registrados no card): segue a 2ª pergunta pedindo só o que falta
+        const sQ2: LeadState = { ...s, objetivo: opcao, etapa: 'q2' }
+        const jaTinha = s.rendaBruta != null || s.rendaLiquida != null || s.descontoConta != null
+        if (jaTinha || temValores(leitura)) {
+          await deps.patch({ etapa: 'q2' })
+          const r = await etapaQ2(sQ2, jaTinha)
+          return { ...r, acao: `opção ${opcao}${leitura.opcao ? '' : ' (do histórico)'} · ${r.acao}` }
+        }
         // memória: já informou os valores antes → confirma se a situação mudou, em vez de perguntar tudo de novo
         const mem = deps.memoria ? await deps.memoria().catch(() => null) : null
         if (mem && valoresTexto(mem)) {
           const enviado = await falar(ctx, deps, TEXTOS.memoriaConfirma(mem.quando, valoresTexto(mem)), 'q2', { id: 'memoria_confirma', obrigatorio: ['melhorou', 'igual'] })
           await deps.patch({ etapa: 'q2', memoria: mem, memoriaPendente: true })
-          return { acao: `opção ${leitura.opcao}: memória (valores de ${mem.quando})`, enviado, leitura }
+          return { acao: `opção ${opcao}: memória (valores de ${mem.quando})`, enviado, leitura }
         }
         const enviado = await falar(ctx, deps, TEXTOS.pergunta2, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
         await deps.patch({ etapa: 'q2' })
-        return { acao: `opção ${leitura.opcao}: pergunta 2`, enviado, leitura }
+        return { acao: `opção ${opcao}: pergunta 2`, enviado, leitura }
       }
       // Dra., 05/11: o lead volta com "oi", "sim", "bom dia"… → reapresenta a 1ª pergunta inteira, sem presumir nada
       const ultimaAnna = [...ctx.conversa].reverse().find(m => m.dir === 'out')?.text || ''
@@ -543,98 +792,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       return { acao: 'q1 sem opção: pediu o número', enviado, leitura }
     }
 
-    case 'q2': {
-      // resposta à confirmação dos valores lidos no documento (Dra., 09/11)
-      if (s.docPendente) {
-        const doc = s.docPendente
-        await deps.patch({ docPendente: undefined })
-        // a IA relê o documento do histórico: só vale como valor digitado o que tem número NESTA mensagem
-        const digitou = /\d/.test(ctx.textoTurno) && (leitura.renda_bruta != null || leitura.renda_liquida != null)
-        if (!digitou && RX_CONFIRMA.test(ctx.textoTurno) && !RX_NAO.test(ctx.textoTurno)) {
-          leitura.renda_bruta = doc.rendaBruta ?? null
-          leitura.renda_liquida = doc.rendaLiquida ?? null
-        } else if (!digitou) {
-          // não confirmou (ou não deu para saber): pede os valores por escrito, sem usar os do documento
-          const enviado = await falar(ctx, deps, `Sem problemas. ${PENDENTE.q2(s)}`, 'q2', { id: 'livre' })
-          return { acao: 'documento: o lead não confirmou os valores, pediu por escrito', enviado, leitura }
-        }
-      }
-      const patch: Partial<LeadState> = {}
-      const campos: Record<number, number> = {}
-      const disse = { rendaBruta: leitura.renda_bruta, rendaLiquida: leitura.renda_liquida, descontoConta: leitura.desconto_conta }
-      // valores contraditórios digitados (líquido maior que o bruto): AÇÃO SDR ou pede para conferir (Dra., 09/11)
-      const brutaN = disse.rendaBruta ?? s.rendaBruta
-      const liquidaN = disse.rendaLiquida ?? s.rendaLiquida
-      if (brutaN != null && liquidaN != null && liquidaN > brutaN && (disse.rendaBruta != null || disse.rendaLiquida != null)) {
-        const r = await irParaAcaoSdr(ctx, deps, `valores contraditórios: líquido ${brl(liquidaN)} maior que o bruto ${brl(brutaN)}; conferir com o lead`, TEXTOS.valoresEquipe, 'valores_equipe', leitura)
-        if (r) return r
-        const enviado = await falar(ctx, deps, TEXTOS.valoresConferir, 'q2', { id: 'valores_conferir' })
-        return { acao: 'valores contraditórios: pediu para conferir', enviado, leitura }
-      }
-      if (s.memoriaPendente) {
-        // resposta ao "melhorou, piorou ou continua igual?": igual reaproveita os valores registrados;
-        // mudou (ou não deu para saber) pede os valores de hoje. Números ditos agora sempre valem.
-        const deuValor = disse.rendaBruta != null || disse.rendaLiquida != null || disse.descontoConta != null
-        const r = leituraMemoria(ctx.textoTurno)
-        patch.memoriaPendente = false
-        if (r === 'igual' && s.memoria) {
-          disse.rendaBruta ??= s.memoria.rendaBruta ?? null
-          disse.rendaLiquida ??= s.memoria.rendaLiquida ?? null
-          disse.descontoConta ??= s.memoria.descontoConta ?? null
-        } else if (!deuValor) {
-          if (leitura.intencao === 'pergunta' && leitura.resposta) {
-            const livre = await responderLivre()
-            if (livre) return livre
-          }
-          await deps.patch(patch)
-          // depois de "piorou", o "Ótimo!" do início da pergunta 2 soa mal: vira "Entendi."
-          const texto = TEXTOS.pergunta2.replace(/^\s*\*?Ótimo!\*?/, 'Entendi.')
-          const enviado = await falar(ctx, deps, texto, 'q2', { id: 'pergunta2', obrigatorio: ['bruta', 'líquido', 'conta corrente'] })
-          return { acao: `memória: situação ${r === 'mudou' ? 'mudou' : 'sem resposta clara'}, pergunta 2`, enviado, leitura }
-        }
-      }
-      if (disse.rendaBruta != null && s.rendaBruta == null) { patch.rendaBruta = disse.rendaBruta; campos[CRM_MAP.campos.rendaBruta] = disse.rendaBruta }
-      if (disse.rendaLiquida != null && s.rendaLiquida == null) { patch.rendaLiquida = disse.rendaLiquida; campos[CRM_MAP.campos.rendaLiquida] = disse.rendaLiquida }
-      if (disse.descontoConta != null && s.descontoConta == null) { patch.descontoConta = disse.descontoConta; campos[CRM_MAP.campos.descontoConta] = disse.descontoConta }
-      const novo = { ...s, ...patch }
-      if (Object.keys(campos).length) await deps.salvarCampos(campos)
-      if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
-      if (Object.keys(patch).length) await deps.patch(patch)
-
-      const faltando = [
-        novo.rendaBruta == null ? ['a sua renda bruta mensal', 'bruta'] : null,
-        novo.rendaLiquida == null ? ['quanto você recebe líquido', 'líquido'] : null,
-        novo.descontoConta == null ? ['quanto o banco desconta da sua conta corrente por mês', 'conta corrente'] : null,
-      ].filter((x): x is string[] => !!x)
-      const faltam = faltando.map(f => f[0])
-      if (!faltam.length) {
-        // Dra., 27/10: antes da mensagem do alívio, cheque especial e cartão de crédito
-        await deps.patch({ etapa: 'limite' })
-        const enviado = await falar(ctx, deps, TEXTOS.perguntaLimite, 'limite', { id: 'pergunta_limite', obrigatorio: ['CHEQUE ESPECIAL', 'CARTÃO DE CRÉDITO'] })
-        return { acao: 'q2 completa: pergunta do cheque especial e do cartão', enviado, leitura }
-      }
-      const recebeuValor = Object.keys(campos).length > 0
-      // Dra., 27/10: "vou ver e depois te mando" → a mensagem dela sobre a importância dos valores (a régua segue)
-      // a mensagem do "aguardo" termina em "Combinado?": um "combinado"/"ok" não pede resposta (a régua segue)
-      const ultimaAnna = [...ctx.conversa].reverse().find(m => m.dir === 'out')?.text || ''
-      if (!recebeuValor && ultimaAnna.includes('Aguardo seu retorno') && RX_OK.test(ctx.textoTurno)) {
-        return { acao: 'q2: o lead confirmou que manda os valores depois; aguardando', leitura }
-      }
-      if (!recebeuValor && vaiMandarDepois(ctx.textoTurno)) {
-        const enviado = await falar(ctx, deps, TEXTOS.aguardoValores, 'q2', { id: 'aguardo_valores', obrigatorio: ['SUSPENDER'] })
-        return { acao: 'q2: o lead vai mandar os valores depois', enviado, leitura }
-      }
-      if (!recebeuValor) {
-        const livre = await responderLivre()
-        if (livre) return livre
-      }
-      const lista = faltam.length === 1 ? faltam[0] : `${faltam.slice(0, -1).join(', ')} e ${faltam[faltam.length - 1]}`
-      const texto = recebeuValor
-        ? `Obrigada. Falta só ${lista}. Pode me informar?`
-        : `Para eu fazer a análise inicial, preciso saber ${lista}. Pode me informar?`
-      const enviado = await falar(ctx, deps, texto, 'q2', { id: 'q2_falta', obrigatorio: faltando.map(f => f[1]) })
-      return { acao: `q2 incompleta (faltam ${faltam.length})`, enviado, leitura }
-    }
+    case 'q2': return etapaQ2(s)
 
     case 'limite': {
       if (leitura.intencao === 'pergunta') {

@@ -149,6 +149,34 @@ export const TEXTOS_PADRAO = {
   /** [DRA] lead que já tem advogado no caso (resposta pronta "Possui advogado") */
   possui_advogado: 'Compreendo sua situação, mas, caso você já tenha um advogado atuando no processo, a Dra. não poderá auxiliá-lo, pois isso poderia comprometer a ética profissional estabelecida pela OAB. Recomendo que entre em contato diretamente com o seu advogado para tratar da questão.',
 
+  /** [DRA] o lead pergunta com quem está falando (Dra., 10/11) */
+  identidade: 'Você está falando com a Anna, da equipe da Dra. Carolina Calvo! 😊',
+
+  /** [DRA] o lead vai mandar os valores depois e perguntou algo: lista o que falta, sem cobrar agora (Dra., 10/11) */
+  valores_depois:
+    '*Para darmos continuidade à avaliação do seu caso, preciso de três informações:*\n\n' +
+    '1️⃣ Sua renda bruta mensal, antes dos descontos.\n' +
+    '2️⃣ Sua renda líquida mensal, depois dos descontos do contracheque.\n' +
+    '3️⃣ Quanto o banco desconta diretamente da sua conta corrente quando o salário é depositado.\n\n' +
+    '*Assim que conseguir reunir esses valores, pode me encaminhar por aqui, tudo bem?*',
+
+  /** [DRA] fecho curto quando o lead vai mandar depois e a Anna respondeu a uma pergunta dele (Dra., 10/11) */
+  aguardo_curto: 'Sem problemas! Fico aguardando seu retorno. Assim que conseguir reunir as informações, pode me encaminhar por aqui.',
+
+  /** [CG] o lead mandou os valores antes de escolher a opção: a Anna guarda os valores e pede só a opção (Dra., 10/11) */
+  q1_so_opcao:
+    'Obrigada pelas informações! Para seguir com a análise, me diga qual dessas possibilidades faria mais diferença para você hoje:\n\n' +
+    '*1️⃣* Suspender os descontos bancários por até 6 meses.\n' +
+    '*2️⃣* Reestruturar as dívidas, com revisão dos juros.\n' +
+    '*3️⃣* As duas opções.\n\n' +
+    '*Me responda apenas 1, 2 ou 3.*',
+
+  /** [DRA] 1 h depois do horário oferecido pela equipe, sem confirmação do lead (Dra., 10/11) */
+  oferta_equipe_follow: 'Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?',
+
+  /** [CG] o horário oferecido pela equipe não está mais disponível: a Anna oferece outro */
+  oferta_equipe_outro: 'O horário que te enviei não está mais disponível. A Dra. pode atender você *{quando}*, ON LINE. Posso agendar?',
+
   /** [CG] perguntas de retomada: emendadas depois de uma resposta livre da Anna */
   pendente_q1: 'Qual das opções você quer saber: 1, 2 ou 3?',
   pendente_q2: 'Pode me passar a sua renda bruta, o valor líquido e quanto o banco desconta da sua conta corrente?',
@@ -197,6 +225,12 @@ export const TEXTOS = {
   novaOferta: (quando: string) => preencher(texto('nova_oferta'), { quando }),
   horarioOcupado: (quando: string) => preencher(texto('horario_ocupado'), { quando }),
   get manhaOuTarde() { return texto('manha_ou_tarde') },
+  get identidade() { return texto('identidade') },
+  get valoresDepois() { return texto('valores_depois') },
+  get aguardoCurto() { return texto('aguardo_curto') },
+  get q1SoOpcao() { return texto('q1_so_opcao') },
+  get ofertaEquipeFollow() { return texto('oferta_equipe_follow') },
+  ofertaEquipeOutro: (quando: string) => preencher(texto('oferta_equipe_outro'), { quando }),
   agendado: (quando: string, link: string) => preencher(texto('agendado'), { quando, link }),
   // encerramentos que passam para a equipe: entre 22h e 4h, com o aviso de fora do horário (Dra., 04/11)
   get semReuniao() { return comAvisoFora(texto('sem_reuniao'), new Date(), CONFIG.plantao) },

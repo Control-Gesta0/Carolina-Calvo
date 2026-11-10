@@ -167,6 +167,11 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       async reservar(slot) {
         await redis.hset(k('reservas'), { [slot.chave]: { leadId, ate: Date.now() + RESERVA_MS } })
       },
+      async livre(slot) {
+        if ((await reservados(leadId)).has(slot.chave)) return false
+        const busy = await ocupados(slot.inicio, slot.fim)
+        return !busy.some(b => b.inicio < slot.fim.getTime() && b.fim > slot.inicio.getTime())
+      },
       async confirmar(slot: Slot, titulo, descricao) {
         // trava do horário: dois leads dizendo "sim" no mesmo segundo não criam dois eventos
         if ((await redis.set(k('slotlock', slot.chave), String(leadId), { nx: true, ex: 120 })) !== 'OK') return null

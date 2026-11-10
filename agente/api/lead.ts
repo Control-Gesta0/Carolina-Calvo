@@ -4,22 +4,26 @@ import crypto from 'crypto'
 import { bloqueio, processLead } from '../lib/agent'
 import { getHistory } from '../lib/history'
 import { retomar, TAG_RETOMAR } from '../lib/pausa'
-import { reguaDaEtapa } from '../lib/anna/fluxo'
-import { primeiroNome } from '../lib/anna/producao'
+import { continuarDeOndeParou, reguaDaEtapa } from '../lib/anna/fluxo'
+import { depsProducao, montarCtx, primeiroNome } from '../lib/anna/producao'
+import { recuperarNaRetomada } from '../lib/retomada'
+import { comTextos } from '../lib/anna/textos'
+import { baseVigente } from '../lib/base'
+import { textosDoRoteiro } from '../lib/base-core'
 import { CONFIG } from '../lib/config'
 import { colunaPelaFaixa, CRM_MAP, PIPELINES, STATUS, TAG_NAO_ENTREGUE } from '../lib/crm-map'
 import { logExec, marcarWebhook } from '../lib/execlog'
 import { iniciarRegua } from '../lib/followup'
 import { memoriaNoInicio } from '../lib/memoria'
 import { soltarConversaAntiga } from '../lib/conversa-antiga'
-import { esperarSaudacao } from '../lib/saudacao'
+import { esperarSaudacao, moverPelaFaixaNaEntrada } from '../lib/saudacao'
 import { saudacaoDaHora } from '../lib/plantao'
 import { etiquetaDoMes } from '../lib/etiqueta-mes'
-import { agendarPosReuniao, posReuniaoVale } from '../lib/pos-reuniao'
+import { agendarPosReuniao, posReuniaoVale, reuniaoDoCard } from '../lib/pos-reuniao'
 import { sincronizarReuniaoEquipe } from '../lib/reuniao-equipe'
-import { addLeadNote, addLeadTags, fieldValue, getLead, getMainContactName, leadTags, removeLeadTags, runSalesbot, updateLeadFields, updateLeadStatus, type KommoLead } from '../lib/kommo'
+import { addLeadNote, addLeadTags, addLeadTask, fieldValue, getLead, getMainContactName, leadTags, removeLeadTags, runSalesbot, updateLeadFields, updateLeadStatus, type KommoLead } from '../lib/kommo'
 import { cancelarRegua } from '../lib/followup'
-import { enviarModelo } from '../lib/modelos'
+import { enviarModelo, marcarBotRodando } from '../lib/modelos'
 import { k, redis } from '../lib/redis'
 import { clearState, getState, patchState } from '../lib/state'
 
@@ -132,8 +136,12 @@ async function tratar(ev: Evento): Promise<void> {
       if (CONFIG.primeiroContatoAnnaDispara) {
         // o card já tem a tag, o nome e a conversa antiga resolvida: agora a saudação sai, sem depender do robô da etapa
         const botId = daHora?.botId ?? CRM_MAP.modelos.primeiroContato.botId
+        // a saída do robô é da Anna: o webhook de saída (que pode chegar atrasado) não pode parecer a equipe
+        await marcarBotRodando(ev.id)
         await runSalesbot(botId, ev.id)
         await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: `primeiro contato: robô da saudação (${botId}) disparado pela Anna; conferindo a saída` })
+        // faixa do formulário de 10 mil ou mais: a coluna da faixa já na entrada (Dra., 10/11, caso Luciano)
+        await moverPelaFaixaNaEntrada(await getLead(ev.id)).catch(e => logExec({ tipo: 'erro', leadId: ev.id, detalhe: `faixa na entrada: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}` }))
         return
       }
       await logExec({ tipo: 'pulou', leadId: ev.id, nome: lead.name, etapa: 'q1', detalhe: 'primeiro contato: aguardando a saudação do robô do Kommo' })
@@ -156,14 +164,52 @@ async function tratar(ev: Evento): Promise<void> {
 
 /** Depois da retomada: se a última mensagem é do lead, a Anna responde considerando todo o histórico; senão, a régua da etapa recomeça. */
 async function continuarDepoisDaRetomada(leadId: number): Promise<void> {
+  // antes de falar: o que o lead já respondeu (com a Anna ou com a equipe) e o horário que a equipe ofereceu (Dra., 10/11)
+  const lead = await getLead(leadId)
+  const rec = await recuperarNaRetomada(lead).catch(async e => {
+    await logExec({ tipo: 'erro', leadId, nome: lead.name, detalhe: `retomada: recuperação do histórico falhou (${(e instanceof Error ? e.message : String(e)).slice(0, 160)})` })
+    return null
+  })
   const ultima = (await getHistory(leadId).catch(() => [])).slice(-1)[0]
+  const etapa = (await getState(leadId)).etapa
+  // reunião já marcada (campo "Reunião" no futuro) ou card no Closer: os dados ficam guardados, mas a Anna não
+  // pergunta nada da qualificação; se o lead escreveu, o atendimento normal decide (no Closer ela só cuida da reunião dela)
+  if ((reuniaoDoCard(lead) ?? 0) * 1000 > Date.now() || lead.pipeline_id === PIPELINES.closer) {
+    if (ultima?.dir === 'in') await processLead(leadId, `retomar-${Date.now()}`)
+    return
+  }
+  // o lead aceitou o horário da equipe, mas a conversa seguiu sem a reunião marcada: a equipe confere
+  if (rec?.ofertaAceita && ultima?.dir !== 'in') {
+    await addLeadTask(leadId, 'Anna: na conversa, o lead aceitou o horário que a equipe ofereceu, mas a reunião não está marcada no card. Confirmar com o lead e marcar.', CRM_MAP.tarefa).catch(() => undefined)
+    return
+  }
+  // a etapa andou além da 2ª pergunta pelo que já estava respondido: a próxima pergunta sai agora (a última
+  // mensagem do lead já foi considerada na leitura do histórico)
+  if (rec?.avancou && etapa !== 'q2' && etapa !== 'oferta') return seguirDeOndeParou(leadId)
   if (ultima?.dir === 'in') {
     await processLead(leadId, `retomar-${Date.now()}`)
     return
   }
-  const etapa = (await getState(leadId)).etapa
+  // horário oferecido pela equipe: o follow-up de 1 h já está agendado (não oferece outro horário)
+  if (rec?.oferta) return
+  if (rec?.avancou) return seguirDeOndeParou(leadId)
   const regua = etapa ? reguaDaEtapa(etapa) : null
   if (regua) await iniciarRegua(leadId, regua, Date.now())
+}
+
+/** A próxima pergunta da qualificação, depois de a retomada recuperar o que já tinha sido respondido. */
+async function seguirDeOndeParou(leadId: number): Promise<void> {
+  const dono = crypto.randomUUID()
+  if ((await redis.set(k('lock', leadId), dono, { nx: true, ex: 180 })) !== 'OK') return
+  try {
+    const lead = await getLead(leadId)
+    const { ctx } = await montarCtx(leadId, lead)
+    const base = await baseVigente()
+    const r = await comTextos(textosDoRoteiro(base.textos), () => continuarDeOndeParou(ctx, depsProducao(leadId, lead)))
+    await logExec({ tipo: 'resposta', leadId, nome: lead.name, etapa: (await getState(leadId)).etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160), respostaIA: r.enviado })
+  } finally {
+    await redis.eval(`if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`, [k('lock', leadId)], [dono])
+  }
 }
 
 const NOME_COLUNA: Record<number, string> = { [STATUS.acima15]: 'ACIMA DE 15 MIL', [STATUS.de10a15]: '10 A 15 MIL', [STATUS.desqualificado]: 'Desqualificado' }

@@ -54,6 +54,12 @@ export const ITENS = [
   { id: 'sem_agenda', grupo: 'paradas', titulo: 'Sem horário na agenda', ajuda: 'Google Agenda fora do ar ou sem horário livre nos próximos dias: a equipe confirma o horário.', semPergunta: true },
   { id: 'desistiu', grupo: 'paradas', titulo: 'Lead que não quer continuar', ajuda: 'O card vai para "Não quer continuar".', semPergunta: true },
   { id: 'possui_advogado', grupo: 'paradas', titulo: 'Lead que já tem advogado no caso', ajuda: 'Resposta pronta da Dra. (ética da OAB). Depois dela a equipe assume.', semPergunta: true },
+  { id: 'identidade', grupo: 'roteiro', titulo: '"Com quem eu falo?"', ajuda: 'O lead pergunta com quem está falando (Dra., 10/11). A Anna responde só isso e emenda a pergunta em aberto.', semPergunta: true },
+  { id: 'valores_depois', grupo: 'roteiro', titulo: 'Vai mandar os valores depois (com pergunta)', ajuda: 'O lead disse que envia depois e perguntou algo (Dra., 10/11): a Anna responde, lista as três informações sem cobrar agora e espera. Os follow-ups não saem antes do momento que o lead indicou.', comPergunta: true },
+  { id: 'aguardo_curto', grupo: 'roteiro', titulo: 'Fico aguardando (curto)', ajuda: 'Fecho depois de responder a uma pergunta de quem vai mandar os valores depois (Dra., 10/11).', semPergunta: true },
+  { id: 'q1_so_opcao', grupo: 'roteiro', titulo: 'Mandou os valores antes da opção', ajuda: 'O lead mandou renda e descontos antes de escolher 1, 2 ou 3: a Anna guarda os valores e pede só a opção (Dra., 10/11).' },
+  { id: 'oferta_equipe_follow', grupo: 'agenda', titulo: 'Follow-up do horário oferecido pela equipe', ajuda: 'A equipe ofereceu um horário pelo Kommo e devolveu o atendimento (anna-retomar). 1 h depois da oferta, sem confirmação, sai esta mensagem, uma vez por oferta (Dra., 10/11).', comPergunta: true },
+  { id: 'oferta_equipe_outro', grupo: 'agenda', titulo: 'Horário da equipe indisponível', ajuda: 'O horário oferecido pela equipe já passou do prazo ou foi ocupado: a Anna oferece outro. {quando} é o novo horário.', exige: ['{quando}'], comPergunta: true },
   { id: 'pendente_q1', grupo: 'retomadas', titulo: 'Retomada da 1ª pergunta', ajuda: 'Quando o lead faz uma pergunta no meio do roteiro, a Anna responde e emenda esta pergunta para voltar ao ponto.', comPergunta: true },
   { id: 'pendente_q2', grupo: 'retomadas', titulo: 'Retomada da 2ª pergunta', ajuda: 'Emendada depois de uma resposta livre enquanto faltam os valores de renda.', comPergunta: true },
   { id: 'pendente_limite', grupo: 'retomadas', titulo: 'Retomada da pergunta do cheque especial e do cartão', ajuda: 'Emendada depois de uma resposta livre enquanto a Anna espera essa resposta.', comPergunta: true },
@@ -158,6 +164,8 @@ export function validarTexto(id: string, texto: string): string[] {
     if (instrucao && SO_MENSAGEM.has(v.regra)) continue
     // a confirmação da Dra. pede para ter os documentos em mãos NA reunião: é texto dela, não pedido de envio
     if (id === 'agendado' && v.regra === 'pediu documento') continue
+    // o 😊 da identificação é do texto da Dra. (10/11)
+    if (id === 'identidade' && v.regra === 'emoji') continue
     const porque: Record<string, string> = {
       'travessão': 'tem travessão (use vírgula, ponto ou dois-pontos)',
       'disse que é IA': 'diz que é IA, robô ou assistente virtual',

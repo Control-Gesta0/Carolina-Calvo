@@ -1053,6 +1053,147 @@ async function main() {
     eq('fecha só a conversa aberta presa em outro card do SDR', conversasParaFechar(conversas, 99, new Set([10])).map(t => t.id), [1])
   }
 
+  console.log('\n— Histórico preservado, oferta da equipe e "só o que foi perguntado" (Dra., 10/11)')
+  {
+    const { bateComModelo } = await import('../lib/saudacao')
+    const modelo = 'Olá, {{lead.cf.805158}}!\n\n*Imagine poder respirar financeiramente, com menos descontos comprometendo sua renda todos os meses.*\n\nQual dessas possibilidades faria mais diferença para você hoje?\n\n*Me responda apenas 1, 2 ou 3*, para verificarmos o que pode ser feito no seu caso.\n'
+    eq('saudação entregue com atraso é reconhecida como modelo da Anna (não é a equipe)', [
+      bateComModelo('Olá, Gilse!\n\nImagine poder respirar financeiramente, com menos descontos comprometendo sua renda todos os meses.\n\nQual dessas possibilidades faria mais diferença para você hoje?\n\nMe responda apenas 1, 2 ou 3, para verificarmos o que pode ser feito no seu caso.', modelo),
+      bateComModelo('Oi Gilse, aqui é a Ana da equipe. Consigo para amanhã às 15h30, pode ser?', modelo),
+    ], [true, false])
+
+    const { opcaoNoHistorico, aplicarRecuperacao, etapaPeloQueFoiDito } = await import('../lib/anna/recuperar')
+    const M = (dir: 'in' | 'out', text: string, ts: number, id = `x${ts}`) => ({ id, dir, text, ts })
+    const saud = M('out', 'Olá, Gilse! ... *Me responda apenas 1, 2 ou 3*', 1, 'saudacao:1')
+    eq('opção respondida no histórico (o "3" sem resposta da Gilse)', [
+      opcaoNoHistorico([saud, M('in', '3', 2)]),
+      opcaoNoHistorico([saud, M('in', 'Opção 2', 2)]),
+      opcaoNoHistorico([saud, M('in', 'as duas', 2)]),
+      opcaoNoHistorico([saud, M('in', 'tenho 3 empréstimos', 2)]),
+      opcaoNoHistorico([M('in', '3', 0), saud]),
+    ], [3, 2, 3, null, null])
+    eq('etapa pelo que já foi dito', [etapaPeloQueFoiDito({}), etapaPeloQueFoiDito({ objetivo: 3 }), etapaPeloQueFoiDito({ objetivo: 3, rendaBruta: 1, rendaLiquida: 1, descontoConta: 0 }), etapaPeloQueFoiDito({ objetivo: 3, rendaBruta: 1, rendaLiquida: 1, descontoConta: 0, limite: 'não uso' })], ['q1', 'q2', 'limite', 'q3'])
+
+    // TESTE 1 da Dra.: a equipe assume e devolve; a Anna não pergunta de novo o que o lead já respondeu
+    const agora = A.deBrt(2026, 10, 10, 14, 0)
+    const conversa1 = [saud, M('in', '3', 2), M('in', 'bruta 17.250 líquido 9.800 desconto na conta 2.100', 3), M('out', 'Oi Gilse, aqui é a Carla da equipe, tudo bem?', 4, 'kommo:9')]
+    const rec1 = { opcao: 3 as const, renda_bruta: 17250, renda_liquida: 9800, desconto_conta: 2100, limite: null, oferta_equipe: null, oferta_aceita: false }
+    const ap1 = aplicarRecuperacao({ etapa: 'q1' }, rec1, conversa1, agora)
+    eq('Teste 1: retomada em q1 com opção e valores no histórico → vai direto à pergunta do cheque especial', [ap1.patch.objetivo, ap1.patch.rendaBruta, ap1.patch.etapa, ap1.avancou], [3, 17250, 'limite', true])
+    const ap1b = aplicarRecuperacao({ etapa: 'q2', objetivo: 3, rendaBruta: 20000 }, { ...rec1, renda_bruta: 17250 }, conversa1, agora)
+    eq('o valor que já está no estado/card vale (o recuperado só preenche o que falta)', [ap1b.patch.rendaBruta, ap1b.patch.rendaLiquida], [undefined, 9800])
+
+    // TESTE 2 da Dra.: oferta manual da equipe + retomada → follow-up 1 h depois, sem outro horário
+    const ofertaTs = A.deBrt(2026, 10, 10, 12, 5).getTime()
+    const conversa2 = [...conversa1, M('out', 'Gilse, a Dra. consegue te atender hoje às 15:30, on-line. Pode ser?', ofertaTs, 'kommo:10')]
+    const rec2 = { ...rec1, oferta_equipe: { data: '2026-11-10', hora: '15:30', mensagem: 4 }, oferta_aceita: false }
+    const ap2 = aplicarRecuperacao({ etapa: 'q1' }, rec2, conversa2, agora)
+    eq('Teste 2: oferta da equipe reconhecida → etapa oferta com o horário dela, sem requalificar', [ap2.patch.etapa, ap2.patch.oferta?.chave, ap2.ofertaEquipe?.enviadaEm === ofertaTs, ap2.patch.objetivo], ['oferta', '2026-11-10T15:30', true, 3])
+    eq('oferta que aponta para mensagem que não é da equipe não vale', aplicarRecuperacao({ etapa: 'q1' }, { ...rec2, oferta_equipe: { data: '2026-11-10', hora: '15:30', mensagem: 2 } }, conversa2, agora).ofertaEquipe, undefined)
+    eq('reunião já marcada no card: não é oferta em aberto', aplicarRecuperacao({ etapa: 'q1' }, rec2, conversa2, agora, true).ofertaEquipe, undefined)
+
+    // follow-up da oferta da equipe
+    const oferta = { chave: '2026-11-10T15:30', inicio: A.deBrt(2026, 10, 10, 15, 30).toISOString(), fim: A.deBrt(2026, 10, 10, 16, 0).toISOString(), em: ofertaTs }
+    const fo = async (st: LS, quando: Date, livre = true, conversa = conversa2) => {
+      const { w, deps } = mundo(quando)
+      deps.agenda.livre = async () => livre
+      w.state = st
+      const r = await fluxo.followOfertaEquipe({ ...ctx(w, quando, ''), conversa }, deps, '2026-11-10T15:30')
+      return { r, w }
+    }
+    const base: LS = { etapa: 'oferta', objetivo: 3, rendaBruta: 17250, oferta, ofertaEquipe: { chave: oferta.chave, enviadaEm: ofertaTs } }
+    const f1 = await fo(base, A.deBrt(2026, 10, 10, 13, 5))
+    eq('1 h depois da oferta: o texto da Dra., uma vez', [f1.w.enviados, f1.w.state.ofertaEquipe?.followEnviado, f1.w.eventos], [['Ainda não tive sua confirmação sobre o horário que te enviei. Posso reservar esse horário para a sua reunião com a Dra. Carolina?'], true, []])
+    const f2 = await fo({ ...base, ofertaEquipe: { ...base.ofertaEquipe!, followEnviado: true } }, A.deBrt(2026, 10, 10, 13, 5))
+    eq('não repete o follow-up da mesma oferta', f2.w.enviados, [])
+    const f3 = await fo(base, A.deBrt(2026, 10, 10, 13, 5), false)
+    eq('horário ocupado: oferece outro', [f3.w.enviados[0]?.startsWith('O horário que te enviei não está mais disponível'), f3.w.state.oferta?.chave !== oferta.chave], [true, true])
+    const f4 = await fo(base, A.deBrt(2026, 10, 10, 15, 10))
+    eq('em cima da hora (menos de 30 min): oferece outro', f4.w.enviados[0]?.startsWith('O horário que te enviei não está mais disponível'), true)
+    const f5 = await fo(base, A.deBrt(2026, 10, 10, 13, 5), true, [...conversa2, M('in', 'vou ver com meu marido', ofertaTs + 60_000)])
+    eq('o lead respondeu depois da oferta: o follow-up não sai (o turno trata)', f5.w.enviados, [])
+    // o "sim" do lead marca no Google e no Kommo o horário da equipe
+    {
+      const { w, deps } = mundo(A.deBrt(2026, 10, 10, 13, 10))
+      w.state = { ...base }
+      w.leituras.push(L({ intencao: 'aceita_horario' }))
+      await fluxo.turno(ctx(w, A.deBrt(2026, 10, 10, 13, 10), 'pode sim'), deps)
+      eq('confirmação explícita: marca o horário que a equipe ofereceu', [w.eventos, w.state.etapa, w.state.ofertaEquipe], [['2026-11-10T15:30'], 'agendado', undefined])
+    }
+
+    // 1ª pergunta: valores antes da opção (Gilse 10/11) e opção que ficou no histórico
+    {
+      const { w, deps } = mundo(agora)
+      w.state = { etapa: 'q1' }
+      w.leituras.push(L({ renda_bruta: 17250, renda_liquida: 9800 }))
+      await fluxo.turno({ ...ctx(w, agora, 'bruta 17.250 líquido 9.800'), conversa: [M('out', 'Olá! *Me responda apenas 1, 2 ou 3*', 1), M('in', 'bruta 17.250 líquido 9.800', 2)] }, deps)
+      eq('valores antes da opção: guarda os valores e pede só a opção', [w.state.rendaBruta, w.state.rendaLiquida, w.state.etapa, w.enviados[0]?.startsWith('Obrigada pelas informações!'), w.movido], [17250, 9800, 'q1', true, [STATUS.acima15]])
+      w.leituras.push(L({ opcao: 3 }))
+      await fluxo.turno(ctx(w, agora, '3'), deps)
+      eq('depois a opção: pede só o que falta (sem a 2ª pergunta inteira)', [w.state.objetivo, w.state.etapa, w.enviados[1]], [3, 'q2', 'Obrigada. Falta só quanto o banco desconta da sua conta corrente por mês. Pode me informar?'])
+    }
+    {
+      const { w, deps } = mundo(agora)
+      w.state = { etapa: 'q1' }
+      w.leituras.push(L({ renda_bruta: 17250, renda_liquida: 9800, desconto_conta: 2100 }))
+      await fluxo.turno({ ...ctx(w, agora, 'bruta 17.250 líquido 9.800 desconto 2.100'), conversa: [saud, M('in', '3', 2), M('out', 'Oi', 3, 'kommo:1'), M('in', 'bruta 17.250 líquido 9.800 desconto 2.100', 4)] }, deps)
+      eq('opção que ficou no histórico + valores: vai direto ao cheque especial', [w.state.objetivo, w.state.etapa, w.enviados[0]?.includes('CHEQUE ESPECIAL')], [3, 'limite', true])
+    }
+    {
+      // retomada com tudo recuperado: a próxima pergunta, sem repetir
+      const { w, deps } = mundo(agora)
+      w.state = { etapa: 'limite', objetivo: 3, rendaBruta: 17250, rendaLiquida: 9800, descontoConta: 2100 }
+      await fluxo.continuarDeOndeParou(ctx(w, agora, ''), deps)
+      const { w: w2, deps: d2 } = mundo(agora)
+      w2.state = { etapa: 'q2', objetivo: 3, rendaBruta: 17250 }
+      await fluxo.continuarDeOndeParou(ctx(w2, agora, ''), d2)
+      eq('retomada: pergunta só o que falta', [w.enviados[0]?.includes('CHEQUE ESPECIAL'), w2.enviados[0]], [true, 'Obrigada pelas informações! Pode me passar o valor líquido e quanto o banco desconta da sua conta corrente?'])
+    }
+
+    // card 29181780: "Envio mais tarde." + "Com quem falo?"
+    const ter10 = A.deBrt(2026, 10, 10, 10, 0)
+    {
+      const { w, deps } = mundo(ter10)
+      const bases: number[] = []
+      deps.iniciarRegua = async (_r, b) => { bases.push(b) }
+      w.state = { etapa: 'q2', objetivo: 3 }
+      w.leituras.push(L({ intencao: 'pergunta', resposta: 'Você está falando com a Anna. A primeira reunião é on-line, gratuita e dura 30 minutos.' }))
+      await fluxo.turno({ ...ctx(w, ter10, 'Envio mais tarde.\nCom quem falo?'), conversa: [M('in', 'Envio mais tarde.', 1), M('in', 'Com quem falo?', 2)] }, deps)
+      eq('TESTE OBRIGATÓRIO "Envio mais tarde." + "Com quem falo?": o texto da Dra.', w.enviados, ['Você está falando com a Anna, da equipe da Dra. Carolina Calvo!\n\n*Para darmos continuidade à avaliação do seu caso, preciso de três informações:*\n\n1️⃣ Sua renda bruta mensal, antes dos descontos.\n2️⃣ Sua renda líquida mensal, depois dos descontos do contracheque.\n3️⃣ Quanto o banco desconta diretamente da sua conta corrente quando o salário é depositado.\n\n*Assim que conseguir reunir esses valores, pode me encaminhar por aqui, tudo bem?*'])
+      eq('o 1º follow-up não sai antes de amanhã às 10h', bases[0] + 2 * 3600_000, A.deBrt(2026, 10, 11, 10, 0).getTime())
+    }
+    {
+      const { w, deps } = mundo(ter10)
+      w.state = { etapa: 'q1' }
+      w.leituras.push(L({ intencao: 'pergunta' }))
+      await fluxo.turno(ctx(w, ter10, 'Com quem falo?'), deps)
+      eq('"Com quem falo?" sozinho: só a identificação e a pergunta em aberto', w.enviados, ['Você está falando com a Anna, da equipe da Dra. Carolina Calvo! 😊\n\nQual das opções você quer saber: 1, 2 ou 3?'])
+    }
+    {
+      const { w, deps } = mundo(ter10)
+      const bases: number[] = []
+      deps.iniciarRegua = async (_r, b) => { bases.push(b) }
+      w.state = { etapa: 'q2', objetivo: 3 }
+      w.leituras.push(L({ intencao: 'pergunta', resposta: 'A análise inicial é gratuita.' }))
+      await fluxo.turno(ctx(w, ter10, 'Amanhã te mando. A análise é paga?'), deps)
+      eq('vai mandar depois + pergunta: responde só ela e aguarda, sem cobrar os valores', w.enviados, ['A análise inicial é gratuita.\n\nSem problemas! Fico aguardando seu retorno. Assim que conseguir reunir as informações, pode me encaminhar por aqui.'])
+      eq('"amanhã": follow-up só amanhã às 14h', bases[0] + 2 * 3600_000, A.deBrt(2026, 10, 11, 14, 0).getTime())
+    }
+    const { esperaDoLead, listaDoQueFalta } = fluxo
+    eq('quando o follow-up pode cobrar', [
+      esperaDoLead('quando chegar em casa envio', ter10) === A.deBrt(2026, 10, 11, 10, 0).getTime(),
+      esperaDoLead('na sexta te passo', ter10) === A.deBrt(2026, 10, 13, 14, 0).getTime(),
+      esperaDoLead('semana que vem', ter10) === A.deBrt(2026, 10, 16, 14, 0).getTime(),
+    ], [true, true, true])
+    eq('lista só o que falta', listaDoQueFalta({ rendaBruta: 1 }).split('\n').filter(l => /️⃣/.test(l)).length, 2)
+    const { semInfoNaoPedida } = await import('../lib/anna/interprete')
+    eq('resposta livre: sai a informação da reunião que não foi pedida', [
+      semInfoNaoPedida('Você está falando com a Anna. A primeira reunião é on-line, pelo Google Meet, e é gratuita.', 'Com quem falo?'),
+      semInfoNaoPedida('Não! Nossa primeira reunião on-line é gratuita. Ela dura cerca de 30 minutos.', 'É paga?'),
+      semInfoNaoPedida('A reunião on-line dura aproximadamente 30 minutos.', 'quanto tempo dura?'),
+    ], ['Você está falando com a Anna.', 'Não! Nossa primeira reunião on-line é gratuita.', 'A reunião on-line dura aproximadamente 30 minutos.'])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')

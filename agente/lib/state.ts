@@ -52,6 +52,8 @@ export interface LeadState {
   remarcacao?: boolean
   /** em AÇÃO SDR (Dra., 09/11): faixa para voltar, tarefa a concluir na retomada */
   acaoSdr?: { faixa: number; tarefaId?: number; providencia: string; em: string }
+  /** horário oferecido pela EQUIPE (reconhecido na retomada): o follow-up de 1 h sai uma vez por oferta (Dra., 10/11) */
+  ofertaEquipe?: { chave: string; enviadaEm: number; followEnviado?: boolean }
   /** valores lidos de um documento, esperando o lead confirmar a renda bruta (Dra., 09/11) */
   docPendente?: { rendaBruta?: number; rendaLiquida?: number }
 }

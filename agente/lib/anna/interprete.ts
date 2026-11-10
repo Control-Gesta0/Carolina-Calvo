@@ -49,7 +49,12 @@ export interface Entrada {
 /** A pergunta em aberto em cada etapa ('' = nenhuma). Vai para o lead: o código emenda depois da resposta livre. */
 export const PENDENTE: Record<Etapa, (s: LeadState, quando?: string) => string> = {
   q1: () => texto('pendente_q1'),
-  q2: () => texto('pendente_q2'),
+  // só o que falta (Dra., 10/11: nunca pedir de novo um valor já informado)
+  q2: s => {
+    const f = [s.rendaBruta == null ? 'a sua renda bruta' : '', s.rendaLiquida == null ? 'o valor líquido' : '', s.descontoConta == null ? 'quanto o banco desconta da sua conta corrente' : ''].filter(Boolean)
+    if (f.length === 3 || !f.length) return texto('pendente_q2')
+    return `Pode me passar ${f.length === 1 ? f[0] : `${f[0]} e ${f[1]}`}?`
+  },
   limite: () => texto('pendente_limite'),
   q3: () => texto('pendente_q3'),
   analise: () => '',
@@ -109,6 +114,34 @@ export function dataDoTexto(l: Leitura, etapa: Etapa, textoLead: string, agora: 
   else if (/\bhoje\b[^.?!]{0,20}\bn[aã]o\b|\bn[aã]o\b[^.?!]{0,20}\bhoje\b/.test(t)) dia = proximoDiaUtil(diaIso(agora))
   else if (/\bhoje\b/.test(t)) dia = diaIso(agora)
   return dia ? { ...l, data_preferida: dia } : l
+}
+
+/**
+ * "Responda só o que foi perguntado" (Dra., 10/11, card 29181780): tira da resposta livre as frases com fatos da
+ * reunião (gratuita, duração, Google Meet, on-line) que o lead não perguntou. Se não sobrar nada, devolve null. Puro.
+ */
+const TEMAS_REUNIAO: Array<[RegExp, RegExp]> = [
+  [/gratuit|sem custo|n[aã]o (tem|h[aá]) custo|n[aã]o (é|e) paga|n[aã]o cobra/i, /gratuit|pag[ao]|pagar|cust|cobr|valor|pre[cç]o|honor[aá]r|de gra[cç]a|free/i],
+  [/\b\d+ ?minutos|dura(r|ção|cao)?\b|aproximadamente meia hora|meia hora/i, /tempo|dura|demora|minutos|hora|r[aá]pid/i],
+  [/google meet|\bmeet\b|on-?line|por v[ií]deo|videochamada|chamada de v[ií]deo/i, /meet|on-?line|v[ií]deo|presencial|pessoalmente|escrit[oó]rio|como (é|e|funciona|vai ser|ser[aá]|fa[cç]o|entro)|onde|link|liga[cç][aã]o|telefone|entrar|acess|participar|celular|computador|aplicativo|\bapp\b/i],
+]
+/** "é paga?", "tem custo?", "gratuita ou paga?": só aí o "Não!" do texto da Dra. responde à pergunta. */
+const RX_PERGUNTA_SIM_NAO_PAGO = /(?:^|\s)(é|e|seria|vai ser|ser[aá])\s+([a-zà-ú]+\s+)?(pag[ao]|cobrad[ao])|pag[ao]\s*\?|tem (algum )?(custo|valor|cobran[cç]a)|gratuit[ao] ou pag[ao]|pag[ao] ou gratuit[ao]|(é|e) (de )?gr[aá]tis|(é|e) gratuit[ao]|\bcobra(m)? (algo|alguma coisa|pela|a consulta|a reuni)/i
+export function semInfoNaoPedida(resposta: string, textoLead: string): string | null {
+  // "Quanto custa a consulta?" → "Não!" não responde à pergunta: sai, e a resposta começa pelo fato
+  if (/^\s*n[aã]o!\s+/i.test(resposta) && !RX_PERGUNTA_SIM_NAO_PAGO.test(textoLead)) {
+    const r = resposta.replace(/^\s*n[aã]o!\s+/i, '')
+    resposta = r.charAt(0).toUpperCase() + r.slice(1)
+  }
+  // "Dra." e "Sr." não terminam a frase
+  const frases = (resposta.replace(/\b(Dra?|Sra?|Srta)\./g, '$1\u0000').match(/[^.!?]+[.!?]*\s*/g) || [resposta]).map(f => f.replace(/\u0000/g, '.'))
+  // a frase sai só quando TODOS os fatos da reunião nela são assunto que o lead não perguntou
+  const fica = frases.filter(f => {
+    const fatos = TEMAS_REUNIAO.filter(([fato]) => fato.test(f))
+    return !fatos.length || fatos.some(([, pedido]) => pedido.test(textoLead))
+  })
+  const r = fica.join('').trim()
+  return r || null
 }
 
 /** Mensagem final de uma resposta livre: a resposta do modelo + a pergunta pendente (do código). */
@@ -228,7 +261,8 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
         v = [...violacoes(texto), ...comPergunta(texto)]
         if (v.length || !texto) { guard.push('fallback: resposta descartada'); texto = '' }
       }
-      leitura.resposta = texto || null
+      leitura.resposta = texto ? semInfoNaoPedida(texto, textoLead) : null
+      if (texto && !leitura.resposta) guard.push('resposta só com fatos da reunião que o lead não perguntou: descartada')
     }
     return { leitura, usage, guard }
   }
