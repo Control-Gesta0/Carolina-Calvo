@@ -136,6 +136,7 @@ async function executar(job: Job): Promise<string> {
       const { ctx } = await montarCtx(leadId, lead)
       const base = await baseVigente()
       const r = await comTextos(textosDoRoteiro(base.textos), () => followOfertaEquipe(ctx, depsProducao(leadId, lead, tel), job.token))
+      if (r.reagendarPara) await agendarJob({ tipo: 'oferta-equipe', leadId, quando: r.reagendarPara, token: job.token })
       const depois = await getState(leadId)
       if (r.enviado) await addLeadNote(leadId, `Anna: follow-up do horário oferecido pela equipe. ${r.acao}.`)
       await logExec({ tipo: r.enviado ? 'followup' : 'job', leadId, nome: lead.name, etapa: depois.etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160), respostaIA: r.enviado })

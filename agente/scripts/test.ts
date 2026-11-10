@@ -1112,6 +1112,12 @@ async function main() {
     eq('em cima da hora (menos de 30 min): oferece outro', f4.w.enviados[0]?.startsWith('O horário que te enviei não está mais disponível'), true)
     const f5 = await fo(base, A.deBrt(2026, 10, 10, 13, 5), true, [...conversa2, M('in', 'vou ver com meu marido', ofertaTs + 60_000)])
     eq('o lead respondeu depois da oferta: o follow-up não sai (o turno trata)', f5.w.enviados, [])
+    // Dra., 10/11: o lead disse que vê a disponibilidade e responde depois → o follow-up espera esse momento
+    const vouVer = M('in', 'vou ver minha disponibilidade e te respondo amanhã', ofertaTs + 10 * 60_000)
+    const f6 = await fo(base, A.deBrt(2026, 10, 10, 13, 5), true, [...conversa2, vouVer, M('out', 'Combinado, aguardo!', ofertaTs + 11 * 60_000, 'kommo:11')])
+    eq('"te respondo amanhã" depois da oferta: o follow-up não sai agora, volta amanhã às 14h', [f6.w.enviados, f6.r.reagendarPara === A.deBrt(2026, 10, 11, 14, 0).getTime(), f6.w.state.ofertaEquipe?.followEnviado], [[], true, undefined])
+    const f7 = await fo(base, A.deBrt(2026, 10, 11, 14, 0), true, [...conversa2, vouVer, M('out', 'Combinado, aguardo!', ofertaTs + 11 * 60_000, 'kommo:11')])
+    eq('no momento indicado, sem resposta: segue o previsto (horário vencido → oferece outro)', f7.w.enviados[0]?.startsWith('O horário que te enviei não está mais disponível'), true)
     // o "sim" do lead marca no Google e no Kommo o horário da equipe
     {
       const { w, deps } = mundo(A.deBrt(2026, 10, 10, 13, 10))

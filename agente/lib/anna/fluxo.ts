@@ -27,6 +27,8 @@ export const RX_GENERICO = /^\s*(oi+|ol[aá]|opa|e a[ií]|sim|ok(ay)?|certo|clar
 export const vaiMandarDepois = (texto: string) => RX_DEPOIS.test(texto || '') && !/\?/.test(texto || '')
 /** O lead disse que manda depois, mesmo junto de uma pergunta ("Envio mais tarde. Com quem falo?"). Puro. */
 export const disseQueMandaDepois = (texto: string) => RX_DEPOIS.test(texto || '')
+/** O lead vai ver a disponibilidade ou responder depois ("vou ver minha agenda", "te confirmo amanhã"). Puro. */
+export const RX_RESPONDE_DEPOIS = new RegExp(`${RX_DEPOIS.source}|disponibilidade|minha agenda|meu hor[aá]rio|te (aviso|confirmo|falo|retorno|respondo)|(vou|preciso|deixa eu) (ver|verificar|consultar|olhar|confirmar|checar)`, 'i')
 /** "Com quem eu falo?", "quem é você?" (Dra., 10/11). Puro. */
 export const RX_IDENTIDADE = /com quem (eu )?(falo|t[oô] falando|estou falando|to falando)|quem (é|e) (voc[eê]|vc)\b|quem (fala|est[aá] falando)|qual (é |e )?(o )?seu nome/i
 
@@ -158,7 +160,7 @@ export interface Deps {
   encaminharAcaoSdr?(providencia: string, resumo: string): Promise<boolean>
 }
 
-export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string }
+export interface Resultado { acao: string; enviado?: string; leitura?: Leitura; /** na passagem: o resumo que vai para a tarefa da equipe */ resumo?: string; /** job que volta mais tarde (o lead disse quando responde) */ reagendarPara?: number }
 
 /** encaminhamento → oferta: 15 minutos (Dra., 05/11; antes 30) */
 const PAUSA_ANALISE_MS = 15 * 60_000
@@ -508,8 +510,16 @@ export async function followOfertaEquipe(ctx: Ctx, deps: Deps, chave: string): P
   const s = ctx.state
   if (s.etapa !== 'oferta' || s.oferta?.chave !== chave || s.ofertaEquipe?.chave !== chave) return { acao: 'follow da oferta da equipe cancelado (a oferta mudou)' }
   if (s.ofertaEquipe.followEnviado) return { acao: 'follow da oferta da equipe já enviado' }
+  // a última manifestação do lead depois da oferta vale (Dra., 10/11): "vou ver minha disponibilidade", "te respondo
+  // amanhã" → o follow-up espera o momento que ele indicou; sem resposta nem compromisso de retorno, segue o previsto
+  const depoisDaOferta = ctx.conversa.filter(m => m.dir === 'in' && m.ts > s.ofertaEquipe!.enviadaEm)
+  const vaiResponder = [...depoisDaOferta].reverse().find(m => RX_RESPONDE_DEPOIS.test(m.text))
+  if (vaiResponder) {
+    const espera = esperaDoLead(vaiResponder.text, new Date(vaiResponder.ts))
+    if (ctx.agora.getTime() < espera) return { acao: `follow da oferta da equipe adiado: o lead disse que responde depois ("${vaiResponder.text.slice(0, 60)}")`, reagendarPara: espera }
+  }
   const ultima = ctx.conversa[ctx.conversa.length - 1]
-  if (ultima?.dir === 'in' && ultima.ts > s.ofertaEquipe.enviadaEm) return { acao: 'follow da oferta da equipe não sai: o lead respondeu depois da oferta' }
+  if (ultima?.dir === 'in' && ultima.ts > s.ofertaEquipe.enviadaEm && ultima !== vaiResponder) return { acao: 'follow da oferta da equipe não sai: o lead respondeu depois da oferta' }
   await deps.patch({ ofertaEquipe: { ...s.ofertaEquipe, followEnviado: true } })
   const slot = slotDaOferta(s.oferta)
   const noPrazo = slot.inicio.getTime() >= ctx.agora.getTime() + AGENDA.antecedenciaConfirmacaoMin * 60_000
