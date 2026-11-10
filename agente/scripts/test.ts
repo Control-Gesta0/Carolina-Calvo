@@ -848,6 +848,9 @@ async function main() {
     eq('pedidos claros (exemplos da Dra.) → claro', ['Quero cancelar minha reunião.', 'Pode desmarcar.', 'Não vou participar.', 'Não vou poder participar da reunião de amanhã', 'Pode cancelar, não quero mais a reunião'].map(C.classificarCancelamento), ['claro', 'claro', 'claro', 'claro', 'claro'])
     eq('ambíguos (exemplos da Dra.) → ambíguo, não cancela', ['Acho que não vou conseguir.', 'Talvez precise desmarcar.', 'E se eu não puder comparecer?', 'Será que dá para cancelar?'].map(C.classificarCancelamento), ['ambiguo', 'ambiguo', 'ambiguo', 'ambiguo'])
     eq('não é sobre cancelar a reunião → nada', ['Quero cancelar o empréstimo consignado', 'Obrigada, até amanhã', 'Pode confirmar o link?', 'Vou participar sim'].map(C.classificarCancelamento), [null, null, null, null])
+    // caso Gilse (10/11): frases comuns de quem não vai comparecer também são pedido claro
+    eq('"não vou conseguir", "não posso hoje", "vou precisar remarcar" → claro', ['Não vou conseguir', 'Dra, infelizmente não vou poder hoje', 'Não posso participar hoje', 'Não vai dar pra mim hoje', 'Vou precisar remarcar', 'Estou no banco e não vou conseguir participar', 'tive uma emergência, não posso hoje', 'Infelizmente não conseguirei'].map(C.classificarCancelamento), Array(8).fill('claro'))
+    eq('dívida, link e confirmação não cancelam', ['não vou conseguir pagar o empréstimo', 'não consigo mais pagar', 'não posso mais com esses descontos', 'não consigo abrir o link', 'Confirmado, hoje às 15h estarei lá', 'o banco não desconta nada'].map(C.classificarCancelamento), Array(6).fill(null))
   }
 
   console.log('\n— Reunião marcada pela equipe no Kommo → agenda Google (09/11)')

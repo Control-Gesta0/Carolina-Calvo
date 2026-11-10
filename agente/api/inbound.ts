@@ -13,7 +13,7 @@ import { mediaKind, mediaToText } from '../lib/media'
 import { isResetCommand, resetLead } from '../lib/reset'
 import { sendReply } from '../lib/transport'
 import { respostaEmOutroCard, whatsappDiretoConfigurado } from '../lib/whatsapp'
-import { posReuniaoVale, respostaPosReuniao } from '../lib/pos-reuniao'
+import { posReuniaoVale, respostaPosReuniao, reuniaoDoCard } from '../lib/pos-reuniao'
 import { PIPELINES } from '../lib/crm-map'
 import { confirmarSaudacao, ehModeloDaAnna, jaNoHistorico } from '../lib/saudacao'
 import { getState } from '../lib/state'
@@ -116,6 +116,15 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         await sendReply(m.leadId, '🔄 Teste reiniciado. Mande a primeira mensagem como se fosse um lead novo.')
         await logExec({ tipo: 'reset', leadId: m.leadId, detalhe: 'reset de teste' })
         continue
+      }
+      // áudio do lead com reunião marcada (a Anna pode estar pausada e não transcrever): transcreve para ver se é
+      // cancelamento (Dra., 10/11, caso Gilse: cancelou 30 min antes e o lembrete saiu mesmo assim)
+      if (!outgoing && !text && mediaKind(m.attachType) === 'audio') {
+        const l = await getLead(m.leadId).catch(() => null)
+        if (l && (reuniaoDoCard(l) ?? 0) * 1000 > Date.now()) {
+          const ouvido = await mediaToText('audio', m.attachLink, '').catch(() => '')
+          if (ouvido && classificarCancelamento(ouvido)) await cancelamentoComEquipe(l, ouvido, m.id).catch(e => logExec({ tipo: 'erro', leadId: m.leadId, detalhe: `cancelamento com a equipe (áudio): ${(e instanceof Error ? e.message : String(e)).slice(0, 200)}` }))
+        }
       }
       if (!outgoing && text) {
         await guardarUltimaMensagem(m.leadId, text)

@@ -22,18 +22,34 @@ import { pausado } from './pausa'
  * dela, sem pausa), quem trata é o fluxo dela, com as mensagens da Dra.
  */
 
-/** assunto que não é a reunião: "cancelar o empréstimo", "desmarcar o débito" */
-const RX_OUTRO_OBJETO = /empr[eé]stimo|consignad|cart[aã]o|desconto|contrato|\bconta\b|d[ií]vida|banco|d[eé]bito|parcela|seguro|plano/i
-const RX_CLARO = /\b(cancel(ar|a|e|o|em)|desmarc(ar|a|e|o|em))\b|n[aã]o vou (mais )?(participar|comparecer|poder (participar|comparecer|ir|entrar)|conseguir (participar|comparecer|ir|entrar))|n[aã]o (poderei|conseguirei|irei) (participar|comparecer|ir)|n[aã]o quero mais (a |essa )?reuni[aã]o/i
+/** cancelar/desmarcar OUTRA coisa: "cancelar o empréstimo", "desmarcar o débito" */
+const RX_OUTRO_OBJETO = /(cancel|desmarc|suspend)\w*\s+(\S+\s+){0,3}(empr[eé]stimo|consignad|cart[aã]o|desconto|contrato|conta\b|d[ií]vida|d[eé]bito|parcela|seguro|plano)/i
+const RX_CLARO = /\b(cancel(ar|a|e|o|em)|desmarc(ar|a|e|o|em)|remarc(ar|a|o|em))\b|n[aã]o vou (mais )?(participar|comparecer)|n[aã]o quero mais (a |essa )?reuni[aã]o/i
+/** "não vou conseguir", "não posso hoje", "não vai dar pra mim": vale só quando é sobre ir à reunião (não "não consigo pagar") */
+const RX_NAO_CONSIGO = /n[aã]o (?:vou (?:mais )?(?:poder|conseguir)|irei|poderei|conseguirei|posso|consigo|vai (?:dar|rolar))((?:\s+[a-zà-ú]+){0,2})/gi
+const DEPOIS_OK = /^(participar|comparecer|ir|entrar|estar|chegar|hoje|amanh[aã]|nesse|neste|no|na|pra|para|mais tarde|de)$/
+const DEPOIS_NAO = /^(pagar|quitar|arcar|manter|aguentar|continuar|esperar|viver|com|mais|descont\w*|empr[eé]stimo|parcela\w*|d[ií]vida\w*|pagamento|abrir|acessar|usar|ver|ouvir)$/
+function naoVaiComparecer(t: string): boolean {
+  for (const m of t.matchAll(RX_NAO_CONSIGO)) {
+    const [p1 = '', p2 = ''] = m[1].trim().toLowerCase().split(/\s+/)
+    if (p1 && !DEPOIS_OK.test(p1)) continue
+    if (DEPOIS_NAO.test(p2)) continue
+    return true
+  }
+  return false
+}
 const RX_DUVIDA = /\?|\bacho\b|talvez|pode ser que|n[aã]o sei se|ser[aá] que|\be se\b|\bse eu\b|\bse n[aã]o\b|\bprovavelmente\b|\bacredito\b/i
-const RX_AMBIGUO = /acho que n[aã]o (vou|consigo|vai dar)|talvez (eu )?(precise|tenha que|n[aã]o)|e se eu n[aã]o (puder|conseguir)|n[aã]o sei se (vou|consigo|d[aá])|pode ser que (eu )?n[aã]o|ser[aá] que (d[aá]|consigo)|(cancelar|desmarcar)/i
+const RX_AMBIGUO = /acho que n[aã]o (vou|consigo|vai dar)|talvez (eu )?(precise|tenha que|n[aã]o)|e se eu n[aã]o (puder|conseguir)|n[aã]o sei se (vou|consigo|d[aá])|pode ser que (eu )?n[aã]o|ser[aá] que (d[aá]|consigo)|imprevisto|emerg[eê]ncia|(cancelar|desmarcar|remarcar)/i
+/** dificuldade técnica para entrar ("não consigo abrir o link") não é cancelamento */
+const RX_TECNICO = /n[aã]o (consigo|estou conseguindo|t[oô] conseguindo|posso) (entrar no|acessar|abrir|usar|ouvir|ver)|\blink\b.*n[aã]o (abre|funciona|carrega)/i
 
 /** Puro: a mensagem do cliente pede o cancelamento? 'claro' | 'ambiguo' | null (não é sobre cancelar a reunião). */
 export function classificarCancelamento(texto: string): 'claro' | 'ambiguo' | null {
   const t = (texto || '').trim()
-  if (!t || RX_OUTRO_OBJETO.test(t)) return null
-  if (RX_CLARO.test(t) && !RX_DUVIDA.test(t)) return 'claro'
-  if (RX_AMBIGUO.test(t) || RX_CLARO.test(t)) return 'ambiguo'
+  if (!t || RX_OUTRO_OBJETO.test(t) || RX_TECNICO.test(t)) return null
+  const claro = RX_CLARO.test(t) || naoVaiComparecer(t)
+  if (claro && !RX_DUVIDA.test(t)) return 'claro'
+  if (RX_AMBIGUO.test(t) || claro) return 'ambiguo'
   return null
 }
 
