@@ -1189,6 +1189,9 @@ async function main() {
       eq('"amanhã": follow-up só amanhã às 14h', bases[0] + 2 * 3600_000, A.deBrt(2026, 10, 11, 14, 0).getTime())
     }
     const { esperaDoLead, listaDoQueFalta } = fluxo
+    eq('"Vou organizar a documentação" = manda depois (11/11)', [fluxo.vaiMandarDepois('Vou organizar a documentação'), fluxo.vaiMandarDepois('preciso separar os contracheques')], [true, true])
+    const { ehPerguntaRobo: robo } = await import('../lib/anna/interprete')
+    eq('mensagem automática de outra empresa encaminhada não é "é robô?" (11/11)', [robo('*Sua visita não foi realizada*\n\nConta pra gente qual foi o motivo?\n\n*[📲 Mensagem automática do QuintoAndar]*\nMinha renda bruta : 13.800'), robo('isso é mensagem automática?')], [false, true])
     eq('quando o follow-up pode cobrar', [
       esperaDoLead('quando chegar em casa envio', ter10) === A.deBrt(2026, 10, 11, 10, 0).getTime(),
       esperaDoLead('na sexta te passo', ter10) === A.deBrt(2026, 10, 13, 14, 0).getTime(),

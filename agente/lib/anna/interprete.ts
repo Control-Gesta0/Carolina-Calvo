@@ -272,4 +272,7 @@ export function createInterprete(opts: { apiKey: string; model: string; prompt?:
 
 /** "É robô?" pego em código, antes do modelo (a Anna nunca nega nem confirma). */
 export const PERGUNTA_ROBO = /(rob[oô]|chat ?bot|\bbot\b|intelig[eê]ncia artificial|(?:^|\s)(é|eh|e) (uma )?i\.?a\b|mensage(m|ns) (autom[aá]tica|gravada)s?|resposta(s)? autom[aá]tica|falando com (uma )?(m[aá]quina|pessoa|algu[eé]m de verdade|humano)|pessoa (de verdade|real))/i
-export const ehPerguntaRobo = (t: string) => PERGUNTA_ROBO.test(t) && /\?|(?:^|\s)(é|eh|vc|voc[eê]|sou|t[oô] falando|estou falando)(?=[\s?,.!]|$)/i.test(t)
+/** mensagem de outra empresa que o lead encaminhou ("[📲 Mensagem automática do QuintoAndar]") não é pergunta dele (10/11) */
+const semEncaminhada = (t: string) => t.replace(/\[[^\]\n]*mensage(m|ns) autom[aá]tica[^\]\n]*\]/gi, '')
+export const ehPerguntaRobo = (texto: string) => { const t = semEncaminhada(texto); return ehPerguntaRoboTexto(t) }
+const ehPerguntaRoboTexto = (t: string) => PERGUNTA_ROBO.test(t) && /\?|(?:^|\s)(é|eh|vc|voc[eê]|sou|t[oô] falando|estou falando)(?=[\s?,.!]|$)/i.test(t)
