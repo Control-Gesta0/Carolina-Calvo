@@ -80,6 +80,8 @@ export async function executarFu(
     encerrar(pipelineId: number, statusId: number): Promise<void>
     /** depois do 1º follow-up da qualificação: o card sai de Contato inicial para AGUARDANDO QUALIFICAÇÃO */
     aposPrimeiroFollow?(): Promise<void>
+    /** depois do 2º follow-up da qualificação: true = o card foi desqualificado e a régua acaba (Dra., 11/11) */
+    aposSegundoFollow?(): Promise<boolean>
   },
 ): Promise<string> {
   const fu = await getFu(job.leadId)
@@ -104,6 +106,10 @@ export async function executarFu(
   const comoSaiu = especial ? await acoes.enviarTexto(especial, modelo, 'Anna: lead recorrente; no lugar do 1º follow-up saiu a mensagem para quem já procurou o escritório antes (Dra., 06/11).')
     : etapa.texto_livre ? await acoes.enviarTexto(etapa.texto_livre, modelo) : (await acoes.enviar(modelo), 'modelo')
   if (fu.regua === 'qualificacao' && idx === 0 && acoes.aposPrimeiroFollow) await acoes.aposPrimeiroFollow().catch(() => undefined)
+  if (fu.regua === 'qualificacao' && idx === 1 && acoes.aposSegundoFollow && (await acoes.aposSegundoFollow().catch(() => false))) {
+    await cancelarRegua(job.leadId)
+    return `régua ${fu.regua}: enviado ${etapa.nome} (${CRM_MAP.modelos[modelo].nome}); card desqualificado (formulário até R$ 10 mil, sem resposta) e follow-ups restantes cancelados`
+  }
   const agora = Date.now()
   const prox = idx + 1
   if (cfg.etapas[prox]) {

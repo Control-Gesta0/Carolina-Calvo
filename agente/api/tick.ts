@@ -9,7 +9,7 @@ import { baseVigente } from '../lib/base'
 import { textosDoRoteiro } from '../lib/base-core'
 import { depsProducao, montarCtx, primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
-import { colunaDoPrimeiroFollow, CRM_MAP, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
+import { colunaDoPrimeiroFollow, CRM_MAP, desqualificaNoSegundoFollow, MOTIVO_DESQUALIFICADO, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
 import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { varrerCloser } from '../lib/closer'
@@ -197,6 +197,8 @@ async function executar(job: Job): Promise<string> {
       if (await pausado(leadId)) return 'pausada: a equipe está atendendo'
       const b = bloqueio(lead)
       if (b) return b
+      // card em DESQUALIFICADO (pelo 2º follow-up, pela renda ou à mão): os follow-ups de qualificação param (Dra., 11/11)
+      if (regua === 'qualificacao' && lead.pipeline_id === PIPELINES.sdr && lead.status_id === STATUS.desqualificado) return 'card em DESQUALIFICADO'
       const etapa = (await getState(leadId)).etapa
       const esperadas = regua === 'qualificacao' ? ['q1', 'q2', 'limite', 'q3'] : ['oferta', 'preferencia']
       return etapa && esperadas.includes(etapa) ? null : `etapa atual ${etapa || '(nenhuma)'}`
@@ -247,6 +249,17 @@ async function executar(job: Job): Promise<string> {
       await addLeadNote(leadId, destino === STATUS.aguardandoQualificacao
         ? 'Anna: o lead recebeu o 1º follow-up sem responder. Card movido para AGUARDANDO QUALIFICAÇÃO.'
         : `Anna: o lead recebeu o 1º follow-up sem responder. Pela faixa do formulário, card movido para ${destino === STATUS.acima15 ? 'ACIMA DE 15 MIL' : '10 A 15 MIL'}. A renda confirmada na conversa continua valendo para a coluna final.`)
+    },
+    async aposSegundoFollow() {
+      // Dra., 11/11: formulário até R$ 10 mil, sem nenhuma resposta até o 2º follow-up → DESQUALIFICADO na hora
+      const lead = await getLead(leadId)
+      const st = await getState(leadId)
+      const respondeu = (await getHistory(leadId)).some(m => m.dir === 'in' && m.ts >= (st.inicioEm ?? 0))
+      const faixa = String(fieldValue(lead, CRM_MAP.campos.formSalario) || '')
+      if (!desqualificaNoSegundoFollow({ faixa, pipelineId: lead.pipeline_id, statusId: lead.status_id, rendaConfirmada: st.rendaBruta != null, respondeu })) return false
+      await updateLeadStatus(leadId, STATUS.desqualificado, PIPELINES.sdr)
+      await addLeadNote(leadId, `Anna: ${MOTIVO_DESQUALIFICADO.semResposta} Faixa do formulário: "${faixa}" (não é renda confirmada). Follow-ups restantes cancelados. Se o lead responder, a Anna retoma a qualificação e a renda confirmada decide a coluna.`)
+      return true
     },
     async encerrar(pipelineId, statusId) {
       const lead = await getLead(leadId)

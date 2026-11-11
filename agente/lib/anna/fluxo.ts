@@ -1,4 +1,4 @@
-import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from '../crm-map'
+import { colunaPorRenda, CRM_MAP, MOTIVO_DESQUALIFICADO, PIPELINES, STATUS } from '../crm-map'
 import type { Regua } from '../followup'
 import type { ChatMsg } from '../history'
 import type { Etapa, LeadState, Oferta } from '../state'
@@ -532,6 +532,13 @@ export async function followOfertaEquipe(ctx: Ctx, deps: Deps, chave: string): P
   return { ...r, acao: `oferta da equipe (${chave}) não dá mais (${noPrazo ? 'agenda ocupada' : 'fora do prazo'}): ${r.acao}` }
 }
 
+/** Coluna pela renda CONFIRMADA na conversa; abaixo de 10 mil, com o motivo da desqualificação no card (Dra., 11/11). */
+async function moverPelaRenda(deps: Deps, renda: number): Promise<void> {
+  const coluna = colunaPorRenda(renda)
+  await deps.mover(coluna, PIPELINES.sdr)
+  if (coluna === STATUS.desqualificado) await deps.nota(`Anna: ${MOTIVO_DESQUALIFICADO.renda} Renda bruta confirmada na conversa: ${brl(renda)}.`)
+}
+
 /** Um turno do lead. */
 export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   const s = ctx.state
@@ -706,7 +713,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
     if (disse.descontoConta != null && s.descontoConta == null) { patch.descontoConta = disse.descontoConta; campos[CRM_MAP.campos.descontoConta] = disse.descontoConta }
     const novo = { ...s, ...patch }
     if (Object.keys(campos).length) await deps.salvarCampos(campos)
-    if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
+    if (patch.rendaBruta != null) await moverPelaRenda(deps, patch.rendaBruta)
     if (Object.keys(patch).length) await deps.patch(patch)
 
     const faltando = [
@@ -763,7 +770,7 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
         if (leitura.renda_liquida != null && s.rendaLiquida == null) { patch.rendaLiquida = leitura.renda_liquida; campos[CRM_MAP.campos.rendaLiquida] = leitura.renda_liquida }
         if (leitura.desconto_conta != null && s.descontoConta == null) { patch.descontoConta = leitura.desconto_conta; campos[CRM_MAP.campos.descontoConta] = leitura.desconto_conta }
         if (Object.keys(campos).length) await deps.salvarCampos(campos)
-        if (patch.rendaBruta != null) await deps.mover(colunaPorRenda(patch.rendaBruta), PIPELINES.sdr)
+        if (patch.rendaBruta != null) await moverPelaRenda(deps, patch.rendaBruta)
         if (Object.keys(patch).length) await deps.patch(patch)
         const enviado = await falar(ctx, deps, TEXTOS.q1SoOpcao, 'q1', { id: 'q1_so_opcao', obrigatorio: ['1', '2', '3'] })
         return { acao: 'q1: mandou os valores antes da opção; guardou os valores e pediu só a opção', enviado, leitura }

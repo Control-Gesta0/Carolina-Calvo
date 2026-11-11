@@ -1189,6 +1189,22 @@ async function main() {
       eq('"amanhã": follow-up só amanhã às 14h', bases[0] + 2 * 3600_000, A.deBrt(2026, 10, 11, 14, 0).getTime())
     }
     const { esperaDoLead, listaDoQueFalta } = fluxo
+    // Dra., 11/11: formulário até R$ 10 mil, sem resposta até o 2º follow-up → DESQUALIFICADO
+    eq('faixas do formulário até 10 mil', ['até_5_mil', 'Até 5 mil', 'de_5_a_10_mil', 'De 5 a 10 mil', 'de_10_a_15_mil', 'acima_de_15_mil', 'De 7 a 15 mil', ''].map(CRM.faixaAte10Mil), [true, true, true, true, false, false, false, false])
+    const dq = (o: Partial<Parameters<typeof CRM.desqualificaNoSegundoFollow>[0]>) => CRM.desqualificaNoSegundoFollow({ faixa: 'de_5_a_10_mil', pipelineId: PIPELINES.sdr, statusId: STATUS.aguardandoQualificacao, rendaConfirmada: false, respondeu: false, ...o })
+    eq('2º follow-up: desqualifica só quem é até 10 mil no formulário, sem resposta e sem renda confirmada', [dq({}), dq({ faixa: 'até_5_mil', statusId: STATUS.contatoInicial }), dq({ respondeu: true }), dq({ rendaConfirmada: true }), dq({ faixa: 'de_10_a_15_mil' }), dq({ faixa: 'acima_de_15_mil' }), dq({ statusId: STATUS.de10a15 })], [true, true, false, false, false, false, false])
+    {
+      const { w, deps } = mundo(agora)
+      w.state = { etapa: 'q2', objetivo: 3 }
+      w.leituras.push(L({ renda_bruta: 8000, renda_liquida: 5000, desconto_conta: 900 }))
+      await fluxo.turno(ctx(w, agora, 'bruto 8 mil, líquido 5 mil, 900 na conta'), deps)
+      w.leituras.push(L({ renda_bruta: 12000 }))
+      const { w: w2, deps: d2 } = mundo(agora)
+      w2.state = { etapa: 'q1' }
+      w2.leituras.push(L({ renda_bruta: 12000 }))
+      await fluxo.turno({ ...ctx(w2, agora, 'ganho 12 mil bruto'), conversa: [M('out', 'Olá! *Me responda apenas 1, 2 ou 3*', 1)] }, d2)
+      eq('renda < 10 mil confirmada: DESQUALIFICADO com o motivo; desqualificado que volta com 12 mil vai para 10 A 15 MIL', [w.movido, w.notas.some(n => n.includes('Desqualificado — renda inferior a R$ 10 mil.')), w2.movido], [[STATUS.desqualificado], true, [STATUS.de10a15]])
+    }
     eq('"Vou organizar a documentação" = manda depois (11/11)', [fluxo.vaiMandarDepois('Vou organizar a documentação'), fluxo.vaiMandarDepois('preciso separar os contracheques')], [true, true])
     const { ehPerguntaRobo: robo } = await import('../lib/anna/interprete')
     eq('mensagem automática de outra empresa encaminhada não é "é robô?" (11/11)', [robo('*Sua visita não foi realizada*\n\nConta pra gente qual foi o motivo?\n\n*[📲 Mensagem automática do QuintoAndar]*\nMinha renda bruta : 13.800'), robo('isso é mensagem automática?')], [false, true])

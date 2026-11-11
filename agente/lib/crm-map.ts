@@ -159,6 +159,27 @@ export function colunaDoPrimeiroFollow(faixa: string | null | undefined): number
   return c === STATUS.desqualificado ? STATUS.aguardandoQualificacao : c
 }
 
+/** Faixa do formulário "até 5 mil" ou "de 5 a 10 mil" (não vale a ambígua "de 7 a 15", nem a vazia). Puro. */
+export function faixaAte10Mil(faixa: string | null | undefined): boolean {
+  const f = String(faixa || '').toLowerCase().replace(/_/g, ' ')
+  return /(^|\s)at[eé] 5( mil)?\b/.test(f) || /\b(de )?5 a 10( mil)?\b/.test(f)
+}
+
+export const MOTIVO_DESQUALIFICADO = {
+  renda: 'Desqualificado — renda inferior a R$ 10 mil.',
+  semResposta: 'Desqualificado — renda do formulário até R$ 10 mil, sem resposta após o segundo follow-up.',
+}
+
+/**
+ * Dra., 11/11: lead que declarou no formulário renda até R$ 10 mil e não respondeu nada até o 2º follow-up vai para
+ * DESQUALIFICADO logo depois do envio. Só sai de Contato inicial ou AGUARDANDO QUALIFICAÇÃO; quem respondeu ou já
+ * confirmou renda na conversa segue a qualificação normal. Puro.
+ */
+export function desqualificaNoSegundoFollow(o: { faixa: string | null | undefined; pipelineId: number; statusId: number; rendaConfirmada: boolean; respondeu: boolean }): boolean {
+  return o.pipelineId === PIPELINES.sdr && (o.statusId === STATUS.aguardandoQualificacao || o.statusId === STATUS.contatoInicial)
+    && !o.rendaConfirmada && !o.respondeu && faixaAte10Mil(o.faixa)
+}
+
 /** Etiqueta que a equipe põe quando a saudação dá "Erro" no WhatsApp (Dra., 05/11). */
 export const TAG_NAO_ENTREGUE = 'nao-entregue'
 
