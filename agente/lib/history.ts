@@ -7,7 +7,11 @@ import { k, redis } from './redis'
  * morre; o que importa comercialmente fica no card).
  */
 
-export interface ChatMsg { id: string; dir: 'in' | 'out'; text: string; ts: number }
+export interface ChatMsg {
+  id: string; dir: 'in' | 'out'; text: string; ts: number
+  /** anexo do lead guardado sem leitura (atendimento com a equipe): lido na retomada (Dra., 12/11, caso Ernane) */
+  anexo?: { kind: string; link: string; legenda?: string; lido?: boolean }
+}
 
 const MAX_MSGS = 60
 /** 365 dias, como o estado: a conversa fica para retomar quem volta meses depois */
@@ -74,4 +78,16 @@ export async function markHumanSpoke(leadId: number): Promise<void> {
 
 export async function humanSpokeRecently(leadId: number): Promise<boolean> {
   return !!(await redis.get(k('humano', leadId)))
+}
+
+/** Troca uma mensagem do histórico (pelo id): usada para pôr a leitura de um anexo no lugar do marcador. */
+export async function substituirMensagem(leadId: number, id: string, nova: ChatMsg): Promise<boolean> {
+  const key = k('conv', leadId)
+  const raw = await redis.lrange<string | ChatMsg>(key, 0, -1)
+  for (let i = 0; i < raw.length; i++) {
+    let m: ChatMsg | null = null
+    try { m = typeof raw[i] === 'string' ? JSON.parse(raw[i] as string) as ChatMsg : raw[i] as ChatMsg } catch { /* */ }
+    if (m?.id === id) { await redis.lset(key, i, JSON.stringify(nova)); return true }
+  }
+  return false
 }

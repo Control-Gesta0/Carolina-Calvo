@@ -11,7 +11,8 @@ import { k, redis } from './redis'
 import { equipeFalouEm, etiquetaRetomarEm, marcarPausa, pausado, retomadaExpressa, retomar, TAG_RETOMAR } from './pausa'
 import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from './crm-map'
 import { emptyUsage, logExec } from './execlog'
-import { getHistory } from './history'
+import { getHistory, substituirMensagem } from './history'
+import { mediaToText } from './media'
 import { agendarJob } from './jobs'
 import { addLeadNote, addLeadTags, addLeadTask, getLead, kommoGet, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from './kommo'
 import { reuniaoDoCard } from './pos-reuniao'
@@ -23,10 +24,12 @@ import { aplicarRecuperacao, createRecuperador, type Recuperado } from './anna/r
  * (com ela ou com a equipe) e o horário que a equipe ofereceu (Dra., 10/11/2026, caso Gilse).
  * Devolve o que a retomada deve fazer em seguida.
  */
-export async function recuperarNaRetomada(lead: KommoLead): Promise<{ avancou: boolean; oferta: boolean; ofertaAceita: boolean; resumo: string[] }> {
+export async function recuperarNaRetomada(lead: KommoLead): Promise<{ avancou: boolean; oferta: boolean; ofertaAceita: boolean; resumo: string[]; documento?: boolean }> {
   const leadId = lead.id
   const st = await getState(leadId)
   const desde = st.inicioEm ?? 0
+  // documentos que o lead mandou enquanto a equipe atendia: a Anna lê agora (Dra., 12/11, caso Ernane)
+  await lerAnexosGuardados(leadId).catch(e => logExec({ tipo: 'erro', leadId, nome: lead.name, detalhe: `retomada: não deu para ler os documentos (${(e instanceof Error ? e.message : String(e)).slice(0, 160)})` }))
   const conversa = (await getHistory(leadId).catch(() => [])).filter(m => m.ts >= desde)
   let x: Recuperado | null = null
   const usage = emptyUsage()
@@ -65,7 +68,7 @@ export async function recuperarNaRetomada(lead: KommoLead): Promise<{ avancou: b
     ? `Ela acompanha o horário oferecido pela equipe (não oferece outro${ap.ofertaEquipe.aceita ? '' : ', e manda o follow-up 1 h depois da oferta se o lead não confirmar'}). A reunião só é marcada quando o lead confirmar.`
     : 'Nada disso será perguntado de novo.'}`).catch(() => undefined)
   await logExec({ tipo: 'pulou', leadId, nome: lead.name, etapa: p.etapa || st.etapa, detalhe: `retomada: recuperado do histórico (${ap.resumo.join(' · ')})`, usage: usage.calls ? usage : undefined })
-  return { avancou: ap.avancou, oferta: !!ap.ofertaEquipe, ofertaAceita: !!ap.ofertaEquipe?.aceita, resumo: ap.resumo }
+  return { avancou: ap.avancou, oferta: !!ap.ofertaEquipe, ofertaAceita: !!ap.ofertaEquipe?.aceita, resumo: ap.resumo, documento: !!ap.patch.docPendente }
 }
 
 /**
@@ -94,14 +97,27 @@ export async function tratarRetomada(lead: KommoLead): Promise<string> {
 }
 
 /**
- * Relógio: etiqueta anna-retomar colocada nos últimos 20 min. O Kommo nem sempre avisa quando só uma etiqueta muda
- * (Antonio, 11/11: colocada às 16:05, a Anna só soube às 16:25, na alteração seguinte do card).
+ * Relógio (a cada 5 min): etiquetas anna-retomar colocadas desde a última varredura. O Kommo não avisa quando só uma
+ * etiqueta muda (Antonio, 11/11: colocada às 16:05, a Anna só soube às 16:25; Ernane: colocada em 11/11 às 10:45, a
+ * Anna só soube em 12/11 às 10:58, quando o card mudou de coluna). Guarda até onde já leu, para não perder nenhuma.
  */
 export async function varrerRetomadas(): Promise<string[]> {
-  const desde = Math.floor(Date.now() / 1000) - 20 * 60
-  const d = await kommoGet<{ _embedded?: { events?: Array<{ entity_id: number; value_after?: Array<{ tag?: { name?: string } }> }> } }>(
-    `/api/v4/events?filter[entity]=lead&filter[type]=entity_tag_added&filter[created_at][from]=${desde}&limit=100`).catch(() => null)
-  const ids = [...new Set((d?._embedded?.events || []).filter(e => (e.value_after || []).some(v => (v.tag?.name || '').toLowerCase() === TAG_RETOMAR)).map(e => e.entity_id))]
+  const agora = Math.floor(Date.now() / 1000)
+  const cursor = Number(await redis.get<number>(k('retomar-cursor')).catch(() => null)) || agora - 30 * 60
+  const ids = new Set<number>()
+  let ate = cursor
+  for (let page = 1; page <= 10; page++) {
+    const d = await kommoGet<{ _embedded?: { events?: Array<{ entity_id: number; created_at: number; value_after?: Array<{ tag?: { name?: string } }> }> } }>(
+      `/api/v4/events?filter[entity]=lead&filter[type]=entity_tag_added&filter[created_at][from]=${cursor}&limit=100&page=${page}`).catch(() => null)
+    const evs = d?._embedded?.events || []
+    for (const e of evs) {
+      ate = Math.max(ate, e.created_at)
+      if ((e.value_after || []).some(v => (v.tag?.name || '').toLowerCase() === TAG_RETOMAR)) ids.add(e.entity_id)
+    }
+    if (evs.length < 100) break
+  }
+  // volta 1 min no cursor: eventos do mesmo segundo não se perdem (a retomada é idempotente)
+  await redis.set(k('retomar-cursor'), Math.max(cursor, ate - 60), { ex: 30 * 86400 })
   const feitos: string[] = []
   for (const id of ids) {
     const lead = await getLead(id).catch(() => null)
@@ -134,6 +150,8 @@ export async function continuarDepoisDaRetomada(leadId: number): Promise<void> {
   }
   // a etapa andou além da 2ª pergunta pelo que já estava respondido: a próxima pergunta sai agora (a última
   // mensagem do lead já foi considerada na leitura do histórico)
+  // renda lida de documento: a confirmação sai agora (a leitura do histórico já usou as mensagens do lead)
+  if (rec?.documento) return seguirDeOndeParou(leadId)
   if (rec?.avancou && etapa !== 'q2' && etapa !== 'oferta') return seguirDeOndeParou(leadId)
   if (ultima?.dir === 'in') {
     await processLead(leadId, `retomar-${Date.now()}`)
@@ -142,6 +160,10 @@ export async function continuarDepoisDaRetomada(leadId: number): Promise<void> {
   // horário oferecido pela equipe: o follow-up de 1 h já está agendado (não oferece outro horário)
   if (rec?.oferta) return
   if (rec?.avancou) return seguirDeOndeParou(leadId)
+  // lead que a Anna nunca atendeu, devolvido pela equipe: ela começa agora, do ponto certo (Dra., 12/11, caso Ernane)
+  const historico = await getHistory(leadId).catch(() => [])
+  const annaJaFalou = historico.some(m => m.dir === 'out' && !String(m.id).startsWith('kommo:'))
+  if (!annaJaFalou && (etapa === 'q1' || etapa === 'q2')) return seguirDeOndeParou(leadId)
   // a última palavra foi da equipe (pergunta, remarcação, combinado): a Anna espera o lead e não manda follow-up de
   // qualificação por cima da conversa da equipe (Dra., 12/11, caso Antonio)
   if (ultima?.dir === 'out' && String(ultima.id).startsWith('kommo:')) return
@@ -164,3 +186,13 @@ async function seguirDeOndeParou(leadId: number): Promise<void> {
   }
 }
 
+
+/** Lê os anexos do lead guardados sem leitura (no máximo os 4 mais recentes) e põe a leitura no histórico. */
+export async function lerAnexosGuardados(leadId: number): Promise<number> {
+  const pendentes = (await getHistory(leadId)).filter(m => m.dir === 'in' && m.anexo && !m.anexo.lido).slice(-4)
+  for (const m of pendentes) {
+    const lido = await mediaToText(m.anexo!.kind as Parameters<typeof mediaToText>[0], m.anexo!.link, m.anexo!.legenda || '')
+    await substituirMensagem(leadId, m.id, { ...m, text: lido, anexo: { ...m.anexo!, lido: true } })
+  }
+  return pendentes.length
+}

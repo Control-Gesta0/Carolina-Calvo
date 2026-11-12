@@ -1080,7 +1080,7 @@ async function main() {
     // TESTE 1 da Dra.: a equipe assume e devolve; a Anna não pergunta de novo o que o lead já respondeu
     const agora = A.deBrt(2026, 10, 10, 14, 0)
     const conversa1 = [saud, M('in', '3', 2), M('in', 'bruta 17.250 líquido 9.800 desconto na conta 2.100', 3), M('out', 'Oi Gilse, aqui é a Carla da equipe, tudo bem?', 4, 'kommo:9')]
-    const rec1 = { opcao: 3 as const, renda_bruta: 17250, renda_liquida: 9800, desconto_conta: 2100, limite: null, oferta_equipe: null, oferta_aceita: false }
+    const rec1 = { opcao: 3 as const, renda_bruta: 17250, renda_liquida: 9800, desconto_conta: 2100, limite: null, oferta_equipe: null, oferta_aceita: false, renda_do_documento: false }
     const ap1 = aplicarRecuperacao({ etapa: 'q1' }, rec1, conversa1, agora)
     eq('Teste 1: retomada em q1 com opção e valores no histórico → vai direto à pergunta do cheque especial', [ap1.patch.objetivo, ap1.patch.rendaBruta, ap1.patch.etapa, ap1.avancou], [3, 17250, 'limite', true])
     const ap1b = aplicarRecuperacao({ etapa: 'q2', objetivo: 3, rendaBruta: 20000 }, { ...rec1, renda_bruta: 17250 }, conversa1, agora)
@@ -1256,6 +1256,26 @@ async function main() {
     w.leituras.push(L({}))
     await fluxo.turno(ctx(w, agora, '[imagem do lead]: É um extrato bancário do Banco do Brasil. Os valores de salário bruto, líquido e descontos estão ilegíveis na imagem.'), deps)
     eq('renda já confirmada + documento ilegível: fica na coluna e pede só o desconto em conta', [(w as unknown as { acao?: string[] }).acao, w.state.etapa, w.enviados[0]], [undefined, 'q2', 'Não consegui ver os valores com clareza na imagem. Pode me passar quanto o banco desconta da sua conta corrente?'])
+  }
+
+  console.log('\n— Retomada com documento (Dra., 12/11, caso Ernane)')
+  {
+    const { aplicarRecuperacao } = await import('../lib/anna/recuperar')
+    const agora = A.deBrt(2026, 10, 12, 11, 0)
+    const base = { opcao: null, renda_bruta: 18430, renda_liquida: 7210.55, desconto_conta: 2110.4, limite: null, oferta_equipe: null, oferta_aceita: false, renda_do_documento: true }
+    const ap = aplicarRecuperacao({ etapa: 'q1' }, base, [], agora)
+    eq('renda lida do documento: fica para confirmar (não classifica antes), desconto em conta indicado pelo lead vale', [ap.patch.rendaBruta, ap.patch.docPendente, ap.patch.descontoConta, ap.patch.etapa, ap.avancou], [undefined, { rendaBruta: 18430, rendaLiquida: 7210.55 }, 2110.4, 'q2', true])
+    const { w, deps } = mundo(agora)
+    w.state = { etapa: 'q2', descontoConta: 2110.4, docPendente: { rendaBruta: 18430, rendaLiquida: 7210.55 } }
+    await fluxo.continuarDeOndeParou(ctx(w, agora, ''), deps)
+    eq('retomada: confirma a renda do documento sem repetir as perguntas', w.enviados[0]?.includes('R$ 18.430'), true)
+    w.leituras.push(L({}))
+    await fluxo.turno(ctx(w, agora, 'sim, está certo'), deps)
+    eq('confirmou: renda gravada, card em ACIMA DE 15 MIL, e pede só a opção (que ainda não tinha)', [w.state.rendaBruta, w.movido, w.state.etapa, w.enviados[1]?.startsWith('Obrigada pelas informações!')], [18430, [STATUS.acima15], 'q1', true])
+    const { w: w2, deps: d2 } = mundo(agora)
+    w2.state = { etapa: 'q1' }
+    await fluxo.continuarDeOndeParou(ctx(w2, agora, ''), d2)
+    eq('lead nunca atendido e sem dados: começa pela 1ª pergunta (texto, sem o modelo de saudação)', w2.enviados[0]?.includes('1️⃣'), true)
   }
 
   console.log('\n— Lembrete confere a reunião na agenda')

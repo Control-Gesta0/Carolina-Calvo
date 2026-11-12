@@ -83,6 +83,11 @@ export function etapaDeVolta(s: LeadState): LeadState['etapa'] {
 export async function retomar(lead: KommoLead): Promise<string> {
   // uma retomada por vez (o webhook de update chega repetido)
   if ((await redis.set(k('retomar', lead.id), '1', { nx: true, ex: 60 })) !== 'OK') return 'retomada já em andamento'
+  // lead que a Anna nunca atendeu (Dra., 12/11, caso Ernane): ela começa na qualificação a partir do que já foi
+  // conversado com a equipe, ANTES de a etiqueta de liberação entrar (senão o card parece novo e recebe a saudação)
+  const antes = await getState(lead.id)
+  if (!antes.etapa) await patchState(lead.id, { etapa: 'q1', inicioEm: 0 })
+  await redis.set(k('iniciado', lead.id), '1', { ex: 30 * 86400 })
   await removeLeadTags(lead.id, [CONFIG.humanTag, TAG_RETOMAR])
   if (CONFIG.gateTag && !leadTags(lead).some(t => t.toLowerCase() === CONFIG.gateTag)) await addLeadTags(lead.id, [CONFIG.gateTag])
   await redis.del(K(lead.id), k('humano', lead.id))

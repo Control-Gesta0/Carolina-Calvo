@@ -149,15 +149,21 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         }
         // atendimento com a equipe (pausa): a conversa entra no histórico, para a Anna retomar sabendo o que
         // o lead e a equipe disseram (Dra., 09/11). Áudio e imagem ficam marcados, sem transcrever.
-        if ((await pausado(m.leadId)) || (await getState(m.leadId)).etapa) {
-          const registro = text || (mediaKind(m.attachType) ? `[${mediaKind(m.attachType)} enviado${outgoing ? ' pela equipe' : ' pelo lead'}]` : '')
-          if (registro) await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: outgoing ? 'out' : 'in', text: registro, ts: Date.now() })
+        // todo card do SDR também (Dra., 12/11, caso Ernane): a equipe pode passar à Anna, com anna-retomar, um lead
+        // que ela nunca atendeu, e ela precisa do que já foi conversado (o Kommo não devolve o texto das mensagens)
+        const noSdr = async () => (await getLead(m.leadId).catch(() => null))?.pipeline_id === PIPELINES.sdr
+        if ((await pausado(m.leadId)) || (await getState(m.leadId)).etapa || (await noSdr())) {
+          const kindAnexo = mediaKind(m.attachType)
+          const registro = text || (kindAnexo ? `[${kindAnexo} enviado${outgoing ? ' pela equipe' : ' pelo lead'}]` : '')
+          const anexo = !outgoing && kindAnexo && m.attachLink ? { kind: kindAnexo, link: m.attachLink, ...(text ? { legenda: text } : {}) } : undefined
+          if (registro) await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: outgoing ? 'out' : 'in', text: anexo && text ? `${text}\n[${kindAnexo} enviado pelo lead]` : registro, ts: Date.now(), ...(anexo ? { anexo } : {}) })
           // a equipe escreveu com a Anna já pausada: fica registrado quando (a etiqueta anna-retomar só vale se vier
           // depois) e a pausa vale mesmo se a etiqueta sair do card (Dra., 12/11, caso Antonio)
           const deRobo = !!text && (ehMensagemDeRoboKommo(text) || (await isEchoOfSent(m.leadId, text)) || (await ehModeloDaAnna(text)))
           if (outgoing && !deRobo && !(await botRodandoRecente(m.leadId))) {
             await marcarEquipeFalou(m.leadId)
-            if (!(await pausado(m.leadId))) await marcarPausa(m.leadId, 'a equipe escreveu para o lead (card já com a etiqueta)')
+            // a marca da pausa só para quem a Anna já atendia (lead que ela nunca atendeu não tem o que pausar)
+            if (!(await pausado(m.leadId)) && (await getState(m.leadId)).etapa) await marcarPausa(m.leadId, 'a equipe escreveu para o lead (card já com a etiqueta)')
           }
         }
         continue

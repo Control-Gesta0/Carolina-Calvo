@@ -482,6 +482,21 @@ export async function quintaMensagem(ctx: Ctx, deps: Deps, token: string): Promi
  */
 export async function continuarDeOndeParou(ctx: Ctx, deps: Deps): Promise<Resultado> {
   const s = ctx.state
+  // renda lida do documento na retomada: confirma com o lead antes de classificar o card (Dra., 12/11, caso Ernane)
+  if (s.docPendente?.rendaBruta != null) {
+    const d = s.docPendente
+    const valores = d.rendaLiquida != null ? `${brl(d.rendaBruta!)} e o líquido de ${brl(d.rendaLiquida)}` : brl(d.rendaBruta!)
+    await deps.patch({ etapa: 'q2' })
+    const enviado = await falar(ctx, deps, TEXTOS.docConfirma(valores), 'q2', { id: 'doc_confirma', obrigatorio: [brl(d.rendaBruta!)] })
+    return { acao: 'retomada: documento lido, confirmando a renda bruta com o lead', enviado }
+  }
+  if (s.etapa === 'q1') {
+    const temValor = s.rendaBruta != null || s.rendaLiquida != null || s.descontoConta != null
+    const enviado = temValor
+      ? await falar(ctx, deps, TEXTOS.q1SoOpcao, 'q1', { id: 'q1_so_opcao', obrigatorio: ['1', '2', '3'] })
+      : await falar(ctx, deps, TEXTOS.pergunta1(ctx.primeiroNome, ctx.agora), 'q1', { id: 'pergunta1', obrigatorio: ['1', '2', '3'] })
+    return { acao: `retomada: ${temValor ? 'valores no histórico, pediu só a opção' : '1ª pergunta'}`, enviado }
+  }
   if (s.etapa === 'q2') {
     const f = valoresQueFaltam(s)
     if (!f.length) {
@@ -730,6 +745,12 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       novo.descontoConta == null ? ['quanto o banco desconta da sua conta corrente por mês', 'conta corrente'] : null,
     ].filter((x): x is string[] => !!x)
     const faltam = faltando.map(f => f[0])
+    if (!faltam.length && !novo.objetivo) {
+      // os valores vieram antes da opção (documento na retomada, conversa com a equipe): pede só a opção
+      await deps.patch({ etapa: 'q1' })
+      const enviado = await falar(ctx, deps, TEXTOS.q1SoOpcao, 'q1', { id: 'q1_so_opcao', obrigatorio: ['1', '2', '3'] })
+      return { acao: 'q2 completa sem a opção: pediu só a opção', enviado, leitura }
+    }
     if (!faltam.length) {
       // Dra., 27/10: antes da mensagem do alívio, cheque especial e cartão de crédito
       await deps.patch({ etapa: 'limite' })

@@ -48,13 +48,15 @@ export interface Recuperado {
   oferta_equipe: { data: string; hora: string; mensagem: number } | null
   /** o lead aceitou com clareza esse horário */
   oferta_aceita: boolean
+  /** a renda bruta (e o líquido) vieram só da leitura de um documento, sem o lead confirmar: a Anna confirma antes */
+  renda_do_documento: boolean
 }
 
 const num = { type: ['number', 'null'] }
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['opcao', 'renda_bruta', 'renda_liquida', 'desconto_conta', 'limite', 'oferta_equipe', 'oferta_aceita'],
+  required: ['opcao', 'renda_bruta', 'renda_liquida', 'desconto_conta', 'limite', 'oferta_equipe', 'oferta_aceita', 'renda_do_documento'],
   properties: {
     opcao: { type: ['integer', 'null'], enum: [1, 2, 3, null] },
     renda_bruta: num,
@@ -68,15 +70,17 @@ const SCHEMA = {
       properties: { data: { type: 'string', description: 'AAAA-MM-DD' }, hora: { type: 'string', description: 'HH:MM' }, mensagem: { type: 'integer', description: 'número (#) da mensagem da EQUIPE com a oferta' } },
     },
     oferta_aceita: { type: 'boolean' },
+    renda_do_documento: { type: 'boolean' },
   },
 } as const
 
 const INSTRUCAO = `Você lê a conversa de WhatsApp de um escritório de advocacia (superendividamento) e extrai, SEM inventar, o que o LEAD já informou na qualificação. As mensagens vêm numeradas e marcadas como LEAD, ANNA (a assistente) ou EQUIPE (uma pessoa do escritório).
 Regras:
 - opcao: a possibilidade que o LEAD escolheu quando perguntaram "1, 2 ou 3" (1 = suspensão dos descontos, 2 = reestruturação das dívidas, 3 = as duas). "as duas" = 3. null se ele nunca escolheu com clareza.
-- renda_bruta, renda_liquida, desconto_conta: valores mensais em reais que o LEAD informou (ou confirmou para a equipe). renda_bruta = salário antes dos descontos; renda_liquida = o que recebe depois dos descontos do contracheque; desconto_conta = quanto o banco desconta da conta corrente quando o salário cai. "17.250" ou "17,2 mil" = 17250. Um valor que o lead corrigiu depois vale o corrigido. null quando não foi dito com clareza. Valores lidos de documento só valem se o lead confirmou.
+- renda_bruta, renda_liquida, desconto_conta: valores mensais em reais que o LEAD informou (ou confirmou para a equipe). renda_bruta = salário antes dos descontos; renda_liquida = o que recebe depois dos descontos do contracheque; desconto_conta = quanto o banco desconta da conta corrente quando o salário cai. "17.250" ou "17,2 mil" = 17250. Um valor que o lead corrigiu depois vale o corrigido. null quando não foi dito com clareza. Documentos: as linhas "[imagem do lead]: ..." ou "[documento do lead]: ..." são a leitura de um contracheque, extrato ou print que o lead mandou. Deles você pode tirar renda_bruta e renda_liquida (e então renda_do_documento = true, a menos que o lead tenha digitado ou confirmado esses valores). Os descontos do CONTRACHEQUE (consignado, INSS, IR) NUNCA são desconto_conta. desconto_conta só vem do documento quando o próprio lead disse quais valores são descontados direto da conta corrente (ex.: "os 2 últimos valores do print são descontados da conta"): então some esses valores.
 - limite: a resposta do LEAD sobre cheque especial e cartão de crédito com limite, em poucas palavras. null se a pergunta não foi respondida.
 - oferta_equipe: o ÚLTIMO dia e horário de reunião que a EQUIPE propôs ao lead (ex.: "consigo para amanhã às 15h30, pode ser?"), com a data em AAAA-MM-DD (use a data da mensagem para entender "hoje", "amanhã", "quinta") e a hora em HH:MM, e o número da mensagem. null se a equipe não propôs um horário específico, se o lead recusou esse horário ou se a reunião já foi marcada/confirmada pela equipe depois.
+- renda_do_documento: true quando renda_bruta saiu de um documento e o lead não a digitou nem confirmou.
 - oferta_aceita: true só se o LEAD aceitou com clareza o horário de oferta_equipe ("pode sim", "fechado", "confirmo").
 Responda só o JSON.`
 
@@ -143,8 +147,14 @@ export function aplicarRecuperacao(s: LeadState, r: Recuperado | null, conversa:
   const opcao = s.objetivo ? null : (r?.opcao ?? opcaoNoHistorico(conversa))
   if (opcao) { patch.objetivo = opcao; resumo.push(`opção ${opcao}`) }
   const valor = (v: number | null | undefined) => (v != null && Number.isFinite(v) && v >= 0 ? v : undefined)
-  if (s.rendaBruta == null && valor(r?.renda_bruta) != null) { patch.rendaBruta = r!.renda_bruta!; resumo.push(`renda bruta ${r!.renda_bruta}`) }
-  if (s.rendaLiquida == null && valor(r?.renda_liquida) != null) { patch.rendaLiquida = r!.renda_liquida!; resumo.push(`líquido ${r!.renda_liquida}`) }
+  if (r?.renda_do_documento && s.rendaBruta == null && valor(r.renda_bruta) != null) {
+    // renda lida do documento: a Anna confirma com o lead antes de classificar o card (Dra., 09/11 e 12/11)
+    patch.docPendente = { rendaBruta: r.renda_bruta!, ...(valor(r.renda_liquida) != null ? { rendaLiquida: r.renda_liquida! } : {}) }
+    resumo.push(`renda bruta lida do documento ${r.renda_bruta}${valor(r.renda_liquida) != null ? ` e líquido ${r.renda_liquida}` : ''} (a confirmar com o lead)`)
+  } else {
+    if (s.rendaBruta == null && valor(r?.renda_bruta) != null) { patch.rendaBruta = r!.renda_bruta!; resumo.push(`renda bruta ${r!.renda_bruta}`) }
+    if (s.rendaLiquida == null && valor(r?.renda_liquida) != null) { patch.rendaLiquida = r!.renda_liquida!; resumo.push(`líquido ${r!.renda_liquida}`) }
+  }
   if (s.descontoConta == null && valor(r?.desconto_conta) != null) { patch.descontoConta = r!.desconto_conta!; resumo.push(`desconto em conta ${r!.desconto_conta}`) }
   if (!s.limite && r?.limite) { patch.limite = r.limite.slice(0, 300); resumo.push(`cheque especial/cartão: "${r.limite.slice(0, 80)}"`) }
   const novo = { ...s, ...patch }
@@ -178,6 +188,11 @@ export function aplicarRecuperacao(s: LeadState, r: Recuperado | null, conversa:
   // q3 = a mensagem do alívio já saiu. Com o cheque especial já respondido e a mensagem ainda não enviada, a etapa
   // fica em "limite" (com a resposta guardada) e a retomada manda a mensagem do alívio (fluxo.continuarDeOndeParou)
   const alvo: Etapa = pelo === 'q3' && atual !== 'q3' ? 'limite' : pelo
+  // renda lida de documento: a próxima mensagem é a confirmação dela (na 2ª pergunta), sem repetir o resto
+  if (patch.docPendente && (!atual || atual === 'q1' || atual === 'q2')) {
+    patch.etapa = 'q2'
+    return { patch, avancou: true, resumo }
+  }
   const avancou = !!atual && (ORDEM.indexOf(pelo) > ORDEM.indexOf(atual)) && atual !== 'q3'
   if (avancou) patch.etapa = alvo
   return { patch, avancou, resumo }
