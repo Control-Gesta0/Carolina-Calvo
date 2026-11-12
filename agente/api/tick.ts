@@ -9,13 +9,14 @@ import { baseVigente } from '../lib/base'
 import { textosDoRoteiro } from '../lib/base-core'
 import { depsProducao, montarCtx, primeiroNome } from '../lib/anna/producao'
 import { CONFIG } from '../lib/config'
-import { colunaDoPrimeiroFollow, CRM_MAP, desqualificaNoSegundoFollow, MOTIVO_DESQUALIFICADO, PIPELINES, STATUS, type ChaveModelo } from '../lib/crm-map'
+import { colunaDoPrimeiroFollow, CRM_MAP, desqualificaNoSegundoFollow, MOTIVO_DESQUALIFICADO, PIPELINES, qualificacaoEncerrada, STATUS, type ChaveModelo } from '../lib/crm-map'
 import { emptyUsage, logExec } from '../lib/execlog'
 import { motivoDaFrase, perfilDaRenda } from '../lib/central-data'
 import { varrerCloser } from '../lib/closer'
 import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
-import { executarPosReuniao, varrerPosReuniao } from '../lib/pos-reuniao'
+import { executarPosReuniao, reuniaoDoCard, varrerPosReuniao } from '../lib/pos-reuniao'
+import { varrerRetomadas } from '../lib/retomada'
 import { verificarSaudacao } from '../lib/saudacao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
@@ -56,6 +57,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     feitos.push(...(await varrerCloser()).map(l => `closer ${l}`))
   } catch (e) {
     feitos.push(`closer: ERRO ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}`)
+  }
+  try {
+    feitos.push(...(await varrerRetomadas()).map(l => `retomada ${l}`))
+  } catch (e) {
+    feitos.push(`retomada: ERRO ${(e instanceof Error ? e.message : String(e)).slice(0, 300)}`)
   }
   try {
     feitos.push(...(await varrerPosReuniao()).map(l => `pós-reunião ${l}`))
@@ -197,8 +203,10 @@ async function executar(job: Job): Promise<string> {
       if (await pausado(leadId)) return 'pausada: a equipe está atendendo'
       const b = bloqueio(lead)
       if (b) return b
-      // card em DESQUALIFICADO (pelo 2º follow-up, pela renda ou à mão): os follow-ups de qualificação param (Dra., 11/11)
-      if (regua === 'qualificacao' && lead.pipeline_id === PIPELINES.sdr && lead.status_id === STATUS.desqualificado) return 'card em DESQUALIFICADO'
+      // qualificação encerrada (Closer, AGENDAR REUNIÃO, DESQUALIFICADO ou reunião marcada): sem follow-up de
+      // qualificação (Dra., 11/11 e 12/11; caso Antonio: o 1º follow-up saiu com o card em Reunião agendada)
+      const encerrada = regua === 'qualificacao' ? qualificacaoEncerrada({ pipelineId: lead.pipeline_id, statusId: lead.status_id, reuniaoMs: (reuniaoDoCard(lead) ?? 0) * 1000 || null, agoraMs: Date.now() }) : null
+      if (encerrada) return encerrada
       const etapa = (await getState(leadId)).etapa
       const esperadas = regua === 'qualificacao' ? ['q1', 'q2', 'limite', 'q3'] : ['oferta', 'preferencia']
       return etapa && esperadas.includes(etapa) ? null : `etapa atual ${etapa || '(nenhuma)'}`

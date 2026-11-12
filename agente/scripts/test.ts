@@ -1222,6 +1222,42 @@ async function main() {
     ], ['Você está falando com a Anna.', 'Não! Nossa primeira reunião on-line é gratuita.', 'A reunião on-line dura aproximadamente 30 minutos.'])
   }
 
+  console.log('\n— Atendimento humano e retomada (Dra., 12/11, caso Antonio)')
+  {
+    const { retomadaExpressa } = await import('../lib/pausa')
+    const h = (hh: number, mm: number) => A.deBrt(2026, 10, 11, hh, mm).getTime()
+    eq('etiqueta regravada junto com atendimento-humano ao salvar o card (16:26) não devolve', retomadaExpressa({ etiqueta: { em: h(16, 26), comPausa: true }, equipeEm: h(16, 25) }), false)
+    eq('etiqueta colocada antes da última mensagem da equipe (16:05 < 16:36) não devolve', retomadaExpressa({ etiqueta: { em: h(16, 5), comPausa: false }, equipeEm: h(16, 36) }), false)
+    eq('etiqueta colocada depois da última mensagem da equipe devolve', retomadaExpressa({ etiqueta: { em: h(17, 40), comPausa: false }, equipeEm: h(16, 36) }), true)
+    eq('sem saber quando a etiqueta entrou, a devolução vale', retomadaExpressa({ etiqueta: null, equipeEm: h(16, 36) }), true)
+    const enc = (o: Partial<Parameters<typeof CRM.qualificacaoEncerrada>[0]>) => CRM.qualificacaoEncerrada({ pipelineId: PIPELINES.sdr, statusId: STATUS.acima15, reuniaoMs: null, agoraMs: h(18, 30), ...o })
+    eq('follow-up de qualificação não sai: Closer, AGENDAR REUNIÃO, DESQUALIFICADO, reunião marcada', [
+      enc({ pipelineId: PIPELINES.closer, statusId: STATUS.reuniaoAgendada }), enc({ statusId: STATUS.agendarReuniao }), enc({ statusId: STATUS.desqualificado }), enc({ reuniaoMs: h(19, 0) }), enc({}), enc({ reuniaoMs: h(17, 0) }),
+    ], ['card no Closer', 'card em AGENDAR REUNIÃO', 'card em DESQUALIFICADO', 'reunião marcada', null, null])
+
+    // TESTE 7 da Dra.: lead qualificado com reunião → equipe assume → cliente não pode → equipe tenta remarcar → silêncio
+    const passos: string[] = []
+    // 1-2) reunião marcada pela equipe, card em Reunião agendada; a equipe escreveu às 16:36 (pausa)
+    const card = { pipelineId: PIPELINES.closer, statusId: STATUS.reuniaoAgendada, reuniaoMs: h(17, 0) }
+    // 3-5) cliente não pode; equipe pergunta o período; silêncio. 18:30: a régua de qualificação tenta o 1º follow-up
+    passos.push(`18:30 follow-up de qualificação: ${CRM.qualificacaoEncerrada({ ...card, agoraMs: h(18, 30) }) ? 'NÃO sai' : 'sai'}`)
+    // 17:35: a tarefa da reunião é concluída e o card é salvo com a etiqueta antiga (16:26, junto com atendimento-humano)
+    passos.push(`17:35 etiqueta antiga no card: ${retomadaExpressa({ etiqueta: { em: h(16, 26), comPausa: true }, equipeEm: h(16, 36) }) ? 'Anna volta' : 'Anna continua pausada'}`)
+    // a equipe coloca a etiqueta de propósito depois da última mensagem
+    passos.push(`18:40 etiqueta nova colocada pela equipe: ${retomadaExpressa({ etiqueta: { em: h(18, 40), comPausa: false }, equipeEm: h(16, 36) }) ? 'Anna volta' : 'Anna continua pausada'}`)
+    eq('TESTE 7: sem follow-up de qualificação, sem volta automática; só a etiqueta nova devolve', passos,
+      ['18:30 follow-up de qualificação: NÃO sai', '17:35 etiqueta antiga no card: Anna continua pausada', '18:40 etiqueta nova colocada pela equipe: Anna volta'])
+  }
+  {
+    // caso Francisco (11/11): renda já confirmada, extrato ilegível → não vai para AÇÃO SDR; pede só o que falta
+    const agora = A.deBrt(2026, 10, 11, 19, 26)
+    const { w, deps } = mundo(agora); (w as unknown as { naFaixa: boolean }).naFaixa = true
+    w.state = { etapa: 'q2', objetivo: 1, rendaBruta: 10729.78, rendaLiquida: 4396.01 }
+    w.leituras.push(L({}))
+    await fluxo.turno(ctx(w, agora, '[imagem do lead]: É um extrato bancário do Banco do Brasil. Os valores de salário bruto, líquido e descontos estão ilegíveis na imagem.'), deps)
+    eq('renda já confirmada + documento ilegível: fica na coluna e pede só o desconto em conta', [(w as unknown as { acao?: string[] }).acao, w.state.etapa, w.enviados[0]], [undefined, 'q2', 'Não consegui ver os valores com clareza na imagem. Pode me passar quanto o banco desconta da sua conta corrente?'])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')

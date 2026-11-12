@@ -1,6 +1,6 @@
 import { CONFIG } from './config'
 import { logExec } from './execlog'
-import { addLeadNote, addLeadTags, concluirTarefa, fieldValue, leadTags, removeLeadTags, updateLeadStatus, type KommoLead } from './kommo'
+import { addLeadNote, addLeadTags, concluirTarefa, fieldValue, kommoGet, leadTags, removeLeadTags, updateLeadStatus, type KommoLead } from './kommo'
 import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from './crm-map'
 import { k, redis } from './redis'
 import { getState, patchState, type LeadState } from './state'
@@ -27,6 +27,43 @@ export async function pausar(leadId: number, motivo: string): Promise<void> {
 
 export async function pausado(leadId: number): Promise<boolean> {
   return !!(await redis.get(K(leadId)).catch(() => null))
+}
+
+/** Só a marca da pausa (sem mexer em etiqueta): a equipe escreveu num card que já está com a etiqueta. */
+export async function marcarPausa(leadId: number, motivo: string): Promise<void> {
+  await redis.set(K(leadId), { motivo, em: new Date().toISOString() }, { ex: 90 * 86400 })
+}
+
+/** Quando a equipe escreveu ao lead pela última vez (ms). A retomada só vale com a etiqueta colocada depois disso. */
+export async function marcarEquipeFalou(leadId: number, quando = Date.now()): Promise<void> {
+  await redis.set(k('equipe-falou', leadId), quando, { ex: 90 * 86400 })
+}
+export async function equipeFalouEm(leadId: number): Promise<number | null> {
+  const v = await redis.get<number>(k('equipe-falou', leadId)).catch(() => null)
+  return v ? Number(v) : null
+}
+
+/**
+ * Quando a etiqueta anna-retomar entrou no card pela última vez (ms), pelo histórico do Kommo, e se entrou junto com
+ * atendimento-humano (o card salvo com as etiquetas antigas da tela, não uma devolução). null = não deu para saber.
+ */
+export async function etiquetaRetomarEm(leadId: number): Promise<{ em: number; comPausa: boolean } | null> {
+  const d = await kommoGet<{ _embedded?: { events?: Array<{ created_at: number; value_after?: Array<{ tag?: { name?: string } }> }> } }>(
+    `/api/v4/events?filter[entity]=lead&filter[entity_id]=${leadId}&filter[type]=entity_tag_added&limit=100`).catch(() => null)
+  const nomes = (e: { value_after?: Array<{ tag?: { name?: string } }> }) => (e.value_after || []).map(v => (v.tag?.name || '').toLowerCase())
+  const ev = (d?._embedded?.events || []).filter(e => nomes(e).includes(TAG_RETOMAR)).sort((a, b) => b.created_at - a.created_at)[0]
+  return ev ? { em: ev.created_at * 1000, comPausa: nomes(ev).includes(CONFIG.humanTag) } : null
+}
+
+/**
+ * Puro (Dra., 12/11, caso Antonio): a etiqueta anna-retomar só devolve o atendimento se foi colocada DEPOIS da última
+ * mensagem da equipe, e sozinha. Etiqueta antiga, ou regravada junto com atendimento-humano quando alguém salva o card
+ * (o Kommo regrava as etiquetas que estavam na tela), não vale. Sem saber quando entrou, vale (não trava a devolução).
+ */
+export function retomadaExpressa(o: { etiqueta: { em: number; comPausa: boolean } | null; equipeEm: number | null }): boolean {
+  if (!o.etiqueta) return true
+  if (o.etiqueta.comPausa) return false
+  return !o.equipeEm || o.etiqueta.em > o.equipeEm
 }
 
 /** Pausado, mas a etiqueta sumiu do card: recoloca (uma vez a cada 10 min), para a equipe ver o que está valendo. */

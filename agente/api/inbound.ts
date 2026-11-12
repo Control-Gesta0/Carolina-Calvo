@@ -17,7 +17,7 @@ import { posReuniaoVale, respostaPosReuniao, reuniaoDoCard } from '../lib/pos-re
 import { PIPELINES } from '../lib/crm-map'
 import { confirmarSaudacao, ehModeloDaAnna, jaNoHistorico } from '../lib/saudacao'
 import { getState } from '../lib/state'
-import { INSTRUCAO_RETOMAR, pausado, pausar } from '../lib/pausa'
+import { INSTRUCAO_RETOMAR, marcarEquipeFalou, marcarPausa, pausado, pausar } from '../lib/pausa'
 import { cancelamentoComEquipe, classificarCancelamento } from '../lib/cancelamento-equipe'
 
 /**
@@ -152,6 +152,13 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         if ((await pausado(m.leadId)) || (await getState(m.leadId)).etapa) {
           const registro = text || (mediaKind(m.attachType) ? `[${mediaKind(m.attachType)} enviado${outgoing ? ' pela equipe' : ' pelo lead'}]` : '')
           if (registro) await appendMessage(m.leadId, { id: `kommo:${m.id}`, dir: outgoing ? 'out' : 'in', text: registro, ts: Date.now() })
+          // a equipe escreveu com a Anna já pausada: fica registrado quando (a etiqueta anna-retomar só vale se vier
+          // depois) e a pausa vale mesmo se a etiqueta sair do card (Dra., 12/11, caso Antonio)
+          const deRobo = !!text && (ehMensagemDeRoboKommo(text) || (await isEchoOfSent(m.leadId, text)) || (await ehModeloDaAnna(text)))
+          if (outgoing && !deRobo && !(await botRodandoRecente(m.leadId))) {
+            await marcarEquipeFalou(m.leadId)
+            if (!(await pausado(m.leadId))) await marcarPausa(m.leadId, 'a equipe escreveu para o lead (card já com a etiqueta)')
+          }
         }
         continue
       }
@@ -192,6 +199,7 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
         await cancelarRegua(m.leadId)
         // a equipe assumiu: a Anna pausa (etiqueta + marca no Redis) até a equipe devolver com a etiqueta anna-retomar (Dra., 09/11)
         await pausar(m.leadId, 'a equipe escreveu para o lead')
+        await marcarEquipeFalou(m.leadId)
         await addLeadNote(m.leadId, annaAtendia
           ? `A equipe escreveu para o lead pelo Kommo: a Anna pausou o atendimento deste card (etiqueta "${CONFIG.humanTag}") para não responder junto com a equipe. ${INSTRUCAO_RETOMAR}`
           : `A equipe iniciou o atendimento deste lead pelo Kommo antes de a Anna falar com ele: a Anna fica pausada neste card (etiqueta "${CONFIG.humanTag}"). ${INSTRUCAO_RETOMAR}`)

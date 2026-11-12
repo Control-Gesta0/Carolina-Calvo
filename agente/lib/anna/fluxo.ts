@@ -307,6 +307,14 @@ async function tratarDocumento(ctx: Ctx, deps: Deps, leitura: Leitura): Promise<
   const bruta = leitura.renda_bruta
   const liquida = leitura.renda_liquida
   const ilegivel = RX_DOC_FALHOU.test(t) || (bruta == null && /ileg[ií]ve(l|is)|n[aã]o (est[aá]|s[aã]o) leg[ií]ve|n[aã]o (d[aá]|foi poss[ií]vel) (para |de )?ler|desfocad|cortad/i.test(t))
+  // renda já confirmada na conversa (caso Francisco, 11/11): o documento era só para um valor que falta. Não vai para
+  // AÇÃO SDR; o card fica na coluna da renda e a Anna pede por escrito só o que falta
+  if (ilegivel && s.rendaBruta != null) {
+    const falta = PENDENTE.q2(s)
+    if (!falta || !valoresQueFaltam(s).length) return null
+    const enviado = await falar(ctx, deps, `Não consegui ver os valores com clareza na imagem. ${falta}`, 'q2', { id: 'livre' })
+    return { acao: 'documento ilegível com a renda já confirmada: pediu por escrito só o que falta', enviado, leitura }
+  }
   if (ilegivel) {
     const r = await irParaAcaoSdr(ctx, deps, 'o lead enviou um documento que a Anna não conseguiu ler; conferir o documento na conversa e registrar no card a renda bruta, o líquido e o desconto em conta corrente', TEXTOS.docEquipe, 'doc_equipe', leitura)
     if (r) return r

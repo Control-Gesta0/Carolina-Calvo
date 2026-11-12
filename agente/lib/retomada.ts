@@ -1,9 +1,19 @@
+import crypto from 'crypto'
 import { CONFIG } from './config'
+import { processLead } from './agent'
+import { continuarDeOndeParou, reguaDaEtapa } from './anna/fluxo'
+import { depsProducao, montarCtx } from './anna/producao'
+import { comTextos } from './anna/textos'
+import { baseVigente } from './base'
+import { textosDoRoteiro } from './base-core'
+import { iniciarRegua } from './followup'
+import { k, redis } from './redis'
+import { equipeFalouEm, etiquetaRetomarEm, marcarPausa, pausado, retomadaExpressa, retomar, TAG_RETOMAR } from './pausa'
 import { colunaPorRenda, CRM_MAP, PIPELINES, STATUS } from './crm-map'
 import { emptyUsage, logExec } from './execlog'
 import { getHistory } from './history'
 import { agendarJob } from './jobs'
-import { addLeadNote, getLead, updateLeadFields, updateLeadStatus, type KommoLead } from './kommo'
+import { addLeadNote, addLeadTags, addLeadTask, getLead, kommoGet, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from './kommo'
 import { reuniaoDoCard } from './pos-reuniao'
 import { getState, patchState } from './state'
 import { aplicarRecuperacao, createRecuperador, type Recuperado } from './anna/recuperar'
@@ -57,3 +67,100 @@ export async function recuperarNaRetomada(lead: KommoLead): Promise<{ avancou: b
   await logExec({ tipo: 'pulou', leadId, nome: lead.name, etapa: p.etapa || st.etapa, detalhe: `retomada: recuperado do histórico (${ap.resumo.join(' · ')})`, usage: usage.calls ? usage : undefined })
   return { avancou: ap.avancou, oferta: !!ap.ofertaEquipe, ofertaAceita: !!ap.ofertaEquipe?.aceita, resumo: ap.resumo }
 }
+
+/**
+ * Etiqueta anna-retomar no card (webhook ou varredura do relógio). Só devolve o atendimento se a etiqueta foi colocada
+ * depois da última mensagem da equipe e sozinha (Dra., 12/11, caso Antonio); senão, tira a etiqueta antiga e a Anna
+ * continua pausada. Devolve o que fez.
+ */
+export async function tratarRetomada(lead: KommoLead): Promise<string> {
+  const [etiqueta, equipeEm] = await Promise.all([etiquetaRetomarEm(lead.id), equipeFalouEm(lead.id)])
+  if (!retomadaExpressa({ etiqueta, equipeEm })) {
+    if ((await redis.set(k('retomar-antiga', lead.id, etiqueta?.em ?? 0), '1', { nx: true, ex: 86400 })) !== 'OK') return 'etiqueta antiga já tratada'
+    await removeLeadTags(lead.id, [TAG_RETOMAR])
+    if (!leadTags(lead).some(t => t.toLowerCase() === CONFIG.humanTag)) await addLeadTags(lead.id, [CONFIG.humanTag])
+    if (!(await pausado(lead.id))) await marcarPausa(lead.id, 'etiqueta anna-retomar antiga: a equipe segue no atendimento')
+    const quando = (ms: number | null | undefined) => (ms ? new Date(ms).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '?')
+    const porque = etiqueta?.comPausa
+      ? `a etiqueta voltou junto com "${CONFIG.humanTag}" quando o card foi salvo (${quando(etiqueta.em)}), o que não é uma devolução`
+      : `a etiqueta foi colocada (${quando(etiqueta?.em)}) antes da última mensagem da equipe ao lead (${quando(equipeEm)})`
+    await addLeadNote(lead.id, `Anna: a etiqueta "${TAG_RETOMAR}" foi retirada e a Anna CONTINUA PAUSADA: ${porque}. Para devolver o atendimento, coloque a etiqueta "${TAG_RETOMAR}" de novo.`)
+    await logExec({ tipo: 'pulou', leadId: lead.id, nome: lead.name, detalhe: `retomada ignorada: ${porque}` })
+    return 'retomada ignorada (etiqueta antiga)'
+  }
+  const r = await retomar(lead)
+  if (r.startsWith('retomado')) await continuarDepoisDaRetomada(lead.id)
+  return r
+}
+
+/**
+ * Relógio: etiqueta anna-retomar colocada nos últimos 20 min. O Kommo nem sempre avisa quando só uma etiqueta muda
+ * (Antonio, 11/11: colocada às 16:05, a Anna só soube às 16:25, na alteração seguinte do card).
+ */
+export async function varrerRetomadas(): Promise<string[]> {
+  const desde = Math.floor(Date.now() / 1000) - 20 * 60
+  const d = await kommoGet<{ _embedded?: { events?: Array<{ entity_id: number; value_after?: Array<{ tag?: { name?: string } }> }> } }>(
+    `/api/v4/events?filter[entity]=lead&filter[type]=entity_tag_added&filter[created_at][from]=${desde}&limit=100`).catch(() => null)
+  const ids = [...new Set((d?._embedded?.events || []).filter(e => (e.value_after || []).some(v => (v.tag?.name || '').toLowerCase() === TAG_RETOMAR)).map(e => e.entity_id))]
+  const feitos: string[] = []
+  for (const id of ids) {
+    const lead = await getLead(id).catch(() => null)
+    if (!lead || !leadTags(lead).some(t => t.toLowerCase() === TAG_RETOMAR)) continue
+    feitos.push(`${id}: ${await tratarRetomada(lead)}`)
+  }
+  return feitos
+}
+
+/** Depois da retomada: se a última mensagem é do lead, a Anna responde considerando todo o histórico; senão, a régua da etapa recomeça. */
+export async function continuarDepoisDaRetomada(leadId: number): Promise<void> {
+  // antes de falar: o que o lead já respondeu (com a Anna ou com a equipe) e o horário que a equipe ofereceu (Dra., 10/11)
+  const lead = await getLead(leadId)
+  const rec = await recuperarNaRetomada(lead).catch(async e => {
+    await logExec({ tipo: 'erro', leadId, nome: lead.name, detalhe: `retomada: recuperação do histórico falhou (${(e instanceof Error ? e.message : String(e)).slice(0, 160)})` })
+    return null
+  })
+  const ultima = (await getHistory(leadId).catch(() => [])).slice(-1)[0]
+  const etapa = (await getState(leadId)).etapa
+  // reunião já marcada (campo "Reunião" no futuro) ou card no Closer: os dados ficam guardados, mas a Anna não
+  // pergunta nada da qualificação; se o lead escreveu, o atendimento normal decide (no Closer ela só cuida da reunião dela)
+  if ((reuniaoDoCard(lead) ?? 0) * 1000 > Date.now() || lead.pipeline_id === PIPELINES.closer) {
+    if (ultima?.dir === 'in') await processLead(leadId, `retomar-${Date.now()}`)
+    return
+  }
+  // o lead aceitou o horário da equipe, mas a conversa seguiu sem a reunião marcada: a equipe confere
+  if (rec?.ofertaAceita && ultima?.dir !== 'in') {
+    await addLeadTask(leadId, 'Anna: na conversa, o lead aceitou o horário que a equipe ofereceu, mas a reunião não está marcada no card. Confirmar com o lead e marcar.', CRM_MAP.tarefa).catch(() => undefined)
+    return
+  }
+  // a etapa andou além da 2ª pergunta pelo que já estava respondido: a próxima pergunta sai agora (a última
+  // mensagem do lead já foi considerada na leitura do histórico)
+  if (rec?.avancou && etapa !== 'q2' && etapa !== 'oferta') return seguirDeOndeParou(leadId)
+  if (ultima?.dir === 'in') {
+    await processLead(leadId, `retomar-${Date.now()}`)
+    return
+  }
+  // horário oferecido pela equipe: o follow-up de 1 h já está agendado (não oferece outro horário)
+  if (rec?.oferta) return
+  if (rec?.avancou) return seguirDeOndeParou(leadId)
+  // a última palavra foi da equipe (pergunta, remarcação, combinado): a Anna espera o lead e não manda follow-up de
+  // qualificação por cima da conversa da equipe (Dra., 12/11, caso Antonio)
+  if (ultima?.dir === 'out' && String(ultima.id).startsWith('kommo:')) return
+  const regua = etapa ? reguaDaEtapa(etapa) : null
+  if (regua) await iniciarRegua(leadId, regua, Date.now())
+}
+
+/** A próxima pergunta da qualificação, depois de a retomada recuperar o que já tinha sido respondido. */
+async function seguirDeOndeParou(leadId: number): Promise<void> {
+  const dono = crypto.randomUUID()
+  if ((await redis.set(k('lock', leadId), dono, { nx: true, ex: 180 })) !== 'OK') return
+  try {
+    const lead = await getLead(leadId)
+    const { ctx } = await montarCtx(leadId, lead)
+    const base = await baseVigente()
+    const r = await comTextos(textosDoRoteiro(base.textos), () => continuarDeOndeParou(ctx, depsProducao(leadId, lead)))
+    await logExec({ tipo: 'resposta', leadId, nome: lead.name, etapa: (await getState(leadId)).etapa, tools: [r.acao], detalhe: r.enviado?.slice(0, 160), respostaIA: r.enviado })
+  } finally {
+    await redis.eval(`if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`, [k('lock', leadId)], [dono])
+  }
+}
+

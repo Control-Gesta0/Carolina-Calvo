@@ -194,3 +194,15 @@ export function colunaPelaFaixa(faixa: string | null | undefined): number {
   if (/\b10 a 15\b/.test(f)) return STATUS.de10a15
   return STATUS.desqualificado
 }
+
+/**
+ * Puro (Dra., 12/11, caso Antonio): follow-up de qualificação NÃO sai quando a qualificação acabou: card no Closer,
+ * em AGENDAR REUNIÃO, em DESQUALIFICADO ou com reunião marcada no futuro. Devolve o motivo, ou null.
+ */
+export function qualificacaoEncerrada(o: { pipelineId: number; statusId: number; reuniaoMs: number | null; agoraMs: number }): string | null {
+  if (o.pipelineId === PIPELINES.closer) return 'card no Closer'
+  if (o.pipelineId === PIPELINES.sdr && o.statusId === STATUS.agendarReuniao) return 'card em AGENDAR REUNIÃO'
+  if (o.pipelineId === PIPELINES.sdr && o.statusId === STATUS.desqualificado) return 'card em DESQUALIFICADO'
+  if (o.reuniaoMs && o.reuniaoMs > o.agoraMs) return 'reunião marcada'
+  return null
+}
