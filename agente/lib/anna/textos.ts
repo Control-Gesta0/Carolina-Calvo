@@ -116,7 +116,7 @@ export const TEXTOS_PADRAO = {
   /** [Dra., 09/11] reunião cancelada pelo lead sem dizer o motivo */
   cancelou_motivo: 'Entendo, {nome}! Sem problemas.\n\nAconteceu algum imprevisto ou houve alguma questão que fez você reconsiderar a reunião?\n\nPergunto porque gostaria de entender melhor e verificar se conseguimos encontrar uma alternativa para você.',
   /** [Dra., 09/11] o lead teve um imprevisto: oferta de remarcação */
-  remarcar_oferta: 'Sem problemas, {nome}! Imprevistos acontecem, entendo perfeitamente.\n\nPodemos aproveitar e já deixar sua reunião remarcada?\n\nAssim, conseguimos reservar um novo horário na agenda da Dra. Carolina, sem precisar iniciar todo o processo novamente.\n\n*Para você, fica melhor pela manhã ou pela tarde?*',
+  remarcar_oferta: 'Sem problemas, {nome}! Imprevistos acontecem, entendo perfeitamente.\n\n*Podemos deixar sua reunião remarcada para {dia}?*\n\nPara você, fica melhor *pela manhã ou pela tarde?*',
   /** [Dra., 09/11] aceitou remarcar, mas vai ver o horário depois */
   remarcar_depois: 'Combinado, {nome}! Quando puder, me diga se fica melhor pela manhã ou pela tarde, e eu verifico um horário na agenda da Dra. Carolina para você.',
   /** [Dra., 09/11] não quer mais a reunião: uma única tentativa de entender */
@@ -129,10 +129,10 @@ export const TEXTOS_PADRAO = {
   /** [Dra., 06/11] o lead pediu atendimento presencial: como funciona o atendimento (sem valores) */
   como_funciona: 'Claro! Vou te explicar como funciona nosso atendimento.\n\nPrimeiro, fazemos uma avaliação on-line do seu caso para verificar se é uma situação em que nosso escritório pode te ajudar.\n\nSe o seu caso estiver dentro da nossa área de atuação, agendamos uma primeira reunião on-line com a Dra. Carolina Calvo, com duração aproximada de 30 minutos.\n\nNessa conversa, a Dra. Carolina vai explicar o que pode ser feito no seu caso e quais são as possibilidades de atuação.\n\n*Essa primeira reunião on-line é totalmente gratuita.*\n\nCaso você tenha interesse em contratar o escritório após essa conversa, podemos agendar um horário para que venha presencialmente.\n\nTudo bem para você?',
 
-  /** [Dra., 06/11] lead recorrente que de novo parou de responder: substitui o 1º follow-up da qualificação, uma vez por ciclo */
-  recorrente: 'Olá, {nome}! Tudo bem?\n\nVerifiquei aqui que você já procurou nosso escritório em outras ocasiões, mas acabou não dando continuidade ao atendimento.\n\n*Quero te fazer uma pergunta importante: enquanto você adia essa avaliação, o que realmente mudou na sua situação financeira?*\n\nBuscar orientação é o primeiro passo, mas, sem dar continuidade, não conseguimos avaliar quais medidas podem ser adotadas para ajudar você a sair dessa situação.\n\n*De lá para cá, sua situação financeira melhorou, piorou ou continua igual?*\n\nMe conta, porque quero entender o que está acontecendo e verificar como podemos avançar com seu atendimento.',
-  /** [Dra., 06/11] resposta do recorrente ("piorou", "continua igual"): retoma de onde parou; a pergunta da etapa vem logo depois */
-  recorrente_retoma: 'Entendi, {nome}. Então é importante avaliarmos sua situação atual para verificar quais possibilidades existem no seu caso.\n\nVamos atualizar algumas informações para dar continuidade.',
+  /** [Dra., 12/11] lead que já procurou o escritório e não continuou: no INÍCIO do novo atendimento, antes da qualificação financeira, uma vez */
+  recorrente: 'Olá, {nome}! Tudo bem?\n\nVerifiquei aqui que você já procurou nosso escritório anteriormente, mas o atendimento acabou não avançando.\n\n*De lá para cá, sua situação financeira melhorou, piorou ou continua igual?*\n\nQuero entender o que mudou para verificarmos como podemos ajudar você agora.',
+  /** [Dra., 12/11] resposta do recorrente: segue para a atualização financeira (a lista do que falta vem logo depois) */
+  recorrente_retoma: 'Entendi, {nome}. Então vamos atualizar algumas informações para verificarmos as possibilidades de atendimento.',
 
   /** [Dra., 06/11] renda bruta de R$ 10 mil a R$ 15 mil: encerramento provisório; a equipe avalia e dá o retorno */
   encaminha_10_15: 'Entendi, {nome}. Obrigada pelas informações!\n\nVou encaminhar sua situação para a nossa equipe responsável.\n\nAssim que tivermos uma posição, entraremos em contato com você por aqui, tudo bem?',
@@ -244,6 +244,8 @@ export const TEXTOS = {
   get valoresEquipe() { return texto('valores_equipe') },
   get valoresConferir() { return texto('valores_conferir') },
   /** textos da remarcação com {nome}; sem nome, some ", {nome}" */
+  /** "amanhã, sexta-feira, 13/11" ou "segunda-feira, 16/11" (o próximo dia útil) */
+  remarcarOferta: (dia: string, nome?: string) => preencher(nome ? preencher(texto('remarcar_oferta'), { nome }) : texto('remarcar_oferta').replace(', {nome}', ''), { dia }),
   comNome: (id: 'cancelou_motivo' | 'remarcar_oferta' | 'remarcar_depois' | 'desistencia_pergunta' | 'depois_contato' | 'questiona_reuniao', nome?: string) =>
     nome ? preencher(texto(id), { nome }) : texto(id).replace(', {nome}', ''),
   encaminha1015: (nome?: string) => comAvisoFora(nome ? preencher(texto('encaminha_10_15'), { nome }) : texto('encaminha_10_15').replace(', {nome}', ''), new Date(), CONFIG.plantao),

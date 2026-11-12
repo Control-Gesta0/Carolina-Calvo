@@ -149,6 +149,8 @@ export interface Deps {
   agendarLembretes(inicio: Date, eventId: string): Promise<void>
   /** a reunião também na agenda do Kommo (tarefa "Reunião" no horário), Dra., 05/11 */
   tarefaReuniao?(inicio: Date, texto: string): Promise<void>
+  /** o lead já procurou o escritório antes e não continuou (Dra., 06/11 e 12/11) */
+  recorrente?(): Promise<boolean>
   /** valores de um atendimento anterior do mesmo telefone (memória); null = nada registrado ou memória desligada */
   memoria?(): Promise<LeadState['memoria'] | null>
   /** reescreve a mensagem do roteiro como conversa (redator.ts); sem ela, sai o texto pronto */
@@ -205,7 +207,7 @@ export const OBJETIVO: Record<string, string> = {
   livre: 'responder a dúvida da pessoa só com o que está na referência e, no fim, retomar a pergunta do roteiro',
 }
 /** Ficam como a Dra. escreveu: a confirmação (data, link e orientações) e o texto da ética da OAB. */
-const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios', 'doc_confirma', 'doc_equipe', 'doc_ilegivel', 'valores_equipe', 'valores_conferir', 'identidade', 'valores_depois', 'aguardo_curto', 'q1_so_opcao', 'oferta_equipe_follow', 'oferta_equipe_outro'])
+const FIXOS = new Set(['pergunta1', 'pergunta2', 'q1_numero', 'agendado', 'possui_advogado', 'como_funciona', 'encaminha_10_15', 'recorrente_retoma', 'honorarios', 'doc_confirma', 'doc_equipe', 'doc_ilegivel', 'valores_equipe', 'valores_conferir', 'identidade', 'valores_depois', 'aguardo_curto', 'q1_so_opcao', 'oferta_equipe_follow', 'oferta_equipe_outro', 'recorrente', 'remarcar_oferta'])
 
 interface Fala { id: string; obrigatorio?: string[]; /** começo da régua (o lead disse quando manda): sem ela, agora */ baseRegua?: number }
 
@@ -444,7 +446,8 @@ async function tratarCancelamento(ctx: Ctx, deps: Deps, leitura: Leitura): Promi
       await deps.patch({ etapa: 'remarcar_pergunta' })
       return { acao: 'duvidou da reunião: explicou e ofereceu remarcar', enviado, leitura }
     }
-    const enviado = await dizer(ctx, deps, TEXTOS.comNome('remarcar_oferta', nome), { id: 'remarcar_oferta' })
+    // Dra., 12/11: a primeira tentativa já sugere o próximo dia útil e pergunta o período
+    const enviado = await dizer(ctx, deps, TEXTOS.remarcarOferta(proximoDiaUtilExtenso(ctx.agora), nome), { id: 'remarcar_oferta' })
     await deps.patch({ etapa: 'remarcar_pergunta' })
     return { acao: 'cancelou com imprevisto: ofereceu remarcar', enviado, leitura }
   }
@@ -562,6 +565,20 @@ async function moverPelaRenda(deps: Deps, renda: number): Promise<void> {
   if (coluna === STATUS.desqualificado) await deps.nota(`Anna: ${MOTIVO_DESQUALIFICADO.renda} Renda bruta confirmada na conversa: ${brl(renda)}.`)
 }
 
+/** Puro: "amanhã, sexta-feira, 13/11" ou "segunda-feira, 16/11" — o próximo dia útil depois de hoje. */
+export function proximoDiaUtilExtenso(agora: Date): string {
+  const iso = proximoDiaUtil(diaIso(agora))
+  const [a, m, d] = iso.split('-').map(Number)
+  const dia = quandoExtenso(deBrt(a, m - 1, d, 12, 0)).split(', às')[0]
+  return iso === diaIso(new Date(agora.getTime() + 86400_000)) ? `amanhã, ${dia}` : dia
+}
+
+/** Puro: as perguntas de renda que faltam, numeradas (Dra., 12/11). */
+export function perguntasDoQueFalta(s: Pick<LeadState, 'rendaBruta' | 'rendaLiquida' | 'descontoConta'>): string {
+  const p = { bruta: 'Qual é sua renda bruta mensal?', liquida: 'Quanto você recebe líquido, após os descontos do contracheque?', conta: 'Quanto o banco desconta diretamente da sua conta corrente quando seu salário é depositado?' }
+  return valoresQueFaltam(s).map((x, i) => `*${i + 1}. ${p[x]}*`).join('\n\n')
+}
+
 /** Um turno do lead. */
 export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   const s = ctx.state
@@ -671,12 +688,14 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
 
   // resposta do lead recorrente à mensagem da Dra. ("piorou", "continua igual"): retoma de onde parou,
   // com a pergunta da etapa; se ele já mandou valores ou escolheu a opção, segue o roteiro normal (Dra., 06/11)
+  // Dra., 12/11: a resposta ao "melhorou, piorou ou continua igual?" leva à atualização financeira, pedindo só o que falta
   if (s.recorrentePendente) {
     await deps.patch({ recorrentePendente: false })
     const deuDado = leitura.opcao || leitura.renda_bruta != null || leitura.renda_liquida != null || leitura.desconto_conta != null
-    if (!deuDado && leituraMemoria(ctx.textoTurno) && PENDENTE[etapa](s)) {
-      const enviado = await falar(ctx, deps, `${TEXTOS.recorrenteRetoma(ctx.primeiroNome || undefined)}\n\n${PENDENTE[etapa](s)}`, etapa, { id: 'recorrente_retoma' })
-      return { acao: 'recorrente respondeu: retomou de onde parou', enviado, leitura }
+    const pergunta = etapa === 'q2' ? perguntasDoQueFalta(s) : PENDENTE[etapa](s)
+    if (!deuDado && pergunta) {
+      const enviado = await falar(ctx, deps, `${TEXTOS.recorrenteRetoma(ctx.primeiroNome || undefined)}\n\n${pergunta}`, etapa, { id: 'recorrente_retoma' })
+      return { acao: `recorrente respondeu (${leituraMemoria(ctx.textoTurno) || 'outra resposta'}): atualização financeira`, enviado, leitura }
     }
   }
 
@@ -807,6 +826,14 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
       if (opcao) {
         await deps.patch({ objetivo: opcao })
         await deps.salvarCampos({ [CRM_MAP.campos.objetivo]: String(opcao) })
+        // lead que já procurou o escritório e não continuou (Dra., 12/11): a abordagem de retomada sai AGORA, no
+        // início do novo atendimento e antes das perguntas de renda, uma vez só (nunca como follow-up)
+        const semValores = s.rendaBruta == null && s.rendaLiquida == null && s.descontoConta == null && !temValores(leitura)
+        if (semValores && !s.recorrenteEnviado && deps.recorrente && (await deps.recorrente().catch(() => false))) {
+          await deps.patch({ etapa: 'q2', recorrenteEnviado: true, recorrentePendente: true })
+          const enviado = await falar(ctx, deps, TEXTOS.recorrente(ctx.primeiroNome || undefined), 'q2', { id: 'recorrente' })
+          return { acao: `opção ${opcao}: lead recorrente, perguntou se a situação mudou (antes da renda)`, enviado, leitura }
+        }
         // valores já ditos (agora, antes da opção, ou registrados no card): segue a 2ª pergunta pedindo só o que falta
         const sQ2: LeadState = { ...s, objetivo: opcao, etapa: 'q2' }
         const jaTinha = s.rendaBruta != null || s.rendaLiquida != null || s.descontoConta != null

@@ -526,7 +526,7 @@ async function main() {
     w.state = { etapa: 'q2', objetivo: 3, recorrenteEnviado: true, recorrentePendente: true }
     w.leituras.push(L({ intencao: 'responde_etapa' }))
     await fluxo.turno({ ...ctx(w, seg9, 'piorou bastante'), primeiroNome: 'Eva' }, deps)
-    eq('recorrente responde "piorou" → retoma e pede os valores que faltam', [w.enviados[0].startsWith('Entendi, Eva. Então é importante avaliarmos sua situação atual'), w.enviados[0].endsWith(PENDENTE_Q2), w.state.recorrentePendente], [true, true, false])
+    eq('recorrente responde "piorou" → retoma e pede os valores que faltam (lista numerada da Dra.)', [w.enviados[0].startsWith('Entendi, Eva. Então vamos atualizar algumas informações'), w.enviados[0].includes('*1. Qual é sua renda bruta mensal?*') && w.enviados[0].includes('*3. Quanto o banco desconta'), w.state.recorrentePendente], [true, true, false])
     const m2 = mundo(seg9)
     m2.w.state = { etapa: 'q2', objetivo: 3, recorrenteEnviado: true, recorrentePendente: true }
     m2.w.leituras.push(L({ renda_bruta: 18000, renda_liquida: 6000, desconto_conta: 3000 }))
@@ -1276,6 +1276,59 @@ async function main() {
     w2.state = { etapa: 'q1' }
     await fluxo.continuarDeOndeParou(ctx(w2, agora, ''), d2)
     eq('lead nunca atendido e sem dados: começa pela 1ª pergunta (texto, sem o modelo de saudação)', w2.enviados[0]?.includes('1️⃣'), true)
+  }
+
+  console.log('\n— Recorrente no início e remarcação objetiva (Dra., 12/11, caso Adriana)')
+  {
+    // TESTE A: lead recorrente → abordagem logo depois da opção, antes da renda; "continua igual" → atualização; nunca como follow-up
+    const agora = A.deBrt(2026, 10, 11, 20, 17)
+    const { w, deps } = mundo(agora)
+    deps.recorrente = async () => true
+    w.state = { etapa: 'q1' }
+    w.leituras.push(L({ opcao: 3 }))
+    await fluxo.turno({ ...ctx(w, agora, '3'), primeiroNome: 'Adriana' }, deps)
+    w.leituras.push(L({ intencao: 'responde_etapa' }))
+    await fluxo.turno({ ...ctx(w, agora, 'continua igual'), primeiroNome: 'Adriana' }, deps)
+    w.leituras.push(L({ renda_bruta: 20881.3, renda_liquida: 8981.82, desconto_conta: 9987.82 }))
+    await fluxo.turno({ ...ctx(w, agora, '1 - 20.881,30 2 - 8.981,82 3 - 9.987,82'), primeiroNome: 'Adriana' }, deps)
+    eq('TESTE A: recorrência no início (antes da renda), depois a atualização financeira, e não volta mais', [
+      w.enviados[0].startsWith('Olá, Adriana! Tudo bem?') && w.enviados[0].includes('melhorou, piorou ou continua igual'),
+      w.enviados[1].startsWith('Entendi, Adriana. Então vamos atualizar') && w.enviados[1].includes('*1. Qual é sua renda bruta mensal?*'),
+      w.enviados[2].includes('CHEQUE ESPECIAL'),
+      w.enviados.filter(t => t.includes('já procurou nosso escritório')).length,
+      w.state.recorrenteEnviado,
+    ], [true, true, true, 1, true])
+    const { w: w2, deps: d2 } = mundo(agora)
+    d2.recorrente = async () => true
+    w2.state = { etapa: 'q1' }
+    w2.leituras.push(L({ opcao: 3 }))
+    await fluxo.turno({ ...ctx(w2, agora, '3'), primeiroNome: 'Ana' }, d2)
+    const { w: w3, deps: d3 } = mundo(agora)
+    d3.recorrente = async () => false
+    w3.state = { etapa: 'q1' }
+    w3.leituras.push(L({ opcao: 3 }))
+    await fluxo.turno({ ...ctx(w3, agora, '3'), primeiroNome: 'Ana' }, d3)
+    eq('lead novo (não recorrente): segue direto para a 2ª pergunta', [w2.enviados[0].includes('já procurou'), w3.enviados[0].includes('RENDA BRUTA')], [true, true])
+    // remarcação objetiva: quinta 12/11 → "amanhã, sexta-feira, 13/11"; sexta → segunda
+    eq('próximo dia útil para remarcar', [fluxo.proximoDiaUtilExtenso(A.deBrt(2026, 10, 12, 14, 41)), fluxo.proximoDiaUtilExtenso(A.deBrt(2026, 10, 13, 10, 0))], ['amanhã, sexta-feira, 13/11', 'segunda-feira, 16/11'])
+    const qui = A.deBrt(2026, 10, 12, 14, 41)
+    const { w: w4, deps: d4 } = mundo(qui)
+    w4.state = { etapa: 'agendado', rendaBruta: 20881.3, reuniao: { eventId: 'ev', inicio: A.deBrt(2026, 10, 12, 15, 0).toISOString(), link: 'x', criadaEm: '' } }
+    w4.leituras.push(L({ intencao: 'cancela_reuniao' }))
+    await fluxo.turno({ ...ctx(w4, qui, 'Fui convocada para uma reunião emergencial. Não vou conseguir entrar com a Dra. Carolina'), primeiroNome: 'Adriana' }, d4)
+    w4.leituras.push(L({ intencao: 'escolhe_periodo', periodo: 'tarde' }))
+    await fluxo.turno({ ...ctx(w4, qui, 'à tarde'), primeiroNome: 'Adriana' }, d4)
+    eq('TESTE Adriana: cancela por imprevisto → sugere sexta 13/11 e pergunta o período; "tarde" → um horário da tarde de sexta', [
+      w4.enviados[0], w4.enviados[1]?.includes('13/11') || w4.enviados[1]?.includes('AMANHÃ às 15:00'),
+    ], ['Sem problemas, Adriana! Imprevistos acontecem, entendo perfeitamente.\n\n*Podemos deixar sua reunião remarcada para amanhã, sexta-feira, 13/11?*\n\nPara você, fica melhor *pela manhã ou pela tarde?*', true])
+    // TESTE da agenda: sem horário hoje, livre amanhã → só horário autorizado do próximo dia útil (nunca 12:50 nem data passada)
+    const hoje = A.deBrt(2026, 10, 12, 9, 0)
+    const ocupadoHoje = [{ inicio: A.deBrt(2026, 10, 12, 0, 0).getTime(), fim: A.deBrt(2026, 10, 12, 23, 59).getTime() }]
+    const sl = A.proximoSlot({ agora: hoje, ocupados: ocupadoHoje, reservados: new Set(), mesmoDia: true })
+    const autorizados = [...A.AGENDA.manha, ...A.AGENDA.tarde]
+    const todos: string[] = []
+    for (let h = 0; h < 200; h++) { const ag = new Date(hoje.getTime() + h * 37 * 60_000); const x = A.proximoSlot({ agora: ag, ocupados: [], reservados: new Set(), mesmoDia: true }); if (x) todos.push(`${x.chave}|${x.inicio.getTime() > ag.getTime()}`) }
+    eq('agenda cheia hoje: oferece horário autorizado do próximo dia útil; nenhuma oferta fora da grade ou no passado', [sl?.chave, todos.every(c => autorizados.includes(c.slice(11, 16)) && c.endsWith('|true'))], ['2026-11-13T11:00', true])
   }
 
   console.log('\n— Lembrete confere a reunião na agenda')

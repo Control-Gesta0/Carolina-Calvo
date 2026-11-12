@@ -17,7 +17,7 @@ import type { Ctx, Deps } from './fluxo'
 import { baseVigente } from '../base'
 import { createInterprete } from './interprete'
 import { createRedator } from './redator'
-import { memoriaDoLead, memoriaVale } from '../memoria'
+import { ehRecorrente, memoriaDoLead, memoriaVale } from '../memoria'
 import crypto from 'crypto'
 import { INSTRUCAO_RETOMAR, pausar } from '../pausa'
 
@@ -93,6 +93,10 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       await appendMessage(leadId, { id: crypto.randomUUID(), dir: 'out', text: texto, ts: Date.now() })
     },
     patch: p => patchState(leadId, p),
+    async recorrente() {
+      if (!memoriaVale(leadId)) return false
+      return ehRecorrente(await memoriaDoLead(lead))
+    },
     async memoria() {
       if (!memoriaVale(leadId)) return null
       return (await memoriaDoLead(lead)).valores
