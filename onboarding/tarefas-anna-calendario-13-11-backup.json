@@ -1,0 +1,761 @@
+[
+ {
+  "id": 3872230,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1793365690,
+  "updated_at": 1793365690,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29083586,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead voltou e no Closer (pós-reunião) (card 29046218, outubro): a Anna não qualificou de novo. Este telefone já teve 1 atendimento(s) antes: card 29046218 (outubro): no Closer (pós-reunião). Último registro com valores (outubro): renda bruta de R$ 20.000, líquido de R$ 16.000 e nenhum desconto em conta corrente.",
+  "result": [],
+  "complete_till": 1793369290,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3872230?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3892206,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1793910388,
+  "updated_at": 1793910388,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29068494,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Boa tarde, pensei direito aqui, irei tentar outra forma,sou filiado ao simpol DF, irei tentar com eles.\"",
+  "result": [],
+  "complete_till": 1793911288,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3892206?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3894212,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1793971826,
+  "updated_at": 1793971826,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29145506,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu depois da reunião — retorno imediato. Mensagem do cliente: \"Nossa\"",
+  "result": [],
+  "complete_till": 1793972726,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3894212?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3894444,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1793975366,
+  "updated_at": 1793975366,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29148544,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu depois da reunião — retorno imediato. Mensagem do cliente: \"Podemos sim. As 14:30. Vai ser com a Dr. Carolina Calvo?\"",
+  "result": [],
+  "complete_till": 1793976266,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3894444?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3894816,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1793980730,
+  "updated_at": 1793980730,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 28495644,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Assinado ok\"",
+  "result": [],
+  "complete_till": 1793981630,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3894816?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3897792,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794061506,
+  "updated_at": 1794061506,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29153846,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Anna passou o atendimento: assunto de outra área. O lead perguntou se o escritório atua com Receita Federal. · Objetivo: reestruturar dívidas · Renda bruta: R$ 22.100,40 · Líquido: R$ 9.158,94 · Desconto em conta: R$ 6.200 · Cheque especial e cartão: \"Cheque especial+- 5000,00\nCartão de crédito+- 20000,00\nTem outro empréstimo 5000,00 em outro contracheque. Vou baixar\"",
+  "result": [],
+  "complete_till": 1794065105,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3897792?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3898474,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794076488,
+  "updated_at": 1794076488,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29160078,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 13.322 · Líquido: R$ 6.091,98 · Desconto em conta: R$ 6.091,98 · Cheque especial e cartão: \"1 - Sim\n2 - não\"",
+  "result": [],
+  "complete_till": 1794080088,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3898474?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3898628,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794081046,
+  "updated_at": 1794081046,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29159774,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 14.738,82 · Líquido: R$ 5.881,30 · Desconto em conta: R$ 8.857,52 · Cheque especial e cartão: \"1 e 2\"",
+  "result": [],
+  "complete_till": 1794084646,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3898628?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3898938,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794092498,
+  "updated_at": 1794092498,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29160982,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 13.617,37 · Líquido: R$ 4.721,49 · Desconto em conta: R$ 8.895,88 · Cheque especial e cartão: \"[imagem do lead]: É um extrato bancário, com movimentação de **cred transferência salário** e débito de **acordo/novação\"",
+  "result": [],
+  "complete_till": 1794096098,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3898938?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3904016,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794247482,
+  "updated_at": 1794247482,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 28834846,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Ok\"",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3904016?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3904470,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794252938,
+  "updated_at": 1794252938,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 28191848,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Achei boa..\nMas gostaria que me mandasse tudo explicado..\"",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3904470?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3904476,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794253075,
+  "updated_at": 1794253075,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 28852224,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Como eu falei no áudio eu não  quero cancelar a oportunidade .\nEu estou refletindo que preciso disso e a promoção  chamou minha atenção.\"",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3904476?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3904536,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794254332,
+  "updated_at": 1794254332,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29153284,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Combinado.\"",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3904536?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3904690,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794257222,
+  "updated_at": 1794257222,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29166332,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 11.000 · Líquido: R$ 8.216,70 · Desconto em conta: R$ 57,40 · Cheque especial e cartão: \"Cheque especial 1.400,00\nTambém uso cartão de crédito\"",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3904690?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3904916,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794261730,
+  "updated_at": 1794261730,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29153484,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 11.356,19 · Líquido: R$ 2.983 · Desconto em conta: R$ 3.951,08 · Cheque especial e cartão: \"- Cheque especial: não \n- ⁠Cartão de crédito: em outro banco  6.268,00 (já em atraso)\"",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3904916?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3905162,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794269556,
+  "updated_at": 1794269556,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29160078,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "AÇÃO SDR: o lead pediu reunião: avaliar se o escritório pode atender e responder. O lead cumprimentou e disse que precisa dos serviços da dra. · Objetivo: suspender e reestruturar · Renda bruta: R$ 13.322 · Líquido: R$ 6.091,98 · Desconto em conta: R$ 6.091,98 · Cheque especial e cartão: \"1 - Sim\n2 - não\" Quando concluir, coloque a etiqueta \"anna-retomar\" no card: a Anna retoma de onde parou e o card volta para 10 A 15 MIL.",
+  "result": [],
+  "complete_till": 1794279540,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3905162?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3906252,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794310279,
+  "updated_at": 1794310279,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29180880,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: reestruturar dívidas · Renda bruta: R$ 10.175,45 · Líquido: R$ 5.842,68 · Desconto em conta: R$ 1.300 · Cheque especial e cartão: \"Não \n\nNão\"",
+  "result": [],
+  "complete_till": 1794365940,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3906252?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3906302,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794311812,
+  "updated_at": 1794311812,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 23762433,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Vamos agendar uma reunião\"",
+  "result": [],
+  "complete_till": 1794365940,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3906302?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3907152,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794326810,
+  "updated_at": 1794326810,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29181780,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 11.000 · Líquido: R$ 7.100 · Desconto em conta: R$ 7.045,73 · Cheque especial e cartão: \"Pode\"",
+  "result": [],
+  "complete_till": 1794365940,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3907152?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3907886,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794337003,
+  "updated_at": 1794337003,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29145506,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Olá\"",
+  "result": [],
+  "complete_till": 1794365940,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3907886?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3908210,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794341848,
+  "updated_at": 1794341848,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29167246,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "AÇÃO SDR: o lead perguntou se está falando com um robô; responder pelo WhatsApp e seguir o atendimento. *Sua visita não foi realizada*\n\nParece que sua visita do dia 09/11, às 12:00 na Área Especial 2 Módulo C, Bloco E  não foi realizada.\n\nConta pra gente qual foi o motivo?\n\n*[ Mensagem automática do Q · Objetivo: suspender e reestruturar · Renda bruta: R$ 13.800 · Líquido: R$ 3.430 · Desconto em conta: ? Quando concluir, coloque a etiqueta \"anna-retomar\" no card: a Anna retoma de onde parou e o card volta para 10 A 15 MIL.",
+  "result": [],
+  "complete_till": 1794365940,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3908210?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3908360,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794345901,
+  "updated_at": 1794345901,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29148810,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu depois da reunião — retorno imediato. Mensagem do cliente: \"Sobre a reunião\"",
+  "result": [],
+  "complete_till": 1794365940,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3908360?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3910794,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794413378,
+  "updated_at": 1794413378,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29197594,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead voltou e está no Closer (pós-reunião) (card 29174374, novembro): a Anna não qualificou de novo. Este telefone já teve 1 atendimento(s) antes: card 29174374 (novembro): no Closer (pós-reunião). Último registro com valores (novembro): renda bruta de R$ 20.797, líquido de R$ 6.929 e desconto em conta de R$ 4.540.",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3910794?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3910800,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794413506,
+  "updated_at": 1794413506,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 28718650,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "O cliente cancelou a reunião de quarta-feira, 11/11, às 15:30 (\"Não vou conseguir chegar a tempo em casa, estou na chácara sem Internet.\"). A reunião já foi cancelada nas agendas. Verificar a possibilidade de remarcação.",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3910800?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3911052,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794417868,
+  "updated_at": 1794417868,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29077280,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Olá, desculpe, não vi a msg e acabei não entrando na reunião.\"",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3911052?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3911128,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794419188,
+  "updated_at": 1794419188,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29172296,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu depois da reunião — retorno imediato. Mensagem do cliente: \"Nao estive\"",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3911128?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3911312,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794421497,
+  "updated_at": 1794421497,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 28836598,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu em Cliente decisão — retorno imediato. Mensagem do cliente: \"Olá boa tarde\"",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3911312?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3911910,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794432709,
+  "updated_at": 1794432709,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29199590,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu depois da reunião — retorno imediato. Mensagem do cliente: \"Em ambos\"",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3911910?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3912196,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794440990,
+  "updated_at": 1794440990,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29201896,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender e reestruturar · Renda bruta: R$ 12.000 · Líquido: R$ 6.000 · Desconto em conta: R$ 12.000 · Cheque especial e cartão: \"1.  Sim\n2. Nao\"",
+  "result": [],
+  "complete_till": 1794452340,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3912196?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3914042,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794494541,
+  "updated_at": 1794494541,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29183368,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Lead respondeu depois da reunião — retorno imediato. Mensagem do cliente: \"Bom dia! \nPodemos retomar a agenda?\"",
+  "result": [],
+  "complete_till": 1794538740,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3914042?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3915658,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794520521,
+  "updated_at": 1794520521,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29204250,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Anna passou o atendimento: já tem advogado no caso. A lead informou que é professora aposentada, já tem uma ação contra o BRB com advogado atuando, teve liminar derrubada e houve bloqueio de R$ 16 mil no pagamento e 13º, com audiência/agendamento com desembargador no dia 16. · Objetivo: não informado · Renda bruta: ? · Líquido: ? · Desconto em conta: ? Para devolver o atendimento à Anna, coloque a etiqueta \"anna-retomar\" neste card: ela retoma a conversa de onde parou.",
+  "result": [],
+  "complete_till": 1794538740,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3915658?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3917104,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794566424,
+  "updated_at": 1794566424,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29210404,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender descontos · Renda bruta: R$ 13.000 · Líquido: R$ 4.500 · Desconto em conta: R$ 600 · Cheque especial e cartão: \"Não\nNão tenho cartão nem cheque especial\"",
+  "result": [],
+  "complete_till": 1794625140,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3917104?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ },
+ {
+  "id": 3918704,
+  "created_by": 0,
+  "updated_by": 0,
+  "created_at": 1794585488,
+  "updated_at": 1794585488,
+  "responsible_user_id": 12068987,
+  "group_id": 0,
+  "entity_id": 29200196,
+  "entity_type": "leads",
+  "duration": 0,
+  "is_completed": false,
+  "task_type_id": 1,
+  "text": "Avaliar a possibilidade de atendimento (renda de R$ 10 a 15 mil) e dar ao lead o retorno prometido pela Anna. Objetivo: suspender descontos · Renda bruta: R$ 10.729,78 · Líquido: R$ 4.396,01 · Desconto em conta: R$ 1.963,01 · Cheque especial e cartão: \"1\nUtilizo limite de cheque Especial\"",
+  "result": [],
+  "complete_till": 1794625140,
+  "account_id": 33595135,
+  "_links": {
+   "self": {
+    "href": "https://advogadacarolinacalvo.kommo.com/api/v4/tasks/3918704?filter%5Bis_completed%5D=0&filter%5Bcomplete_till%5D%5Bfrom%5D=1792800000&limit=250&page=1"
+   }
+  }
+ }
+]

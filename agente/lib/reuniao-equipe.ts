@@ -6,6 +6,7 @@ import { addLeadNote, getMainContactName, kommoGet, updateLeadFields, type Kommo
 import { reuniaoDoCard } from './pos-reuniao'
 import { k, redis } from './redis'
 import { getState, patchState } from './state'
+import { agendarLembretesReuniao } from './lembretes'
 import { quandoExtenso } from './anna/agenda'
 
 /**
@@ -102,6 +103,8 @@ export async function sincronizarReuniaoEquipe(lead: KommoLead): Promise<string 
     : acao === 'mover' ? `Anna: reunião remarcada pela equipe para ${quando}. O mesmo evento foi atualizado na agenda Google (sem duplicar). Link do Meet: ${ev.link}`
     : `Anna: a equipe remarcou a reunião que a Anna tinha marcado. O mesmo evento foi atualizado na agenda Google para ${quando} (sem duplicar). Link do Meet: ${ev.link}`
   await addLeadNote(lead.id, texto)
+  // lembretes da reunião marcada/remarcada pela equipe, presos a este horário (Dra., 13/11)
+  await agendarLembretesReuniao(lead.id, inicio, ev.id).catch(() => 0)
   await logExec({ tipo: 'pulou', leadId: lead.id, nome: lead.name, detalhe: `reunião da equipe → Google (${acao}): ${quando}` })
   return `${acao}: ${quando}`
 }

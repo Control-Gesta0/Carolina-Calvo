@@ -137,13 +137,16 @@ export function fimDoDiaBrt(agoraMs = Date.now()): number {
   return Math.floor(new Date(`${dia}T23:59:00-03:00`).getTime() / 1000)
 }
 
-export async function addLeadTask(leadId: number, text: string, o: { responsavelId: number; tipo: number; prazoMin: number }): Promise<number | null> {
-  // tarefas de acompanhamento da Anna: "Dia todo" (antes vencia em prazoMin e aparecia na grade como se fosse reunião)
-  const r = await kommo<{ _embedded?: { tasks?: Array<{ id: number }> } }>('POST', '/api/v4/tasks', [{
-    text, entity_id: leadId, entity_type: 'leads', task_type_id: o.tipo, responsible_user_id: o.responsavelId,
-    complete_till: fimDoDiaBrt(),
-  }])
-  return r?._embedded?.tasks?.[0]?.id ?? null
+/**
+ * Pendência para a equipe (Dra., 12/11): NÃO vira tarefa, porque toda tarefa com prazo aparece no calendário do Kommo,
+ * que a Dra. usa só para reuniões. Fica registrada como nota no card, com o prazo; a coluna do funil (AÇÃO SDR,
+ * 10 A 15 MIL, Retorno imediato…) é a fila de acompanhamento. Reuniões continuam como tarefa (addLeadTaskAt).
+ * Devolve null (não há tarefa para concluir depois).
+ */
+export async function addLeadTask(leadId: number, text: string, _o?: { responsavelId: number; tipo: number; prazoMin: number }): Promise<number | null> {
+  const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })
+  await addLeadNote(leadId, `PENDÊNCIA DA EQUIPE (fazer até hoje, ${hoje}): ${text}`)
+  return null
 }
 
 /** Conclui uma tarefa pelo id (ex.: a da AÇÃO SDR quando a equipe devolve o atendimento). */

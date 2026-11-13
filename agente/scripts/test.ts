@@ -1331,6 +1331,29 @@ async function main() {
     eq('agenda cheia hoje: oferece horário autorizado do próximo dia útil; nenhuma oferta fora da grade ou no passado', [sl?.chave, todos.every(c => autorizados.includes(c.slice(11, 16)) && c.endsWith('|true'))], ['2026-11-13T11:00', true])
   }
 
+  console.log('\n— Lembretes presos à reunião que os originou (Dra., 13/11)')
+  {
+    const L5 = await import('../lib/lembretes')
+    const seg = (h: number, m: number) => Math.floor(A.deBrt(2026, 10, 12, h, m).getTime() / 1000)
+    const iso = (h: number, m: number) => A.deBrt(2026, 10, 12, h, m).toISOString()
+    const closer = { pipelineId: PIPELINES.closer, statusId: STATUS.reuniaoAgendada }
+    eq('TESTE B (cancelamento simples): campo apagado e card em AGENDAR REUNIÃO → nenhum lembrete', L5.lembreteVale({ inicioDoLembrete: seg(15, 0), campoReuniao: null, pipelineId: PIPELINES.sdr, statusId: STATUS.agendarReuniao, google: null }) !== 'ok', true)
+    eq('TESTE C (horário apagado): campo vazio mesmo com o card em Reunião agendada → nenhum lembrete', L5.lembreteVale({ inicioDoLembrete: seg(15, 0), campoReuniao: null, ...closer }), 'a reunião foi cancelada (data apagada no card)')
+    // TESTE D: 15h cancelada, remarcada para 17h, card de volta em Reunião agendada
+    eq('TESTE D (15h cancelada → 17h): lembrete das 15h bloqueado; os das 17h saem', [
+      L5.lembreteVale({ inicioDoLembrete: seg(15, 0), campoReuniao: seg(17, 0), ...closer, google: { status: 'confirmed', inicio: iso(17, 0) } }),
+      L5.lembreteVale({ inicioDoLembrete: seg(17, 0), campoReuniao: seg(17, 0), ...closer, google: { status: 'confirmed', inicio: iso(17, 0) } }),
+    ], ['a reunião foi remarcada: este lembrete era do horário anterior', 'ok'])
+    eq('evento apagado ou movido na agenda Google → não sai', [
+      L5.lembreteVale({ inicioDoLembrete: seg(15, 0), campoReuniao: seg(15, 0), ...closer, google: null }),
+      L5.lembreteVale({ inicioDoLembrete: seg(15, 0), campoReuniao: seg(15, 0), ...closer, google: { status: 'confirmed', inicio: iso(16, 0) } }),
+      L5.lembreteVale({ inicioDoLembrete: seg(15, 0), campoReuniao: seg(15, 0), ...closer }),
+    ], ['a reunião foi apagada da agenda da Dra.', 'a reunião mudou de horário na agenda da Dra.', 'ok'])
+    eq('com os robôs do Kommo na etapa, 1h e 15 min ficam com eles; sem os robôs, a Anna manda', [
+      L5.kommoCobre('lembrete15m', PIPELINES.closer, STATUS.reuniaoAgendada, true), L5.kommoCobre('lembrete24h', PIPELINES.closer, STATUS.reuniaoAgendada, true), L5.kommoCobre('lembrete15m', PIPELINES.closer, STATUS.reuniaoAgendada, false),
+    ], [true, false, false])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')

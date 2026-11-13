@@ -9,6 +9,7 @@ import { marcarMovidoPelaAnna } from '../closer'
 import { appendMessage, getHistory } from '../history'
 import { addLeadNote, addLeadTags, addLeadTask, addLeadTaskAt, getLead, getMainContactName, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from '../kommo'
 import { agendarJob, novoToken } from '../jobs'
+import { agendarLembretesReuniao } from '../lembretes'
 import { k, redis } from '../redis'
 import { getState, patchState, type LeadState } from '../state'
 import { sendReply } from '../transport'
@@ -187,11 +188,8 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       },
     },
     async agendarLembretes(inicio, eventId) {
-      const t = inicio.getTime()
-      for (const [modelo, antes] of [['lembrete24h', 24 * 3600_000], ['lembrete1h', 3600_000], ['lembrete15m', 15 * 60_000]] as const) {
-        const quando = t - antes
-        if (quando > Date.now() + 5 * 60_000) await agendarJob({ tipo: 'lembrete', leadId, quando, token: eventId, dados: { modelo } })
-      }
+      // cada lembrete preso a esta reunião (evento + horário): cancelada ou remarcada, os antigos não saem (Dra., 13/11)
+      await agendarLembretesReuniao(leadId, inicio, eventId)
     },
   }
   return deps

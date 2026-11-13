@@ -17,6 +17,7 @@ import { varrerEntradas } from '../lib/etiqueta-mes'
 import { executarFu, type Regua } from '../lib/followup'
 import { executarPosReuniao, reuniaoDoCard, varrerPosReuniao } from '../lib/pos-reuniao'
 import { varrerRetomadas } from '../lib/retomada'
+import { kommoCobre, lembreteVale } from '../lib/lembretes'
 import { verificarSaudacao } from '../lib/saudacao'
 import { appendMessage, getHistory, humanSpokeRecently } from '../lib/history'
 import { agendarJob, pegarVencidos, type Job } from '../lib/jobs'
@@ -152,6 +153,31 @@ async function executar(job: Job): Promise<string> {
 
   if (job.tipo === 'posreuniao') return executarPosReuniao(job)
   if (job.tipo === 'saudacao') return verificarSaudacao(job)
+
+  // lembrete preso à reunião que o originou (evento + horário; Dra., 13/11): só sai se o card continua com ELA
+  if (job.tipo === 'lembrete' && job.dados?.inicio) {
+    const lead = await getLead(leadId)
+    const modelo = String(job.dados.modelo) as ChaveModelo
+    const eventId = String(job.dados.eventId || '')
+    let google: { status: string; inicio: string } | null | undefined
+    try { google = eventId ? await lerReuniao(eventId) : undefined } catch { google = undefined }
+    const vale = lembreteVale({ inicioDoLembrete: Number(job.dados.inicio), campoReuniao: reuniaoDoCard(lead), pipelineId: lead.pipeline_id, statusId: lead.status_id, google })
+    if (vale !== 'ok') {
+      await logExec({ tipo: 'pulou', leadId, nome: lead.name, tools: [`lembrete ${modelo}`], detalhe: `lembrete não enviado: ${vale}` })
+      return `lembrete não enviado: ${vale}`
+    }
+    const pulo = kommoCobre(modelo, lead.pipeline_id, lead.status_id) ? 'robô do Kommo da etapa cobre (Reunião agendada)'
+      : !CRM_MAP.modelos[modelo].botId ? `bot do modelo "${CRM_MAP.modelos[modelo].nome}" ainda sem modelo` : ''
+    if (pulo) {
+      await logExec({ tipo: 'pulou', leadId, nome: lead.name, tools: [`lembrete ${modelo}`], detalhe: pulo })
+      return `lembrete pulado: ${pulo}`
+    }
+    if ((await redis.set(k('lembrete-enviado', job.token, modelo), '1', { nx: true, ex: 7 * 86400 })) !== 'OK') return 'lembrete já enviado'
+    const nome = primeiroNome(await getMainContactName(lead).catch(() => ''))
+    const detalhe = await enviarModelo(leadId, modelo, { primeiroNome: nome || 'tudo bem', linkMeet: String(fieldValue(lead, CRM_MAP.campos.linkMeet) || ''), horarioReuniao: String(fieldValue(lead, CRM_MAP.campos.horarioReuniao) || '') })
+    await logExec({ tipo: 'followup', leadId, nome: lead.name, tools: [`lembrete ${modelo}`], detalhe })
+    return detalhe
+  }
 
   if (job.tipo === 'lembrete') {
     const state = await getState(leadId)
