@@ -1354,6 +1354,23 @@ async function main() {
     ], [true, false, false])
   }
 
+  console.log('\n— Calendário do Kommo como agenda ocupada (Dra., 12–13/11)')
+  {
+    const { intervalosDasTarefas } = await import('../lib/kommo-agenda')
+    const s = (d: number, h: number, m: number) => Math.floor(A.deBrt(2026, 10, d, h, m).getTime() / 1000)
+    const iv = intervalosDasTarefas([
+      { id: 1, task_type_id: 3665151, is_completed: false, complete_till: s(25, 14, 0), duration: 18000 },   // AGENDA FECHADA 14–19
+      { id: 2, task_type_id: 2, is_completed: false, complete_till: s(16, 11, 0), duration: 1800 },          // reunião
+      { id: 3, task_type_id: 4120515, is_completed: false, complete_till: s(16, 23, 59), duration: 0 },      // cobrar docs (dia todo): não ocupa
+      { id: 4, task_type_id: 3665151, is_completed: false, complete_till: s(17, 23, 59), duration: 0 },      // AGENDA FECHADA dia todo
+      { id: 5, task_type_id: 3665151, is_completed: true, complete_till: s(18, 15, 0), duration: 3600 },     // concluída: não ocupa
+      { id: 6, task_type_id: 3660959, is_completed: false, complete_till: s(19, 15, 0), duration: 0 },       // audiência sem duração: 30 min
+    ])
+    eq('tarefas do calendário do Kommo que ocupam a agenda', iv.length, 4)
+    const busca = (agora: Date, o: Partial<import('../lib/anna/agenda').Busca> = {}) => A.proximoSlot({ agora, ocupados: iv, reservados: new Set(), mesmoDia: true, ...o })?.chave
+    eq('bloqueio só no Kommo: a Anna não oferece', [busca(A.deBrt(2026, 10, 25, 8, 0), { periodo: 'tarde' }), busca(A.deBrt(2026, 10, 17, 8, 0)), busca(A.deBrt(2026, 10, 19, 13, 0), { periodo: 'tarde' })], ['2026-11-26T15:00', '2026-11-18T11:00', '2026-11-19T15:30'])
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')

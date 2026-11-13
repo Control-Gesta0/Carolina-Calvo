@@ -10,6 +10,7 @@ import { appendMessage, getHistory } from '../history'
 import { addLeadNote, addLeadTags, addLeadTask, addLeadTaskAt, getLead, getMainContactName, leadTags, removeLeadTags, updateLeadFields, updateLeadStatus, type KommoLead } from '../kommo'
 import { agendarJob, novoToken } from '../jobs'
 import { agendarLembretesReuniao } from '../lembretes'
+import { ocupadosNoKommo } from '../kommo-agenda'
 import { k, redis } from '../redis'
 import { getState, patchState, type LeadState } from '../state'
 import { sendReply } from '../transport'
@@ -49,6 +50,12 @@ export async function montarCtx(leadId: number, lead: KommoLead, agora = new Dat
   const textoTurno = conversa.slice(i + 1).filter(m => m.dir === 'in').map(m => m.text).join('\n')
   const nomeContato = await getMainContactName(lead).catch(() => '')
   return { state, ctx: { agora, nomeContato, primeiroNome: primeiroNome(nomeContato), state, textoTurno, conversa } }
+}
+
+/** Ocupado na agenda Google OU no calendário do Kommo (compromissos e bloqueios da Dra.). Falha em qualquer uma = erro. */
+async function ocupadosNasDuasAgendas(de: Date, ate: Date) {
+  const [google, kommoCal] = await Promise.all([ocupados(de, ate), ocupadosNoKommo(de, ate)])
+  return [...google, ...kommoCal]
 }
 
 // ---------- reservas de horário (um horário oferecido não vai para outro lead) ----------
@@ -166,7 +173,9 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       disponivel: agendaConectada,
       async buscar(o) {
         const agora = new Date()
-        const busy = await ocupados(agora, new Date(agora.getTime() + (AGENDA.horizonteDias + 1) * 86400_000))
+        // Google E calendário do Kommo (Dra., 12–13/11): sem conseguir ler os dois, não oferece nada
+        const busy = await ocupadosNasDuasAgendas(agora, new Date(agora.getTime() + (AGENDA.horizonteDias + 1) * 86400_000)).catch(() => null)
+        if (!busy) return null
         return proximoSlot({ agora, ocupados: busy, reservados: await reservados(leadId), ...o })
       },
       async reservar(slot) {
@@ -174,14 +183,14 @@ export function depsProducao(leadId: number, lead: KommoLead, tel: Telemetria = 
       },
       async livre(slot) {
         if ((await reservados(leadId)).has(slot.chave)) return false
-        const busy = await ocupados(slot.inicio, slot.fim)
-        return !busy.some(b => b.inicio < slot.fim.getTime() && b.fim > slot.inicio.getTime())
+        const busy = await ocupadosNasDuasAgendas(slot.inicio, slot.fim).catch(() => null)
+        return !!busy && !busy.some(b => b.inicio < slot.fim.getTime() && b.fim > slot.inicio.getTime())
       },
       async confirmar(slot: Slot, titulo, descricao) {
         // trava do horário: dois leads dizendo "sim" no mesmo segundo não criam dois eventos
         if ((await redis.set(k('slotlock', slot.chave), String(leadId), { nx: true, ex: 120 })) !== 'OK') return null
-        const busy = await ocupados(slot.inicio, slot.fim)
-        if (busy.some(b => b.inicio < slot.fim.getTime() && b.fim > slot.inicio.getTime())) return null
+        const busy = await ocupadosNasDuasAgendas(slot.inicio, slot.fim).catch(() => null)
+        if (!busy || busy.some(b => b.inicio < slot.fim.getTime() && b.fim > slot.inicio.getTime())) { await redis.del(k('slotlock', slot.chave)); return null }
         const ev = await criarReuniao({ inicio: slot.inicio, fim: slot.fim, titulo, descricao })
         await redis.hdel(k('reservas'), slot.chave)
         return { eventId: ev.id, link: ev.link }
