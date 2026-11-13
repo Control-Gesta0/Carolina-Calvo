@@ -91,3 +91,19 @@ export async function substituirMensagem(leadId: number, id: string, nova: ChatM
   }
   return false
 }
+
+/**
+ * Põe a mensagem no lugar certo da conversa, pela hora (não no fim). Usada para a saudação confirmada depois de o
+ * lead já ter respondido (caso Valdete, 13/11): no fim, ela "escondia" a resposta do lead e a Anna ficava calada.
+ */
+export async function inserirEmOrdem(leadId: number, msg: ChatMsg): Promise<void> {
+  const atual = await getHistory(leadId)
+  if (atual.some(m => m.id === msg.id)) return
+  const i = atual.findIndex(m => m.ts > msg.ts)
+  if (i < 0) return appendMessage(leadId, msg)
+  const nova = [...atual.slice(0, i), msg, ...atual.slice(i)].slice(-MAX_MSGS)
+  const key = k('conv', leadId)
+  await redis.del(key)
+  await redis.rpush(key, ...nova.map(m => JSON.stringify(m)))
+  await redis.expire(key, TTL_S)
+}

@@ -175,12 +175,13 @@ async function ingest(msgs: InboundMsg[], webhookId: string): Promise<void> {
       // Eco do que o NOSSO bot enviou (texto igual, ou saída logo depois de um run nosso): já está no histórico
       if (await isEchoOfSent(m.leadId, text)) continue
       if (outgoing) {
-        if (await botRodandoRecente(m.leadId)) continue
-        // a Anna esperava a saudação do robô do Kommo (lead de formulário): esta saída é ela, não a equipe
+        // a Anna esperava a saudação do robô do Kommo (lead de formulário): esta saída é ela, não a equipe. Vem ANTES do
+        // "robô rodando": senão a confirmação só sai na conferência de 5 min, às vezes depois da resposta do lead (13/11)
         if ((await getState(m.leadId)).saudacaoKommo) {
           await confirmarSaudacao(m.leadId, text, 'webhook de saída')
           continue
         }
+        if (await botRodandoRecente(m.leadId)) continue
         // Saída de um robô do Kommo (lembretes de 2h, 1h e 15 min da reunião, modelo "Lembrete Reunião"): não é a equipe.
         // Fica no histórico, mas a Anna não sai do atendimento (casos Sirlei e Zacheu, 06/11). Reconhecido pelo TEXTO:
         // no Kommo, mensagem da equipe e de robô saem com o mesmo autor (0), então o autor não serve

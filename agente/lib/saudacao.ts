@@ -1,7 +1,7 @@
 import { colunaPelaFaixa, CRM_MAP, PIPELINES, STATUS } from './crm-map'
 import { logExec } from './execlog'
 import { iniciarRegua } from './followup'
-import { appendMessage, getHistory, rememberSent } from './history'
+import { getHistory, inserirEmOrdem, rememberSent } from './history'
 import { agendarJob, type Job } from './jobs'
 import { addLeadNote, fieldValue, getLead, getTemplateText, kommoGet, updateLeadStatus, type KommoLead } from './kommo'
 import { getState, patchState } from './state'
@@ -33,8 +33,12 @@ export async function confirmarSaudacao(leadId: number, texto: string, origem: s
   // o Kommo às vezes entrega o webhook de saída da saudação minutos depois (caso Gilse, 09/11): o texto fica
   // marcado como da Anna, para essa entrega atrasada nunca ser lida como a equipe escrevendo
   await rememberSent(leadId, texto).catch(() => undefined)
-  await appendMessage(leadId, { id: `saudacao:${st.saudacaoKommo}`, dir: 'out', text: texto, ts: Date.now() })
-  await iniciarRegua(leadId, 'qualificacao', Date.now())
+  // a saudação entra na conversa na hora em que saiu, antes da resposta do lead (caso Valdete, 13/11: confirmada
+  // depois da resposta e posta no fim, ela fazia a Anna achar que a última palavra era dela e não responder)
+  await inserirEmOrdem(leadId, { id: `saudacao:${st.saudacaoKommo}`, dir: 'out', text: texto, ts: st.saudacaoKommo })
+  // o lead já respondeu: quem conduz é a conversa (a régua recomeça com a próxima mensagem da Anna)
+  const respondeu = (await getHistory(leadId).catch(() => [])).some(m => m.dir === 'in' && m.ts > st.saudacaoKommo!)
+  if (!respondeu) await iniciarRegua(leadId, 'qualificacao', Date.now())
   const lead = await getLead(leadId).catch(() => null)
   // PRIMEIRO_CONTATO=kommo: a saudação é do robô da etapa; o card só sai de Contato inicial depois que ela saiu
   if (lead) await moverPelaFaixaNaEntrada(lead).catch(e => logExec({ tipo: 'erro', leadId, detalhe: `faixa na entrada: ${(e instanceof Error ? e.message : String(e)).slice(0, 160)}` }))
