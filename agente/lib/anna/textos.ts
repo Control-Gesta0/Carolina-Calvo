@@ -177,6 +177,9 @@ export const TEXTOS_PADRAO = {
   /** [CG] o horário oferecido pela equipe não está mais disponível: a Anna oferece outro */
   oferta_equipe_outro: 'O horário que te enviei não está mais disponível. A Dra. pode atender você *{quando}*, ON LINE. Posso agendar?',
 
+  /** [DRA] follow-up quando a Anna perguntou manhã ou tarde e o lead não respondeu (Dra., 13/11, caso Carlos) */
+  periodo_follow: '{nome}, para eu encontrar um horário que funcione melhor para você, me diz: prefere pela manhã ou pela tarde?',
+
   /** [CG] perguntas de retomada: emendadas depois de uma resposta livre da Anna */
   pendente_q1: 'Qual das opções você quer saber: 1, 2 ou 3?',
   pendente_q2: 'Pode me passar a sua renda bruta, o valor líquido e quanto o banco desconta da sua conta corrente?',
@@ -226,6 +229,7 @@ export const TEXTOS = {
   horarioOcupado: (quando: string) => preencher(texto('horario_ocupado'), { quando }),
   get manhaOuTarde() { return texto('manha_ou_tarde') },
   get identidade() { return texto('identidade') },
+  periodoFollow: (nome?: string) => (nome ? preencher(texto('periodo_follow'), { nome }) : texto('periodo_follow').replace(/^\{nome\},\s*/, '').replace(/^./, c => c.toUpperCase())),
   get valoresDepois() { return texto('valores_depois') },
   get aguardoCurto() { return texto('aguardo_curto') },
   get q1SoOpcao() { return texto('q1_so_opcao') },

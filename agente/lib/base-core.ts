@@ -60,6 +60,7 @@ export const ITENS = [
   { id: 'q1_so_opcao', grupo: 'roteiro', titulo: 'Mandou os valores antes da opção', ajuda: 'O lead mandou renda e descontos antes de escolher 1, 2 ou 3: a Anna guarda os valores e pede só a opção (Dra., 10/11).' },
   { id: 'oferta_equipe_follow', grupo: 'agenda', titulo: 'Follow-up do horário oferecido pela equipe', ajuda: 'A equipe ofereceu um horário pelo Kommo e devolveu o atendimento (anna-retomar). 1 h depois da oferta, sem confirmação, sai esta mensagem, uma vez por oferta (Dra., 10/11).', comPergunta: true },
   { id: 'oferta_equipe_outro', grupo: 'agenda', titulo: 'Horário da equipe indisponível', ajuda: 'O horário oferecido pela equipe já passou do prazo ou foi ocupado: a Anna oferece outro. {quando} é o novo horário.', exige: ['{quando}'], comPergunta: true },
+  { id: 'periodo_follow', grupo: 'agenda', titulo: 'Follow-up da pergunta de manhã ou tarde', ajuda: 'A Anna perguntou o período e o lead não respondeu (Dra., 13/11): o 1º follow-up do agendamento pergunta só o período, sem falar em horário pendente. {nome} vira o primeiro nome.', exige: ['{nome}'], comPergunta: true },
   { id: 'pendente_q1', grupo: 'retomadas', titulo: 'Retomada da 1ª pergunta', ajuda: 'Quando o lead faz uma pergunta no meio do roteiro, a Anna responde e emenda esta pergunta para voltar ao ponto.', comPergunta: true },
   { id: 'pendente_q2', grupo: 'retomadas', titulo: 'Retomada da 2ª pergunta', ajuda: 'Emendada depois de uma resposta livre enquanto faltam os valores de renda.', comPergunta: true },
   { id: 'pendente_limite', grupo: 'retomadas', titulo: 'Retomada da pergunta do cheque especial e do cartão', ajuda: 'Emendada depois de uma resposta livre enquanto a Anna espera essa resposta.', comPergunta: true },
@@ -158,7 +159,7 @@ export function validarTexto(id: string, texto: string): string[] {
     if (m.comPergunta && !/\?/.test(t)) out.push('Este texto precisa terminar em pergunta: é o que leva o lead ao próximo passo.')
   }
   // as travas olham a mensagem como o lead vai ler (variáveis preenchidas com um exemplo)
-  const exemplo = t.replace(/\{saudacao\}/g, 'Maria, bom dia!').replace(/\{desconto\}/g, 'R$ 2.000').replace(/\{quando\}/g, 'HOJE às 15:00').replace(/\{link\}/g, 'https://meet.google.com/abc-defg-hij').replace(/\{valores\}/g, 'renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500')
+  const exemplo = t.replace(/\{saudacao\}/g, 'Maria, bom dia!').replace(/\{desconto\}/g, 'R$ 2.000').replace(/\{quando\}/g, 'HOJE às 15:00').replace(/\{link\}/g, 'https://meet.google.com/abc-defg-hij').replace(/\{valores\}/g, 'renda bruta de R$ 18.000, líquido de R$ 9.000 e desconto em conta de R$ 2.500').replace(/\{nome\}/g, 'Maria').replace(/\{dia\}/g, 'amanhã, sexta-feira, 13/11')
   for (const v of checkReply(exemplo, REGRAS_CLIENTE)) {
     if (['mais de uma pergunta', 'vazio'].includes(v.regra)) continue
     if (instrucao && SO_MENSAGEM.has(v.regra)) continue

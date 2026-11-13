@@ -579,6 +579,16 @@ export function perguntasDoQueFalta(s: Pick<LeadState, 'rendaBruta' | 'rendaLiqu
   return valoresQueFaltam(s).map((x, i) => `*${i + 1}. ${p[x]}*`).join('\n\n')
 }
 
+/**
+ * Puro (Dra., 13/11, caso Carlos): o que está pendente na negociação do horário, para o follow-up falar disso.
+ * 'confirmacao' = um horário específico oferecido, ainda válido; 'periodo' = a Anna perguntou manhã ou tarde, ou o
+ * horário oferecido já não vale (recusado, vencido). Nunca pede confirmação de um horário que não está pendente.
+ */
+export function pendenciaDoAgendamento(s: Pick<LeadState, 'etapa' | 'oferta'>, agora: Date): 'confirmacao' | 'periodo' {
+  const valida = s.etapa === 'oferta' && !!s.oferta && Date.parse(s.oferta.inicio) >= agora.getTime() + AGENDA.antecedenciaConfirmacaoMin * 60_000
+  return valida ? 'confirmacao' : 'periodo'
+}
+
 /** Um turno do lead. */
 export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
   const s = ctx.state
@@ -965,7 +975,8 @@ export async function turno(ctx: Ctx, deps: Deps): Promise<Resultado> {
           return oferecer(ctxR, deps, { periodo: periodoDoSlot(recusado) === 'manha' ? 'tarde' : 'manha', aPartirDoDia: diaIso(recusado.inicio) }, TEXTOS.novaOferta, 'nova_oferta')
         }
         if (n === 2) {
-          await deps.patch({ etapa: 'preferencia' })
+          // o horário recusado deixa de ser oferta pendente (Dra., 13/11, caso Carlos)
+          await deps.patch({ etapa: 'preferencia', oferta: undefined })
           const enviado = await falar(ctx, deps, TEXTOS.manhaOuTarde, 'preferencia', { id: 'manha_ou_tarde', obrigatorio: ['manhã', 'tarde'] })
           return { acao: 'recusou de novo: perguntou o período', enviado, leitura }
         }

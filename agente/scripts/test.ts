@@ -1371,6 +1371,20 @@ async function main() {
     eq('bloqueio só no Kommo: a Anna não oferece', [busca(A.deBrt(2026, 10, 25, 8, 0), { periodo: 'tarde' }), busca(A.deBrt(2026, 10, 17, 8, 0)), busca(A.deBrt(2026, 10, 19, 13, 0), { periodo: 'tarde' })], ['2026-11-26T15:00', '2026-11-18T11:00', '2026-11-19T15:30'])
   }
 
+  console.log('\n— Follow-up do agendamento acompanha a pergunta pendente (Dra., 13/11, caso Carlos)')
+  {
+    const agora = A.deBrt(2026, 10, 13, 9, 9)
+    const { w, deps } = mundo(agora)
+    const oferta1530 = { chave: '2026-11-13T15:30', inicio: A.deBrt(2026, 10, 13, 15, 30).toISOString(), fim: A.deBrt(2026, 10, 13, 16, 0).toISOString(), em: agora.getTime() }
+    w.state = { etapa: 'oferta', rendaBruta: 18000, recusas: 1, oferta: oferta1530 }
+    eq('SITUAÇÃO A: horário oferecido e válido → follow-up de confirmação', fluxo.pendenciaDoAgendamento(w.state, A.deBrt(2026, 10, 13, 10, 20)), 'confirmacao')
+    w.leituras.push(L({ intencao: 'recusa_horario' }))
+    await fluxo.turno(ctx(w, A.deBrt(2026, 10, 13, 9, 15), 'Não'), deps)
+    eq('TESTE Carlos: "Não" → pergunta manhã ou tarde; o 15h30 deixa de ser oferta pendente', [w.enviados[0]?.includes('manhã ou tarde'), w.state.etapa, w.state.oferta, (w.state.recusados || []).includes('2026-11-13T15:30')], [true, 'preferencia', undefined, true])
+    eq('SITUAÇÃO C: 10h20 sem resposta → o follow-up pergunta o período (nunca a confirmação das 15h30)', [fluxo.pendenciaDoAgendamento(w.state, A.deBrt(2026, 10, 13, 10, 20)), TEXTOS.periodoFollow('Carlos')], ['periodo', 'Carlos, para eu encontrar um horário que funcione melhor para você, me diz: prefere pela manhã ou pela tarde?'])
+    eq('oferta vencida também não pede confirmação', fluxo.pendenciaDoAgendamento({ etapa: 'oferta', oferta: oferta1530 }, A.deBrt(2026, 10, 13, 15, 10)), 'periodo')
+  }
+
   console.log('\n— Lembrete confere a reunião na agenda')
   {
     const { conferirLembrete } = await import('../lib/google')

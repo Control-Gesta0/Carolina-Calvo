@@ -76,7 +76,7 @@ export async function executarFu(
     /** devolve como saiu: 'texto' ou 'modelo' (fora da janela de 24h) */
     enviarTexto(texto: string, modeloForaDaJanela: ChaveModelo, nota?: string): Promise<'texto' | 'modelo'>
     /** texto que substitui esta etapa (lead recorrente, Dra. 06/11); null = a etapa normal */
-    textoEspecial?(regua: Regua, idx: number): Promise<string | null>
+    textoEspecial?(regua: Regua, idx: number): Promise<{ texto: string; nota: string; rotulo: string } | null>
     encerrar(pipelineId: number, statusId: number): Promise<void>
     /** depois do 1º follow-up da qualificação: o card sai de Contato inicial para AGUARDANDO QUALIFICAÇÃO */
     aposPrimeiroFollow?(): Promise<void>
@@ -103,7 +103,7 @@ export async function executarFu(
   // cada etapa de uma régua sai uma vez só, mesmo com tarefa repetida na fila (28/10: Follow 2 duplicado no teste)
   if ((await redis.set(k('fu-etapa', job.leadId, fu.token, idx), '1', { nx: true, ex: TTL })) !== 'OK') return `etapa ${idx} da régua ${fu.regua} já enviada: duplicata ignorada`
   const especial = acoes.textoEspecial ? await acoes.textoEspecial(fu.regua, idx).catch(() => null) : null
-  const comoSaiu = especial ? await acoes.enviarTexto(especial, modelo, 'Anna: lead recorrente; no lugar do 1º follow-up saiu a mensagem para quem já procurou o escritório antes (Dra., 06/11).')
+  const comoSaiu = especial ? await acoes.enviarTexto(especial.texto, modelo, especial.nota)
     : etapa.texto_livre ? await acoes.enviarTexto(etapa.texto_livre, modelo) : (await acoes.enviar(modelo), 'modelo')
   if (fu.regua === 'qualificacao' && idx === 0 && acoes.aposPrimeiroFollow) await acoes.aposPrimeiroFollow().catch(() => undefined)
   if (fu.regua === 'qualificacao' && idx === 1 && acoes.aposSegundoFollow && (await acoes.aposSegundoFollow().catch(() => false))) {
@@ -123,5 +123,5 @@ export async function executarFu(
   } else {
     await cancelarRegua(job.leadId)
   }
-  return `régua ${fu.regua}: enviado ${especial && comoSaiu === 'texto' ? 'mensagem do lead recorrente' : etapa.nome} (${comoSaiu === 'texto' ? 'texto' : CRM_MAP.modelos[modelo].nome})`
+  return `régua ${fu.regua}: enviado ${especial && comoSaiu === 'texto' ? especial.rotulo : etapa.nome} (${comoSaiu === 'texto' ? 'texto' : CRM_MAP.modelos[modelo].nome})`
 }

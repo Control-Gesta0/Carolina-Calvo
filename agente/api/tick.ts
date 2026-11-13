@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { waitUntil } from '@vercel/functions'
 import crypto from 'crypto'
 import { bloqueio } from '../lib/agent'
-import { followOfertaEquipe, quintaMensagem } from '../lib/anna/fluxo'
+import { followOfertaEquipe, pendenciaDoAgendamento, quintaMensagem } from '../lib/anna/fluxo'
 import { cobrancaPorContinuar, rodarCobranca } from '../lib/cobranca/executar'
 import { comTextos } from '../lib/anna/textos'
 import { baseVigente } from '../lib/base'
@@ -243,7 +243,17 @@ async function executar(job: Job): Promise<string> {
       await enviarModelo(leadId, modelo, { primeiroNome: nome || undefined })
       await addLeadNote(leadId, `Anna: follow-up enviado (${CRM_MAP.modelos[modelo].nome}).`)
     },
-    // Dra., 12/11: a mensagem do lead recorrente não sai mais como follow-up (agora é no início do atendimento)
+    // Dra., 12/11: a mensagem do lead recorrente não sai mais como follow-up (agora é no início do atendimento).
+    // Dra., 13/11 (caso Carlos): o 1º follow-up do agendamento acompanha a pergunta pendente de verdade: confirmação de
+    // um horário só se houver um horário oferecido e válido; senão, a pergunta do período
+    async textoEspecial(regua, idx) {
+      if (regua !== 'agendamento' || idx !== 0) return null
+      const st = await getState(leadId)
+      if (pendenciaDoAgendamento(st, new Date()) === 'confirmacao') return null
+      const lead = await getLead(leadId)
+      const nome = primeiroNome(await getMainContactName(lead).catch(() => '')) || undefined
+      return { texto: TEXTOS.periodoFollow(nome), nota: 'Anna: follow-up da pergunta de manhã ou tarde (não há horário pendente de confirmação).', rotulo: 'follow-up do período (manhã ou tarde)' }
+    },
     async enviarTexto(texto, modeloForaDaJanela, nota) {
       // texto livre só dentro da janela de 24h da Meta (contada da última mensagem do lead); fora dela, o modelo aprovado
       const ultimaDoLead = (await getHistory(leadId)).filter(m => m.dir === 'in').pop()?.ts ?? 0
